@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,6 +29,18 @@ const ThreadDetailView = ({
   const navigate = useNavigate();
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
+  const markedAsRead = useRef<Set<string>>(new Set());
+
+  // Mark unread messages as read via effect, not during render
+  useEffect(() => {
+    const unreadMessages = thread.messages.filter(
+      m => m.to_user_id === currentUserId && !m.read_at && m.type === "message" && !markedAsRead.current.has(m.id)
+    );
+    unreadMessages.forEach(m => {
+      markedAsRead.current.add(m.id);
+      onMarkAsRead(m.id);
+    });
+  }, [thread.messages, currentUserId, onMarkAsRead]);
 
   const toggleExpanded = (messageId: string) => {
     setExpandedMessages(prev => {
@@ -103,11 +115,6 @@ const ThreadDetailView = ({
         <div className="space-y-3 max-h-[60vh] overflow-y-auto">
           {thread.messages.map((message) => {
             const isReceived = message.to_user_id === currentUserId;
-            const isUnread = isReceived && !message.read_at && message.type === "message";
-
-            if (isUnread) {
-              onMarkAsRead(message.id);
-            }
 
             return (
               <MessageBubble
