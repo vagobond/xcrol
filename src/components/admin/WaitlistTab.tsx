@@ -13,7 +13,7 @@ interface WaitlistTabProps {
 }
 
 function generateInviteCode(): string {
-  return crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
+  return crypto.randomUUID();
 }
 
 export function WaitlistTab({ waitlist, onAccepted }: WaitlistTabProps) {
