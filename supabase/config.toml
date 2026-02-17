@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.oauth-connection-degree]
 verify_jwt = false
+
+[functions.send-waitlist-acceptance]
+verify_jwt = true
