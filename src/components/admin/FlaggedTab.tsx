@@ -38,12 +38,12 @@ export function FlaggedTab({ flaggedReferences, onResolveFlag, onDeleteReference
           <div className="space-y-4">
             {flaggedReferences.map((flag) => (
               <div key={flag.id} className="p-4 border rounded-lg space-y-3">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-2">
                   <div>
                     <p className="text-sm font-medium">Flagged by: {flag.flagger?.display_name || "Unknown"}</p>
                     <p className="text-xs text-muted-foreground">{new Date(flag.created_at).toLocaleString()}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button variant="outline" size="sm" onClick={() => onResolveFlag(flag.id, "dismissed")}>
                       <X className="w-3 h-3 mr-1" /> Dismiss
                     </Button>

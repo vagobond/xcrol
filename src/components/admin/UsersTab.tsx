@@ -26,7 +26,7 @@ export function UsersTab({ users, currentUserId, onDeleteUser }: UsersTabProps) 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <CardTitle>Registered Users</CardTitle>
             <CardDescription>All users registered on the platform</CardDescription>
@@ -37,8 +37,8 @@ export function UsersTab({ users, currentUserId, onDeleteUser }: UsersTabProps) 
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <Table>
+      <CardContent className="overflow-x-auto">
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               <TableHead>Display Name</TableHead>

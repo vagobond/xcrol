@@ -315,7 +315,7 @@ const TheForest = () => {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue={initialTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-5 h-auto">
             <TabsTrigger value="friends" className="flex items-center gap-1">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Friends</span>
