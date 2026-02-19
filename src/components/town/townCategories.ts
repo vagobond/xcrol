@@ -155,19 +155,6 @@ export const TOWN_CATEGORIES: TownCategory[] = [
       { key: "resumes", label: "resumes" },
     ],
   },
-  {
-    key: "discussion",
-    label: "discussion forums",
-    subcategories: [
-      { key: "general", label: "general" },
-      { key: "politics", label: "politics" },
-      { key: "money", label: "money" },
-      { key: "food", label: "food" },
-      { key: "arts", label: "arts" },
-      { key: "sports", label: "sports" },
-      { key: "travel", label: "travel" },
-    ],
-  },
 ];
 
 export function getCategoryLabel(key: string): string {
