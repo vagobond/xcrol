@@ -8,7 +8,7 @@ import { ProfileActionBar } from "@/components/public-profile/ProfileActionBar";
 import { ProfileInfoCard } from "@/components/public-profile/ProfileInfoCard";
 import { MeetupHostingSection } from "@/components/public-profile/MeetupHostingSection";
 import ProfileFriendsList from "@/components/ProfileFriendsList";
-import { ProfileGameStats } from "@/components/ProfileGameStats";
+
 import { UserReferences } from "@/components/UserReferences";
 import { LeaveReferenceDialog } from "@/components/LeaveReferenceDialog";
 import { PublicXcrolEntries } from "@/components/PublicXcrolEntries";
@@ -162,10 +162,6 @@ const PublicProfile = () => {
             />
           )}
 
-          {/* Mini-Game Stats */}
-          {resolvedUserId && (
-            <ProfileGameStats userId={resolvedUserId} />
-          )}
         </div>
       </div>
     </>
