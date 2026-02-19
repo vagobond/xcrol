@@ -30,6 +30,7 @@ const TownCreateListing = ({
   const [body, setBody] = useState("");
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
+  const [contactInfo, setContactInfo] = useState("");
 
   const selectedCat = TOWN_CATEGORIES.find((c) => c.key === category);
 
@@ -47,7 +48,8 @@ const TownCreateListing = ({
         body: body.trim(),
         price: price ? parseInt(price, 10) : null,
         location: location.trim() || null,
-        contact_method: "message",
+        contact_info: contactInfo.trim() || null,
+        contact_method: contactInfo.trim() ? "custom" : "message",
       });
       if (error) throw error;
     },
@@ -136,6 +138,20 @@ const TownCreateListing = ({
             placeholder="e.g. Brooklyn, NY"
             className="mt-1"
           />
+        </div>
+
+        <div>
+          <Label className="text-xs">best way to contact you</Label>
+          <Input
+            value={contactInfo}
+            onChange={(e) => setContactInfo(e.target.value)}
+            maxLength={200}
+            placeholder="e.g. email me at joe@example.com, or call 555-1234"
+            className="mt-1"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Leave blank to be contacted via xcrol messages
+          </p>
         </div>
 
         <div>
