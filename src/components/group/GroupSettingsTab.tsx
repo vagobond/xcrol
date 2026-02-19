@@ -88,8 +88,11 @@ const GroupSettingsTab = ({ group, onSave, saving }: GroupSettingsTabProps) => {
           <div className="flex flex-col items-center gap-3">
             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
               <Avatar className="h-24 w-24">
-                <AvatarImage src={avatarUrl ?? undefined} />
-                <AvatarFallback className="text-3xl">{name.charAt(0).toUpperCase()}</AvatarFallback>
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={name} className="aspect-square h-full w-full object-cover" />
+                ) : (
+                  <AvatarFallback className="text-3xl">{name.charAt(0).toUpperCase()}</AvatarFallback>
+                )}
               </Avatar>
               <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 {uploading ? (
