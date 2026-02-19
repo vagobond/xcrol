@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getCategoryLabel, getSubcategoryLabel } from "./townCategories";
@@ -6,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import SendMessageDialog from "@/components/SendMessageDialog";
 
 interface TownListingDetailProps {
   listingId: string;
@@ -16,6 +18,7 @@ const TownListingDetail = ({ listingId, onBack }: TownListingDetailProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["town-listing", listingId],
@@ -66,7 +69,7 @@ const TownListingDetail = ({ listingId, onBack }: TownListingDetailProps) => {
   return (
     <div className="space-y-4 max-w-2xl">
       <button onClick={onBack} className="text-sm text-primary hover:underline">
-        « back to listings
+        « back
       </button>
 
       <div className="space-y-1">
@@ -107,15 +110,24 @@ const TownListingDetail = ({ listingId, onBack }: TownListingDetailProps) => {
         </div>
       )}
 
-      {!isOwner && (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => navigate(`/messages`)}
-          className="text-sm"
-        >
-          {listing.contact_info ? "or message on xcrol" : "reply via message"}
-        </Button>
+      {!isOwner && user && (
+        <>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setMessageDialogOpen(true)}
+            className="text-sm"
+          >
+            {listing.contact_info ? "or message on xcrol" : "reply via message"}
+          </Button>
+          <SendMessageDialog
+            open={messageDialogOpen}
+            onOpenChange={setMessageDialogOpen}
+            recipientId={listing.user_id}
+            recipientName={author?.display_name || author?.username || "poster"}
+            friendshipLevel="friendly_acquaintance"
+          />
+        </>
       )}
 
       {isOwner && (

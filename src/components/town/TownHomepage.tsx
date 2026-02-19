@@ -1,6 +1,8 @@
 import { TOWN_CATEGORIES } from "./townCategories";
+import { toast } from "@/hooks/use-toast";
 
 interface TownHomepageProps {
+  isAuthenticated: boolean;
   onSelectCategory: (catKey: string) => void;
   onSelectSubcategory: (catKey: string, subKey: string) => void;
   onPostClick: () => void;
@@ -11,6 +13,7 @@ interface TownHomepageProps {
 }
 
 const TownHomepage = ({
+  isAuthenticated,
   onSelectCategory,
   onSelectSubcategory,
   onPostClick,
@@ -24,6 +27,14 @@ const TownHomepage = ({
   // Right: services (18) + jobs (33) = 51 lines
   const leftCats = TOWN_CATEGORIES.slice(0, 3);
   const rightCats = TOWN_CATEGORIES.slice(3);
+
+  const handleAuthAction = (action: () => void) => {
+    if (!isAuthenticated) {
+      toast({ title: "Sign in required", description: "Please sign in to use this feature.", variant: "destructive" });
+      return;
+    }
+    action();
+  };
 
   const renderColumn = (cats: typeof TOWN_CATEGORIES) => (
     <div className="space-y-6">
@@ -75,13 +86,13 @@ const TownHomepage = ({
       {/* Action links */}
       <div className="flex gap-4 text-sm">
         <button
-          onClick={onPostClick}
+          onClick={() => handleAuthAction(onPostClick)}
           className="text-primary hover:underline font-medium"
         >
           post to classifieds
         </button>
         <button
-          onClick={onMyListingsClick}
+          onClick={() => handleAuthAction(onMyListingsClick)}
           className="text-primary hover:underline font-medium"
         >
           my listings

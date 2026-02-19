@@ -40,13 +40,17 @@ const TownCreateListing = ({
       if (!category || !subcategory || !title.trim() || !body.trim()) {
         throw new Error("Please fill in all required fields");
       }
+      const parsedPrice = price ? parseFloat(price) : null;
+      if (parsedPrice !== null && (isNaN(parsedPrice) || parsedPrice < 0)) {
+        throw new Error("Please enter a valid price");
+      }
       const { error } = await supabase.from("town_listings").insert({
         user_id: user.id,
         category,
         subcategory,
         title: title.trim(),
         body: body.trim(),
-        price: price ? parseInt(price, 10) : null,
+        price: parsedPrice,
         location: location.trim() || null,
         contact_info: contactInfo.trim() || null,
         contact_method: contactInfo.trim() ? "custom" : "message",
@@ -62,6 +66,19 @@ const TownCreateListing = ({
       toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
+
+  if (!user) {
+    return (
+      <div className="space-y-4">
+        <button onClick={onBack} className="text-sm text-primary hover:underline">
+          « back
+        </button>
+        <p className="text-sm text-muted-foreground">
+          Please sign in to post a listing.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 max-w-lg">
@@ -123,6 +140,8 @@ const TownCreateListing = ({
           <Label className="text-xs">price</Label>
           <Input
             type="number"
+            step="0.01"
+            min="0"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="leave blank if not applicable"

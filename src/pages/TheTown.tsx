@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { useAuth } from "@/hooks/use-auth";
 import TownHomepage from "@/components/town/TownHomepage";
@@ -16,7 +16,22 @@ type TownView =
 const TheTown = () => {
   const { user } = useAuth();
   const [view, setView] = useState<TownView>({ type: "home" });
+  const [previousView, setPreviousView] = useState<TownView | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const navigateTo = useCallback((newView: TownView) => {
+    setPreviousView(view);
+    setView(newView);
+  }, [view]);
+
+  const goBack = useCallback(() => {
+    if (previousView) {
+      setView(previousView);
+      setPreviousView(null);
+    } else {
+      setView({ type: "home" });
+    }
+  }, [previousView]);
 
   return (
     <div className="min-h-screen pt-20 px-4 pb-12 max-w-5xl mx-auto">
@@ -31,6 +46,7 @@ const TheTown = () => {
           className="text-3xl font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => {
             setView({ type: "home" });
+            setPreviousView(null);
             setSearchQuery("");
           }}
         >
@@ -44,21 +60,22 @@ const TheTown = () => {
       {/* Views */}
       {view.type === "home" && (
         <TownHomepage
+          isAuthenticated={!!user}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onSearch={() => {
             if (searchQuery.trim()) {
-              setView({ type: "listings", search: searchQuery.trim() });
+              navigateTo({ type: "listings", search: searchQuery.trim() });
             }
           }}
           onSelectCategory={(catKey) =>
-            setView({ type: "listings", category: catKey })
+            navigateTo({ type: "listings", category: catKey })
           }
           onSelectSubcategory={(catKey, subKey) =>
-            setView({ type: "listings", category: catKey, subcategory: subKey })
+            navigateTo({ type: "listings", category: catKey, subcategory: subKey })
           }
-          onPostClick={() => setView({ type: "create" })}
-          onMyListingsClick={() => setView({ type: "my-listings" })}
+          onPostClick={() => navigateTo({ type: "create" })}
+          onMyListingsClick={() => navigateTo({ type: "my-listings" })}
         />
       )}
 
@@ -69,9 +86,10 @@ const TheTown = () => {
           searchQuery={view.search}
           onBack={() => {
             setView({ type: "home" });
+            setPreviousView(null);
             setSearchQuery("");
           }}
-          onSelectListing={(id) => setView({ type: "detail", id })}
+          onSelectListing={(id) => navigateTo({ type: "detail", id })}
         />
       )}
 
@@ -79,15 +97,18 @@ const TheTown = () => {
         <TownListingsList
           showMyListings
           userId={user?.id}
-          onBack={() => setView({ type: "home" })}
-          onSelectListing={(id) => setView({ type: "detail", id })}
+          onBack={() => {
+            setView({ type: "home" });
+            setPreviousView(null);
+          }}
+          onSelectListing={(id) => navigateTo({ type: "detail", id })}
         />
       )}
 
       {view.type === "detail" && (
         <TownListingDetail
           listingId={view.id}
-          onBack={() => setView({ type: "home" })}
+          onBack={goBack}
         />
       )}
 
@@ -95,8 +116,8 @@ const TheTown = () => {
         <TownCreateListing
           defaultCategory={view.category}
           defaultSubcategory={view.subcategory}
-          onBack={() => setView({ type: "home" })}
-          onCreated={() => setView({ type: "my-listings" })}
+          onBack={goBack}
+          onCreated={() => navigateTo({ type: "my-listings" })}
         />
       )}
     </div>
