@@ -79,8 +79,11 @@ const GroupCard = ({ group, onClick }: { group: ReturnType<typeof useGroups>["da
   >
     <CardHeader className="flex flex-row items-center gap-3 pb-2">
       <Avatar className="h-10 w-10 shrink-0">
-        <AvatarImage src={group.avatar_url ?? undefined} />
-        <AvatarFallback>{group.name.charAt(0).toUpperCase()}</AvatarFallback>
+        {group.avatar_url ? (
+          <img src={group.avatar_url} alt={group.name} className="aspect-square h-full w-full object-cover" />
+        ) : (
+          <AvatarFallback>{group.name.charAt(0).toUpperCase()}</AvatarFallback>
+        )}
       </Avatar>
       <div className="min-w-0 flex-1">
         <CardTitle className="text-base truncate">{group.name}</CardTitle>

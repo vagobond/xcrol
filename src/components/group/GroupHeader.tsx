@@ -19,8 +19,11 @@ const GroupHeader = ({ group, isCreator, userId, onJoin, onLeave, joinPending }:
   <Card className="mb-6">
     <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
       <Avatar className="h-16 w-16 shrink-0">
-        <AvatarImage src={group.avatar_url ?? undefined} />
-        <AvatarFallback className="text-2xl">{group.name.charAt(0).toUpperCase()}</AvatarFallback>
+        {group.avatar_url ? (
+          <img src={group.avatar_url} alt={group.name} className="aspect-square h-full w-full object-cover" />
+        ) : (
+          <AvatarFallback className="text-2xl">{group.name.charAt(0).toUpperCase()}</AvatarFallback>
+        )}
       </Avatar>
       <div className="flex-1 min-w-0">
         <CardTitle className="text-2xl">{group.name}</CardTitle>
