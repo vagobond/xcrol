@@ -1581,6 +1581,66 @@ export type Database = {
         }
         Relationships: []
       }
+      town_listings: {
+        Row: {
+          body: string
+          category: string
+          contact_info: string | null
+          contact_method: string | null
+          created_at: string
+          expires_at: string | null
+          flagged: boolean | null
+          has_images: boolean | null
+          id: string
+          image_urls: string[] | null
+          location: string | null
+          price: number | null
+          status: string
+          subcategory: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category: string
+          contact_info?: string | null
+          contact_method?: string | null
+          created_at?: string
+          expires_at?: string | null
+          flagged?: boolean | null
+          has_images?: boolean | null
+          id?: string
+          image_urls?: string[] | null
+          location?: string | null
+          price?: number | null
+          status?: string
+          subcategory: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          contact_info?: string | null
+          contact_method?: string | null
+          created_at?: string
+          expires_at?: string | null
+          flagged?: boolean | null
+          has_images?: boolean | null
+          id?: string
+          image_urls?: string[] | null
+          location?: string | null
+          price?: number | null
+          status?: string
+          subcategory?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tutorial_completion: {
         Row: {
           completed_at: string

@@ -238,15 +238,15 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    disabled
-                    className="w-full sm:w-auto min-w-[250px] opacity-60 cursor-not-allowed"
+                    onClick={() => navigate("/the-town")}
+                    className="w-full sm:w-auto min-w-[250px]"
                   >
                     🏰
                     <span className="ml-2">THE TOWN</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Coming Soon</p>
+                  <p>Community classifieds — post it, find it, trade it</p>
                 </TooltipContent>
               </Tooltip>
 
