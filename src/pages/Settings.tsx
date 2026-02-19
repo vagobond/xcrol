@@ -42,7 +42,7 @@ const Settings = () => {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        <div className="container max-w-2xl mx-auto py-8 px-4">
+        <div className="container max-w-2xl mx-auto py-8 px-4 pt-20">
           <Button variant="ghost" className="mb-6" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back

@@ -88,7 +88,7 @@ export function WaitlistTab({ waitlist, onAccepted }: WaitlistTabProps) {
         </CardTitle>
         <CardDescription>Users waiting for an invite code. Accept to send them an invitation email.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 overflow-x-auto">
         {pendingEntries.length === 0 && invitedEntries.length === 0 && (
           <p className="text-muted-foreground text-center py-8">No users on the waitlist</p>
         )}

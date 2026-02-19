@@ -65,20 +65,20 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 pt-20">
+    <div className="min-h-screen bg-background p-4 pt-20 sm:p-6 sm:pt-20">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-              <p className="text-muted-foreground">Manage users and permissions</p>
+              <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+              <p className="text-muted-foreground text-sm sm:text-base">Manage users and permissions</p>
             </div>
           </div>
-          <Button onClick={loadDashboardData} variant="outline" disabled={loading}>
+          <Button onClick={loadDashboardData} variant="outline" disabled={loading} size="sm">
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="flex-wrap">
+          <TabsList className="flex flex-wrap h-auto gap-1">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="roles">Admin Roles</TabsTrigger>
             <TabsTrigger value="deletions" className="flex items-center gap-1">

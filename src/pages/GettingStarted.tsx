@@ -43,7 +43,7 @@ const GettingStarted = () => {
   const [profileDetailsOpen, setProfileDetailsOpen] = useState(false);
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div className="min-h-screen p-4 pt-20 md:p-8 md:pt-20">
       <div className="max-w-4xl mx-auto space-y-12 animate-fade-in">
         {/* Header */}
         <div className="text-center space-y-4">
