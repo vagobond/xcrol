@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, Filter, Waves, PenLine } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,7 @@ import {
 import { RiverEntryCard } from "@/components/RiverEntryCard";
 
 import type { Reaction } from "@/components/XcrolReactions";
+import type { RiverReply } from "@/components/RiverReplies";
 
 interface RiverEntry {
   id: string;
@@ -40,6 +41,10 @@ export interface ReactionsMap {
   [entryId: string]: Reaction[];
 }
 
+export interface RepliesMap {
+  [entryId: string]: RiverReply[];
+}
+
 const FILTER_OPTIONS = [
   { value: "all", label: "All Posts" },
   { value: "close_friend", label: "Oath Bound (Close Friends)" },
@@ -56,6 +61,7 @@ export default function TheRiver() {
   const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = useState<RiverEntry[]>([]);
   const [reactions, setReactions] = useState<ReactionsMap>({});
+  const [repliesMap, setRepliesMap] = useState<RepliesMap>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(0);
@@ -113,11 +119,17 @@ export default function TheRiver() {
     const entryIds = data.map((e: any) => e.id);
     const allUserIds = new Set(data.map((e: any) => e.user_id));
 
-    // Fetch reactions
-    const { data: reactionsData } = await supabase
-      .from("xcrol_reactions")
-      .select("entry_id, emoji, user_id")
-      .in("entry_id", entryIds);
+    // Fetch reactions and replies in parallel
+    const [{ data: reactionsData }, { data: repliesData }] = await Promise.all([
+      supabase
+        .from("xcrol_reactions")
+        .select("entry_id, emoji, user_id")
+        .in("entry_id", entryIds),
+      supabase.rpc("get_river_replies", {
+        p_entry_ids: entryIds,
+        p_viewer_id: user?.id ?? null,
+      }),
+    ]);
 
     // Collect reactor user IDs for profile lookup
     const reactorIds = new Set<string>();
@@ -170,6 +182,15 @@ export default function TheRiver() {
       }
     });
 
+    // Group replies by entry_id
+    const newRepliesMap: RepliesMap = {};
+    (repliesData || []).forEach((r: any) => {
+      if (!newRepliesMap[r.entry_id]) {
+        newRepliesMap[r.entry_id] = [];
+      }
+      newRepliesMap[r.entry_id].push(r);
+    });
+
     const entriesWithAuthors: RiverEntry[] = data.map((e: any) => ({
       id: e.id,
       content: e.content,
@@ -187,15 +208,32 @@ export default function TheRiver() {
     if (loadMore) {
       setEntries((prev) => [...prev, ...entriesWithAuthors]);
       setReactions((prev) => ({ ...prev, ...newReactionsMap }));
+      setRepliesMap((prev) => ({ ...prev, ...newRepliesMap }));
       setPage(currentPage);
     } else {
       setEntries(entriesWithAuthors);
       setReactions(newReactionsMap);
+      setRepliesMap(newRepliesMap);
     }
 
     setHasMore(data.length === PAGE_SIZE);
     setLoading(false);
   };
+
+  const refreshReplies = useCallback(async () => {
+    const entryIds = entries.map(e => e.id);
+    if (entryIds.length === 0) return;
+    const { data } = await supabase.rpc("get_river_replies", {
+      p_entry_ids: entryIds,
+      p_viewer_id: user?.id ?? null,
+    });
+    const newRepliesMap: RepliesMap = {};
+    (data || []).forEach((r: any) => {
+      if (!newRepliesMap[r.entry_id]) newRepliesMap[r.entry_id] = [];
+      newRepliesMap[r.entry_id].push(r);
+    });
+    setRepliesMap(newRepliesMap);
+  }, [entries, user?.id]);
 
   const filteredEntries = entries;
 
@@ -285,6 +323,9 @@ export default function TheRiver() {
                   onReactionsChange={(newReactions) => {
                     setReactions(prev => ({ ...prev, [entry.id]: newReactions }));
                   }}
+                  replies={repliesMap[entry.id] || []}
+                  currentUserId={user?.id ?? null}
+                  onRepliesChange={refreshReplies}
                 />
               </div>
             ))}
