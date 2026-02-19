@@ -216,6 +216,61 @@ const Powers = () => {
           </div>
         </TooltipProvider>
 
+        <TooltipProvider>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="mystical" 
+                  size="xl"
+                  disabled
+                  className="w-full sm:w-auto min-w-[250px] opacity-60 cursor-not-allowed"
+                >
+                  🏘️
+                  <span className="ml-2">THE VILLAGE</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Coming Soon</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="mystical" 
+                  size="xl"
+                  disabled
+                  className="w-full sm:w-auto min-w-[250px] opacity-60 cursor-not-allowed"
+                >
+                  🏰
+                  <span className="ml-2">THE TOWN</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Coming Soon</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="mystical" 
+                  size="xl"
+                  disabled
+                  className="w-full sm:w-auto min-w-[250px] opacity-60 cursor-not-allowed"
+                >
+                  🏯
+                  <span className="ml-2">THE CASTLE</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Coming Soon</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
+
         <button 
           onClick={() => navigate("/getting-started")}
           className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-4 text-sm"
