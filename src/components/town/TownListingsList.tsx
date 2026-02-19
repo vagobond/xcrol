@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getCategoryLabel, getSubcategoryLabel } from "./townCategories";
@@ -13,6 +14,8 @@ interface TownListingsListProps {
   onSelectListing: (id: string) => void;
 }
 
+const PAGE_SIZE = 50;
+
 const TownListingsList = ({
   category,
   subcategory,
@@ -22,34 +25,40 @@ const TownListingsList = ({
   onBack,
   onSelectListing,
 }: TownListingsListProps) => {
+  const [limit, setLimit] = useState(PAGE_SIZE);
+
   const { data: listings = [], isLoading } = useQuery({
-    queryKey: ["town-listings", category, subcategory, searchQuery, showMyListings, userId],
+    queryKey: ["town-listings", category, subcategory, searchQuery, showMyListings, userId, limit],
     queryFn: async () => {
       let query = supabase
         .from("town_listings")
-        .select("id, title, price, location, category, subcategory, created_at, user_id")
-        .eq("status", "active")
+        .select("id, title, price, location, category, subcategory, created_at, user_id, status")
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(limit + 1); // fetch one extra to detect if there are more
 
-      if (showMyListings && userId) {
-        query = supabase
-          .from("town_listings")
-          .select("id, title, price, location, category, subcategory, created_at, user_id, status")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false })
-          .limit(100);
+      if (showMyListings) {
+        if (!userId) return [];
+        query = query.eq("user_id", userId);
       } else {
+        query = query.eq("status", "active");
+        // Filter out expired listings
+        query = query.or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
         if (category) query = query.eq("category", category);
         if (subcategory) query = query.eq("subcategory", subcategory);
-        if (searchQuery) query = query.ilike("title", `%${searchQuery}%`);
+        if (searchQuery) {
+          query = query.or(`title.ilike.%${searchQuery}%,body.ilike.%${searchQuery}%`);
+        }
       }
 
       const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
+    enabled: !showMyListings || !!userId,
   });
+
+  const hasMore = listings.length > limit;
+  const displayListings = hasMore ? listings.slice(0, limit) : listings;
 
   const title = showMyListings
     ? "my listings"
@@ -72,11 +81,11 @@ const TownListingsList = ({
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">loading...</p>
-      ) : listings.length === 0 ? (
+      ) : displayListings.length === 0 ? (
         <p className="text-sm text-muted-foreground">no listings found</p>
       ) : (
         <div className="border-t border-border">
-          {listings.map((listing: any) => (
+          {displayListings.map((listing: any) => (
             <button
               key={listing.id}
               onClick={() => onSelectListing(listing.id)}
@@ -88,6 +97,11 @@ const TownListingsList = ({
               <span className="text-sm text-primary hover:underline flex-1 truncate">
                 {listing.title}
               </span>
+              {showMyListings && listing.status !== "active" && (
+                <span className="text-xs text-destructive font-medium whitespace-nowrap">
+                  [{listing.status}]
+                </span>
+              )}
               {listing.price != null && listing.price > 0 && (
                 <span className="text-xs text-foreground/70 font-medium whitespace-nowrap">
                   ${listing.price}
@@ -100,6 +114,15 @@ const TownListingsList = ({
               )}
             </button>
           ))}
+
+          {hasMore && (
+            <button
+              onClick={() => setLimit((l) => l + PAGE_SIZE)}
+              className="w-full text-center py-3 text-sm text-primary hover:underline font-medium"
+            >
+              load more...
+            </button>
+          )}
         </div>
       )}
     </div>
