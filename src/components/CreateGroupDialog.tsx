@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +83,7 @@ const CreateGroupDialog = () => {
             <Info className="h-10 w-10 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
               To create a group, you must have invited at least one person who accepted your invitation to join XCROL. Head to{" "}
-              <span className="font-medium text-foreground">Invite Friends</span> to send an invite first!
+              <Link to="/invite-friends" className="font-medium text-primary underline hover:text-primary/80" onClick={() => setOpen(false)}>Invite Friends</Link> to send an invite first!
             </p>
           </div>
         ) : (
