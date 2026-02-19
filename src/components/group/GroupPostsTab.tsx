@@ -1,11 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Trash2 } from "lucide-react";
+import { Trash2, ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { MentionText } from "@/components/MentionText";
+import { LinkPreview } from "@/components/LinkPreview";
+import { GroupPostReactions } from "@/components/group/GroupPostReactions";
+import { GroupPostComments } from "@/components/group/GroupPostComments";
 import type { GroupPost, Group } from "@/hooks/use-groups";
 
 interface GroupPostsTabProps {
@@ -18,6 +23,7 @@ interface GroupPostsTabProps {
 }
 
 const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, createPending }: GroupPostsTabProps) => {
+  const navigate = useNavigate();
   const [postContent, setPostContent] = useState("");
   const [postLink, setPostLink] = useState("");
 
@@ -27,6 +33,11 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
     await onCreatePost(postContent.trim(), postLink.trim() || undefined);
     setPostContent("");
     setPostLink("");
+  };
+
+  const handleAuthorClick = (post: GroupPost) => {
+    if (post.profile?.username) navigate(`/${post.profile.username}`);
+    else navigate(`/u/${post.user_id}`);
   };
 
   return (
@@ -43,7 +54,7 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
             <Input
               value={postLink}
               onChange={(e) => setPostLink(e.target.value)}
-              placeholder="Add a link (optional)"
+              placeholder="Add a link (optional — PixelFed & PeerTube embeds supported)"
             />
             <Button type="submit" disabled={!postContent.trim() || createPending} size="sm">
               {createPending ? "Posting..." : "Post"}
@@ -53,33 +64,68 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
       </Card>
 
       {posts?.map((post) => (
-        <Card key={post.id}>
+        <Card key={post.id} className="hover:bg-accent/50 transition-colors">
           <CardContent className="pt-4">
             <div className="flex items-start gap-3">
-              <Avatar className="h-8 w-8 shrink-0">
+              <Avatar
+                className="h-10 w-10 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                onClick={() => handleAuthorClick(post)}
+              >
                 <AvatarImage src={post.profile?.avatar_url ?? undefined} />
                 <AvatarFallback>{post.profile?.display_name?.charAt(0) ?? "?"}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">{post.profile?.display_name ?? "Unknown"}</p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="text-sm font-medium cursor-pointer hover:underline"
+                      onClick={() => handleAuthorClick(post)}
+                    >
+                      {post.profile?.display_name ?? "Unknown"}
+                    </span>
+                    {post.profile?.username && (
+                      <span className="text-muted-foreground text-xs">@{post.profile.username}</span>
+                    )}
+                    <span className="text-xs text-muted-foreground">·</span>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                     </span>
-                    {(post.user_id === userId || group.is_admin) && (
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeletePost(post.id)}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
                   </div>
+                  {(post.user_id === userId || group.is_admin) && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeletePost(post.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
-                <p className="mt-1 text-sm whitespace-pre-wrap">{post.content}</p>
+
+                <p className="mt-2 text-sm whitespace-pre-wrap break-words">
+                  <MentionText content={post.content} />
+                </p>
+
                 {post.link && (
-                  <a href={post.link} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline mt-1 block truncate">
-                    {post.link}
-                  </a>
+                  <>
+                    <LinkPreview url={post.link} />
+                    <a
+                      href={post.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      {(() => {
+                        try { return new URL(post.link).hostname; } catch { return post.link; }
+                      })()}
+                    </a>
+                  </>
                 )}
+
+                {/* Reactions */}
+                <div className="mt-3">
+                  <GroupPostReactions targetId={post.id} targetType="post" />
+                </div>
+
+                {/* Threaded Comments */}
+                <GroupPostComments postId={post.id} currentUserId={userId ?? null} />
               </div>
             </div>
           </CardContent>
