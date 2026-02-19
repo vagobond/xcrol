@@ -19,10 +19,11 @@ const TownHomepage = ({
   onSearchChange,
   onSearch,
 }: TownHomepageProps) => {
-  // Split categories into columns like classic Craigslist
-  const leftCats = TOWN_CATEGORIES.slice(0, 2);
-  const centerCats = TOWN_CATEGORIES.slice(2, 4);
-  const rightCats = TOWN_CATEGORIES.slice(4);
+  // Split categories into balanced columns
+  // community (15 items) | housing (8) + for-sale (26) | services (17) + jobs (32)
+  const leftCats = TOWN_CATEGORIES.slice(0, 1);
+  const centerCats = TOWN_CATEGORIES.slice(1, 3);
+  const rightCats = TOWN_CATEGORIES.slice(3);
 
   const renderColumn = (cats: typeof TOWN_CATEGORIES) => (
     <div className="space-y-6">
