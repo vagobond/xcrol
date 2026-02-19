@@ -100,14 +100,21 @@ const TownListingDetail = ({ listingId, onBack }: TownListingDetailProps) => {
       </div>
 
       {/* Contact */}
-      {!isOwner && listing.contact_method === "message" && (
+      {listing.contact_info && (
+        <div className="border border-border rounded p-3 bg-card/30 text-sm">
+          <p className="text-xs text-muted-foreground mb-1 font-medium">contact:</p>
+          <p className="text-foreground">{listing.contact_info}</p>
+        </div>
+      )}
+
+      {!isOwner && (
         <Button
           size="sm"
           variant="outline"
           onClick={() => navigate(`/messages`)}
           className="text-sm"
         >
-          reply via message
+          {listing.contact_info ? "or message on xcrol" : "reply via message"}
         </Button>
       )}
 
