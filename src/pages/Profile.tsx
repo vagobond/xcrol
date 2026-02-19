@@ -14,7 +14,7 @@ import { HostingPreferencesManager } from "@/components/HostingPreferencesManage
 import IntroductionRequestsManager from "@/components/IntroductionRequestsManager";
 import ProfileFriendsList from "@/components/ProfileFriendsList";
 import { UserReferences } from "@/components/UserReferences";
-import { ProfileGameStats } from "@/components/ProfileGameStats";
+
 import BlockedUsersManager from "@/components/BlockedUsersManager";
 
 const Profile = () => {
@@ -178,8 +178,6 @@ const Profile = () => {
         {/* References */}
         <UserReferences userId={user.id} isOwnProfile={true} />
 
-        {/* Mini-Game Stats */}
-        <ProfileGameStats userId={user.id} />
 
         {/* Blocked Users Manager */}
         <BlockedUsersManager />
