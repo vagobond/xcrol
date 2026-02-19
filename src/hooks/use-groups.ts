@@ -368,3 +368,28 @@ export const useDeleteGroupPost = () => {
     },
   });
 };
+
+export const useUpdateGroup = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      groupId: string;
+      updates: { name?: string; description?: string | null; avatar_url?: string | null; trust_level?: string };
+    }) => {
+      const { error } = await supabase
+        .from("groups")
+        .update(params.updates)
+        .eq("id", params.groupId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["group"] });
+      toast({ title: "Group updated!" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error updating group", description: err.message, variant: "destructive" });
+    },
+  });
+};
