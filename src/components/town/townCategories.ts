@@ -26,6 +26,8 @@ export const TOWN_CATEGORIES: TownCategory[] = [
       { key: "politics", label: "politics" },
       { key: "rideshare", label: "rideshare" },
       { key: "volunteers", label: "volunteers" },
+      { key: "missed-connections", label: "missed connections" },
+      { key: "romance", label: "romance" },
     ],
   },
   {

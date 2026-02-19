@@ -34,7 +34,7 @@ const TheTown = () => {
             setSearchQuery("");
           }}
         >
-          xcrol town
+          Xcrol Town
         </h1>
         <p className="text-xs text-muted-foreground mt-1">
           community classifieds · post it, find it, trade it
