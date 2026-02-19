@@ -45,7 +45,7 @@ const GroupSettingsTab = ({ group, onSave, saving }: GroupSettingsTabProps) => {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `group-avatars/${group.id}.${ext}`;
+      const path = `group-avatars/${group.id}/${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
