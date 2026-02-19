@@ -27,20 +27,20 @@ const AppHeader = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/irl-layer")}
-            className="h-9 w-9"
-            title="The World"
-          >
-            <Globe className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
             onClick={() => navigate("/the-river")}
             className="h-9 w-9"
             title="The River"
           >
             <Waves className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/irl-layer")}
+            className="h-9 w-9"
+            title="The World"
+          >
+            <Globe className="h-5 w-5" />
           </Button>
         </>
       )}
