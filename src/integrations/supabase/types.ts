@@ -1281,6 +1281,38 @@ export type Database = {
         }
         Relationships: []
       }
+      river_replies: {
+        Row: {
+          content: string
+          created_at: string
+          entry_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          entry_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          entry_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "river_replies_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "xcrol_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sly_doubt_game_state: {
         Row: {
           bloot_collected: number
@@ -1803,6 +1835,20 @@ export type Database = {
           id: string
           link: string
           privacy_level: string
+          user_id: string
+        }[]
+      }
+      get_river_replies: {
+        Args: { p_entry_ids: string[]; p_viewer_id?: string }
+        Returns: {
+          author_avatar_url: string
+          author_display_name: string
+          author_username: string
+          can_view_content: boolean
+          content: string
+          created_at: string
+          entry_id: string
+          id: string
           user_id: string
         }[]
       }

@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { XcrolReactions } from "@/components/XcrolReactions";
 import { MentionText } from "@/components/MentionText";
 import { LinkPreview } from "@/components/LinkPreview";
+import { RiverReplies } from "@/components/RiverReplies";
+import type { RiverReply } from "@/components/RiverReplies";
 import type { ReactionData } from "@/pages/TheRiver";
 
 interface RiverEntryCardProps {
@@ -25,6 +27,9 @@ interface RiverEntryCardProps {
   };
   initialReactions?: ReactionData[];
   onReactionsChange?: (reactions: ReactionData[]) => void;
+  replies?: RiverReply[];
+  currentUserId?: string | null;
+  onRepliesChange?: () => void;
 }
 
 const PRIVACY_CONFIG: Record<string, { icon: React.ElementType; label: string; color: string }> = {
@@ -36,7 +41,7 @@ const PRIVACY_CONFIG: Record<string, { icon: React.ElementType; label: string; c
   private: { icon: Lock, label: "Private", color: "text-muted-foreground" },
 };
 
-export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange }: RiverEntryCardProps) => {
+export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, replies = [], currentUserId, onRepliesChange }: RiverEntryCardProps) => {
   const navigate = useNavigate();
   const config = PRIVACY_CONFIG[entry.privacy_level] || PRIVACY_CONFIG.private;
   const PrivacyIcon = config.icon;
@@ -114,6 +119,14 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange }: R
                 onReactionsChange={onReactionsChange}
               />
             </div>
+
+            {/* Threaded Replies */}
+            <RiverReplies
+              entryId={entry.id}
+              currentUserId={currentUserId ?? null}
+              replies={replies}
+              onRepliesChange={onRepliesChange}
+            />
           </div>
         </div>
       </CardContent>
