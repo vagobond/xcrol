@@ -134,26 +134,6 @@ export const TOWN_CATEGORIES: TownCategory[] = [
       { key: "tv-film-video", label: "tv/film/video" },
       { key: "web-design", label: "web/info design" },
       { key: "writing-editing", label: "writing/editing" },
-    ],
-  },
-  {
-    key: "gigs",
-    label: "gigs",
-    subcategories: [
-      { key: "computer", label: "computer" },
-      { key: "creative", label: "creative" },
-      { key: "crew", label: "crew" },
-      { key: "domestic", label: "domestic" },
-      { key: "event", label: "event" },
-      { key: "labor", label: "labor" },
-      { key: "talent", label: "talent" },
-      { key: "writing", label: "writing" },
-    ],
-  },
-  {
-    key: "resumes",
-    label: "resumes",
-    subcategories: [
       { key: "resumes", label: "resumes" },
     ],
   },
