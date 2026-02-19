@@ -82,7 +82,7 @@ const GroupProfile = () => {
     updateMember.mutate({ memberId, updates: { role: "member" } });
 
   return (
-    <div className="min-h-screen p-4 pt-20 max-w-3xl mx-auto">
+    <div className="min-h-screen px-3 sm:px-4 pt-20 pb-8 max-w-3xl mx-auto">
       <Helmet>
         <title>{group.name} | The Village | Xcrol</title>
         <meta name="description" content={group.description ?? `${group.name} group`} />
@@ -108,18 +108,18 @@ const GroupProfile = () => {
               </span>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto mt-2 sm:mt-0">
             {user && !group.is_member && group.membership_status !== "pending" && (
-              <Button onClick={handleJoin} disabled={joinGroup.isPending}>
+              <Button onClick={handleJoin} disabled={joinGroup.isPending} size="sm" className="w-full sm:w-auto">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Request to Join
               </Button>
             )}
             {group.membership_status === "pending" && (
-              <Button disabled variant="outline">Pending Approval</Button>
+              <Button disabled variant="outline" size="sm" className="w-full sm:w-auto">Pending Approval</Button>
             )}
             {group.is_member && !isCreator && (
-              <Button variant="outline" onClick={handleLeave}>
+              <Button variant="outline" onClick={handleLeave} size="sm" className="w-full sm:w-auto">
                 <LogOut className="mr-2 h-4 w-4" />
                 Leave
               </Button>
