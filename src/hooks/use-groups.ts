@@ -51,7 +51,7 @@ export const useGroups = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["groups"],
+    queryKey: ["groups", user?.id],
     queryFn: async () => {
       const { data: groups, error } = await supabase
         .from("groups")
@@ -59,36 +59,38 @@ export const useGroups = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+      if (!groups.length) return [] as Group[];
 
-      // Get member counts and membership status
-      const enriched: Group[] = [];
-      for (const g of groups) {
-        const { count } = await supabase
-          .from("group_members")
-          .select("*", { count: "exact", head: true })
-          .eq("group_id", g.id)
-          .eq("status", "active");
+      const groupIds = groups.map((g) => g.id);
 
-        let membership_status: string | null = null;
-        if (user) {
-          const { data: mem } = await supabase
-            .from("group_members")
-            .select("status, role")
-            .eq("group_id", g.id)
-            .eq("user_id", user.id)
-            .maybeSingle();
-          membership_status = mem?.status ?? null;
-        }
+      // Batch: get all active members for counts
+      const { data: allMembers } = await supabase
+        .from("group_members")
+        .select("group_id, user_id, status, role")
+        .in("group_id", groupIds);
 
-        enriched.push({
-          ...g,
-          member_count: count ?? 0,
-          is_member: membership_status === "active",
-          is_admin: false, // will be set in detail view
-          membership_status,
-        });
+      const membersByGroup = new Map<string, typeof allMembers>();
+      for (const m of allMembers ?? []) {
+        const list = membersByGroup.get(m.group_id) ?? [];
+        list.push(m);
+        membersByGroup.set(m.group_id, list);
       }
-      return enriched;
+
+      return groups.map((g) => {
+        const members = membersByGroup.get(g.id) ?? [];
+        const activeCount = members.filter((m) => m.status === "active").length;
+        const myMembership = user
+          ? members.find((m) => m.user_id === user.id)
+          : undefined;
+
+        return {
+          ...g,
+          member_count: activeCount,
+          is_member: myMembership?.status === "active",
+          is_admin: false,
+          membership_status: myMembership?.status ?? null,
+        } as Group;
+      });
     },
   });
 };

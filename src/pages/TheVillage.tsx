@@ -18,7 +18,7 @@ const TheVillage = () => {
   const otherGroups = groups?.filter((g) => !g.is_member && g.creator_id !== user?.id) ?? [];
 
   return (
-    <div className="min-h-screen p-4 pt-20 max-w-4xl mx-auto">
+    <div className="min-h-screen px-3 sm:px-4 pt-20 pb-8 max-w-4xl mx-auto">
       <Helmet>
         <title>The Village | Xcrol</title>
         <meta name="description" content="User groups and communities" />
@@ -78,7 +78,7 @@ const GroupCard = ({ group, onClick }: { group: ReturnType<typeof useGroups>["da
     onClick={onClick}
   >
     <CardHeader className="flex flex-row items-center gap-3 pb-2">
-      <Avatar className="h-10 w-10">
+      <Avatar className="h-10 w-10 shrink-0">
         <AvatarImage src={group.avatar_url ?? undefined} />
         <AvatarFallback>{group.name.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
@@ -87,18 +87,18 @@ const GroupCard = ({ group, onClick }: { group: ReturnType<typeof useGroups>["da
         <p className="text-xs text-muted-foreground">{group.member_count} member{group.member_count !== 1 ? "s" : ""}</p>
       </div>
     </CardHeader>
-    {group.description && (
-      <CardContent className="pt-0">
+    <CardContent className="pt-0 space-y-2">
+      {group.description && (
         <p className="text-sm text-muted-foreground line-clamp-2">{group.description}</p>
-      </CardContent>
-    )}
-    <CardContent className="pt-0">
-      <Badge variant="secondary" className="text-xs">
-        {getFriendshipLabel(group.trust_level)}
-      </Badge>
-      {group.membership_status === "pending" && (
-        <Badge variant="outline" className="text-xs ml-2">Pending</Badge>
       )}
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="secondary" className="text-xs">
+          {getFriendshipLabel(group.trust_level)}
+        </Badge>
+        {group.membership_status === "pending" && (
+          <Badge variant="outline" className="text-xs">Pending</Badge>
+        )}
+      </div>
     </CardContent>
   </Card>
 );
