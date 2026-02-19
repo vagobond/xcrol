@@ -30,6 +30,8 @@ const InviteFriends = lazy(() => import("./pages/InviteFriends"));
 const MyXcrol = lazy(() => import("./pages/MyXcrol"));
 const UserXcrol = lazy(() => import("./pages/UserXcrol"));
 const Brook = lazy(() => import("./pages/Brook"));
+const TheVillage = lazy(() => import("./pages/TheVillage"));
+const GroupProfile = lazy(() => import("./pages/GroupProfile"));
 const EveryCountry = lazy(() => import("./pages/EveryCountry"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const Terms = lazy(() => import("./pages/Terms"));
@@ -93,6 +95,8 @@ const App = () => (
                 <Route path="/myxcrol/edit" element={<ProtectedRoute><MyXcrol /></ProtectedRoute>} />
                 <Route path="/xcrol/:username" element={<ProtectedRoute><UserXcrol /></ProtectedRoute>} />
                 <Route path="/brook/:brookId" element={<ProtectedRoute><Brook /></ProtectedRoute>} />
+                <Route path="/the-village" element={<ProtectedRoute><TheVillage /></ProtectedRoute>} />
+                <Route path="/group/:slug" element={<ProtectedRoute><GroupProfile /></ProtectedRoute>} />
                 <Route path="/every-country" element={<ProtectedRoute><EveryCountry /></ProtectedRoute>} />
                 <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
                 <Route path="/terms" element={<Terms />} />
