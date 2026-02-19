@@ -9,6 +9,7 @@ import {
   useLeaveGroup,
   useUpdateMember,
   useDeleteGroupPost,
+  useUpdateGroup,
 } from "@/hooks/use-groups";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import GroupHeader from "@/components/group/GroupHeader";
 import GroupPostsTab from "@/components/group/GroupPostsTab";
 import GroupMembersTab from "@/components/group/GroupMembersTab";
 import GroupRequestsTab from "@/components/group/GroupRequestsTab";
+import GroupSettingsTab from "@/components/group/GroupSettingsTab";
 
 const GroupProfile = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -30,6 +32,7 @@ const GroupProfile = () => {
   const leaveGroup = useLeaveGroup();
   const updateMember = useUpdateMember();
   const deletePost = useDeleteGroupPost();
+  const updateGroup = useUpdateGroup();
 
   if (isLoading) {
     return (
@@ -69,11 +72,14 @@ const GroupProfile = () => {
 
       {group.is_member ? (
         <Tabs defaultValue="posts">
-          <TabsList className="flex-wrap h-auto">
+           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="posts">Posts</TabsTrigger>
             <TabsTrigger value="members">Members ({activeMembers.length})</TabsTrigger>
             {group.is_admin && pendingMembers.length > 0 && (
               <TabsTrigger value="requests">Requests ({pendingMembers.length})</TabsTrigger>
+            )}
+            {group.is_admin && (
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             )}
           </TabsList>
 
@@ -106,6 +112,18 @@ const GroupProfile = () => {
                 pendingMembers={pendingMembers}
                 onApprove={(id) => updateMember.mutate({ memberId: id, updates: { status: "active" } })}
                 onReject={(id) => updateMember.mutate({ memberId: id, updates: { status: "rejected" } })}
+              />
+            </TabsContent>
+          )}
+
+          {group.is_admin && (
+            <TabsContent value="settings" className="mt-4">
+              <GroupSettingsTab
+                group={group}
+                onSave={async (updates) => {
+                  await updateGroup.mutateAsync({ groupId: group.id, updates });
+                }}
+                saving={updateGroup.isPending}
               />
             </TabsContent>
           )}
