@@ -19,10 +19,10 @@ const TownHomepage = ({
   onSearchChange,
   onSearch,
 }: TownHomepageProps) => {
-  // Split categories into balanced columns
-  // community (15 items) | housing (8) + for-sale (26) | services (17) + jobs (32)
-  const leftCats = TOWN_CATEGORIES.slice(0, 1);
-  const centerCats = TOWN_CATEGORIES.slice(1, 3);
+  // Balanced 2-column layout:
+  // Left: community (15) + housing (9) + for-sale (27) = 51 lines
+  // Right: services (18) + jobs (33) = 51 lines
+  const leftCats = TOWN_CATEGORIES.slice(0, 3);
   const rightCats = TOWN_CATEGORIES.slice(3);
 
   const renderColumn = (cats: typeof TOWN_CATEGORIES) => (
@@ -88,10 +88,9 @@ const TownHomepage = ({
         </button>
       </div>
 
-      {/* Category grid - classic 3-column Craigslist layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 border-t border-border pt-4">
+      {/* Category grid - balanced 2-column layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-border pt-4">
         {renderColumn(leftCats)}
-        {renderColumn(centerCats)}
         {renderColumn(rightCats)}
       </div>
     </div>
