@@ -117,18 +117,16 @@ export function useAdminData() {
           });
         }
 
+        // Fetch points for all users in a single batch query
+        const { data: pointsData } = await supabase.rpc("calculate_all_user_points");
+        const pointsMap = new Map<string, number>();
+        (pointsData as any[] || []).forEach((row: any) => pointsMap.set(row.user_id, Number(row.points)));
+
         const enrichedUsers = usersResult.data.map((user) => {
           const inviterId = inviterMap.get(user.id);
           const inviter = inviterId ? inviterProfiles.get(inviterId) : null;
-          return { ...user, invited_by_name: inviter?.display_name || null, invited_by_email: inviter?.email || null, points: null as number | null };
+          return { ...user, invited_by_name: inviter?.display_name || null, invited_by_email: inviter?.email || null, points: pointsMap.get(user.id) ?? null };
         });
-
-        // Fetch points for all users in parallel
-        const pointsPromises = enrichedUsers.map(async (user) => {
-          const { data } = await supabase.rpc("calculate_user_points", { p_user_id: user.id });
-          user.points = (data as number) ?? null;
-        });
-        await Promise.all(pointsPromises);
 
         setUsers(enrichedUsers);
       }
