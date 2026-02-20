@@ -149,7 +149,7 @@ const TheForest = () => {
     const { data, error } = await supabase
       .from("profiles")
       .select("id, display_name, avatar_url, username")
-      .or(`display_name.ilike.%${searchQuery}%,username.ilike.%${searchQuery}%`)
+      .or(`display_name.ilike.%${searchQuery.replace(/[%_\\,().]/g, "")}%,username.ilike.%${searchQuery.replace(/[%_\\,().]/g, "")}%`)
       .limit(20);
 
     if (error) {
