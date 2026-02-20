@@ -72,7 +72,7 @@ const TownHomepage = ({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && onSearch()}
-          placeholder="search xcrol town"
+          placeholder="Search Xcrol Marketplace"
           className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
         <button
@@ -89,13 +89,13 @@ const TownHomepage = ({
           onClick={() => handleAuthAction(onPostClick)}
           className="text-primary hover:underline font-medium"
         >
-          post to classifieds
+          Post to Marketplace
         </button>
         <button
           onClick={() => handleAuthAction(onMyListingsClick)}
           className="text-primary hover:underline font-medium"
         >
-          my listings
+          My Listings
         </button>
       </div>
 

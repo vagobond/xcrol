@@ -65,7 +65,7 @@ const TownListingsList = ({
   const displayListings = hasMore ? listings.slice(0, limit) : listings;
 
   const title = showMyListings
-    ? "my listings"
+    ? "My Listings"
     : subcategory
     ? `${getCategoryLabel(category ?? "")} > ${getSubcategoryLabel(category ?? "", subcategory)}`
     : category
