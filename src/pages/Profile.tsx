@@ -16,6 +16,7 @@ import ProfileFriendsList from "@/components/ProfileFriendsList";
 import { UserReferences } from "@/components/UserReferences";
 
 import BlockedUsersManager from "@/components/BlockedUsersManager";
+import { UserPointsBadge } from "@/components/UserPointsBadge";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -103,6 +104,11 @@ const Profile = () => {
               Share
             </Button>
           </div>
+        </div>
+
+        {/* User Points */}
+        <div className="flex justify-center">
+          <UserPointsBadge userId={user.id} />
         </div>
 
         {/* Xcrol Prompt */}
