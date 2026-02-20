@@ -77,20 +77,20 @@ export function WaitlistTab({ waitlist, onAccepted }: WaitlistTabProps) {
   };
 
   const pendingEntries = waitlist.filter((e) => !e.invited_at && !acceptedIds.has(e.id));
-  const invitedEntries = waitlist.filter((e) => e.invited_at || acceptedIds.has(e.id));
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          Waitlist ({waitlist.length})
+          Waitlist ({pendingEntries.length})
         </CardTitle>
         <CardDescription>Users waiting for an invite code. Accept to send them an invitation email.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 overflow-x-auto">
-        {pendingEntries.length === 0 && invitedEntries.length === 0 && (
-          <p className="text-muted-foreground text-center py-8">No users on the waitlist</p>
+
+        {pendingEntries.length === 0 && (
+          <p className="text-muted-foreground text-center py-8">No pending users on the waitlist</p>
         )}
 
         {pendingEntries.length > 0 && (
@@ -134,29 +134,6 @@ export function WaitlistTab({ waitlist, onAccepted }: WaitlistTabProps) {
           </>
         )}
 
-        {invitedEntries.length > 0 && (
-          <>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Already Invited ({invitedEntries.length})</h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Joined Waitlist</TableHead>
-                  <TableHead>Invited</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invitedEntries.map((entry) => (
-                  <TableRow key={entry.id} className="opacity-60">
-                    <TableCell className="font-medium">{entry.email}</TableCell>
-                    <TableCell>{new Date(entry.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>{entry.invited_at ? new Date(entry.invited_at).toLocaleDateString() : "Just now"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </>
-        )}
       </CardContent>
     </Card>
   );
