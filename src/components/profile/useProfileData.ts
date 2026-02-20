@@ -137,11 +137,10 @@ export function useProfileData() {
 
   const loadProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
+      // Use SECURITY DEFINER function to read own profile including sensitive columns
+      const { data: rows, error } = await supabase
+        .rpc("get_own_profile");
+      const data = rows?.[0] ?? null;
 
       if (error) throw error;
 
