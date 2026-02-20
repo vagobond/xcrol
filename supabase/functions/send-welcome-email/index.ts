@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -14,12 +15,35 @@ interface WelcomeEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Authenticate the caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Invalid session" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     if (!RESEND_API_KEY) {
       throw new Error("RESEND_API_KEY is not configured");
     }
@@ -43,119 +67,26 @@ const handler = async (req: Request): Promise<Response> => {
           <html>
           <head>
             <style>
-              body { 
-                font-family: Georgia, 'Times New Roman', serif; 
-                margin: 0; 
-                padding: 0; 
-                background: #0a0a0a; 
-                color: #e0e0e0;
-                line-height: 1.7;
-              }
-              .container { 
-                max-width: 650px; 
-                margin: 0 auto; 
-                padding: 40px 20px; 
-              }
-              .card { 
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
-                border-radius: 16px; 
-                padding: 48px; 
-                border: 1px solid rgba(139, 92, 246, 0.3); 
-              }
-              h1 { 
-                color: #ffffff; 
-                font-size: 24px; 
-                margin-bottom: 32px; 
-                font-weight: normal;
-              }
-              h2 {
-                color: #a78bfa;
-                font-size: 18px;
-                margin-top: 32px;
-                margin-bottom: 16px;
-                font-weight: 600;
-              }
-              p { 
-                color: #c0c0c0; 
-                font-size: 16px; 
-                line-height: 1.8; 
-                margin-bottom: 20px; 
-              }
-              .highlight { 
-                color: #a78bfa; 
-                font-weight: 600; 
-              }
-              .section {
-                margin: 32px 0;
-                padding: 24px;
-                background: rgba(139, 92, 246, 0.1);
-                border-radius: 12px;
-                border-left: 4px solid #8b5cf6;
-              }
-              .section-title {
-                color: #e9d5ff;
-                font-size: 16px;
-                font-weight: 600;
-                margin-bottom: 12px;
-              }
-              ul {
-                margin: 0;
-                padding-left: 20px;
-              }
-              li {
-                color: #b0b0b0;
-                margin-bottom: 8px;
-                font-size: 15px;
-              }
-              .signature {
-                margin-top: 40px;
-                padding-top: 24px;
-                border-top: 1px solid rgba(139, 92, 246, 0.3);
-              }
-              .signature p {
-                margin-bottom: 8px;
-              }
-              a { 
-                color: #a78bfa; 
-                text-decoration: underline; 
-              }
-              .cta { 
-                display: inline-block; 
-                background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); 
-                color: white; 
-                padding: 14px 32px; 
-                border-radius: 8px; 
-                text-decoration: none; 
-                font-weight: 600; 
-                margin-top: 24px; 
-              }
-              .divider {
-                border: none;
-                border-top: 1px solid rgba(139, 92, 246, 0.3);
-                margin: 32px 0;
-              }
-              .footer { 
-                margin-top: 40px; 
-                padding-top: 20px; 
-                border-top: 1px solid rgba(255,255,255,0.1); 
-              }
-              .footer p { 
-                color: #666; 
-                font-size: 14px; 
-              }
-              .friendship-levels {
-                margin-top: 12px;
-              }
-              .level-tag {
-                display: inline-block;
-                background: rgba(139, 92, 246, 0.2);
-                color: #c4b5fd;
-                padding: 4px 12px;
-                border-radius: 16px;
-                font-size: 13px;
-                margin-right: 8px;
-                margin-bottom: 8px;
-              }
+              body { font-family: Georgia, 'Times New Roman', serif; margin: 0; padding: 0; background: #0a0a0a; color: #e0e0e0; line-height: 1.7; }
+              .container { max-width: 650px; margin: 0 auto; padding: 40px 20px; }
+              .card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 16px; padding: 48px; border: 1px solid rgba(139, 92, 246, 0.3); }
+              h1 { color: #ffffff; font-size: 24px; margin-bottom: 32px; font-weight: normal; }
+              h2 { color: #a78bfa; font-size: 18px; margin-top: 32px; margin-bottom: 16px; font-weight: 600; }
+              p { color: #c0c0c0; font-size: 16px; line-height: 1.8; margin-bottom: 20px; }
+              .highlight { color: #a78bfa; font-weight: 600; }
+              .section { margin: 32px 0; padding: 24px; background: rgba(139, 92, 246, 0.1); border-radius: 12px; border-left: 4px solid #8b5cf6; }
+              .section-title { color: #e9d5ff; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+              ul { margin: 0; padding-left: 20px; }
+              li { color: #b0b0b0; margin-bottom: 8px; font-size: 15px; }
+              .signature { margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(139, 92, 246, 0.3); }
+              .signature p { margin-bottom: 8px; }
+              a { color: #a78bfa; text-decoration: underline; }
+              .cta { display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 24px; }
+              .divider { border: none; border-top: 1px solid rgba(139, 92, 246, 0.3); margin: 32px 0; }
+              .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+              .footer p { color: #666; font-size: 14px; }
+              .friendship-levels { margin-top: 12px; }
+              .level-tag { display: inline-block; background: rgba(139, 92, 246, 0.2); color: #c4b5fd; padding: 4px 12px; border-radius: 16px; font-size: 13px; margin-right: 8px; margin-bottom: 8px; }
             </style>
           </head>
           <body>
@@ -281,19 +212,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify({ success: true, data }), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
     console.error("Error in send-welcome-email function:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      JSON.stringify({ success: false, error: "Failed to send email" }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
