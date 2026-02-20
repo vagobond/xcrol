@@ -92,12 +92,6 @@ const IRLLayer = () => {
               Back to Powers
             </Button>
           </div>
-          <button
-            onClick={() => data.setShowCreateMeetup(true)}
-            className="text-sm text-yellow-500 hover:text-yellow-400 underline text-right"
-          >
-            Create Meetup/Event
-          </button>
         </div>
       </div>
 
@@ -190,6 +184,10 @@ const IRLLayer = () => {
       <MeetupsListModal
         open={data.showMeetupsModal}
         onClose={() => data.setShowMeetupsModal(false)}
+        onCreateMeetup={() => {
+          data.setShowMeetupsModal(false);
+          data.setShowCreateMeetup(true);
+        }}
         onSelectMeetup={(meetup) => {
           if (map.current && meetup.latitude && meetup.longitude) {
             map.current.flyTo({
