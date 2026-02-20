@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, Trash2 } from "lucide-react";
+import { Copy, Trash2, CircleDollarSign } from "lucide-react";
 import { toast } from "sonner";
 import type { UserProfile } from "./types";
 
@@ -44,6 +44,12 @@ export function UsersTab({ users, currentUserId, onDeleteUser }: UsersTabProps) 
               <TableHead>Display Name</TableHead>
               <TableHead>@Username</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>
+                <div className="flex items-center gap-1">
+                  <CircleDollarSign className="h-4 w-4 text-amber-500" />
+                  Points
+                </div>
+              </TableHead>
               <TableHead>Invited By</TableHead>
               <TableHead>Registered</TableHead>
               <TableHead>Actions</TableHead>
@@ -55,6 +61,7 @@ export function UsersTab({ users, currentUserId, onDeleteUser }: UsersTabProps) 
                 <TableCell className="font-medium">{user.display_name || "No name"}</TableCell>
                 <TableCell className="text-muted-foreground">{user.username ? `@${user.username}` : "—"}</TableCell>
                 <TableCell>{user.email || "No email"}</TableCell>
+                <TableCell className="font-semibold text-amber-500">{user.points ?? "—"}</TableCell>
                 <TableCell className="text-sm">
                   {user.invited_by_name || user.invited_by_email ? (
                     <span title={user.invited_by_email || undefined}>{user.invited_by_name || user.invited_by_email}</span>
