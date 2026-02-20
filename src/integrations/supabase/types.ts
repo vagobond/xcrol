@@ -2020,6 +2020,7 @@ export type Database = {
         Returns: boolean
       }
       calculate_layer_points: { Args: { layer_id: string }; Returns: number }
+      calculate_user_points: { Args: { p_user_id: string }; Returns: number }
       can_create_brook: { Args: { p_user_id: string }; Returns: boolean }
       can_delete_brook: {
         Args: { p_brook_id: string; p_user_id: string }
