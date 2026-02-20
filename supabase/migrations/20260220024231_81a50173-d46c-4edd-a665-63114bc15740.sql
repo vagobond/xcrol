@@ -1,0 +1,1 @@
+CREATE INDEX idx_xcrol_entries_user_id ON public.xcrol_entries (user_id);
