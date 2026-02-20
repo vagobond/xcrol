@@ -1,3 +1,4 @@
+import { Search } from "lucide-react";
 import { TOWN_CATEGORIES } from "./townCategories";
 import { toast } from "@/hooks/use-toast";
 
@@ -77,9 +78,9 @@ const TownHomepage = ({
         />
         <button
           onClick={onSearch}
-          className="text-sm text-primary hover:underline font-medium"
+          className="text-primary hover:text-primary/80"
         >
-          search
+          <Search className="w-4 h-4" />
         </button>
       </div>
 
