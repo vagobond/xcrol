@@ -837,6 +837,10 @@ const GettingStarted = () => {
                 <span className="font-bold text-amber-500">+2</span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Leave a review of another user</span>
+                <span className="font-bold text-amber-500">+3</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
                 <span>Invite a friend to XCROL</span>
                 <span className="font-bold text-amber-500">+2</span>
               </div>
