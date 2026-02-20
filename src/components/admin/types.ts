@@ -6,6 +6,7 @@ export interface UserProfile {
   created_at: string;
   invited_by_name?: string | null;
   invited_by_email?: string | null;
+  points?: number | null;
 }
 
 export interface UserRole {
