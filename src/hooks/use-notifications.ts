@@ -46,11 +46,18 @@ const getDismissedReferenceIds = (): string[] => {
   }
 };
 
+export interface UnreadMessageSender {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 export const useNotifications = () => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
   const [newReferences, setNewReferences] = useState<NewReference[]>([]);
+  const [unreadMessageSenders, setUnreadMessageSenders] = useState<UnreadMessageSender[]>([]);
   const { unreadCount: unreadMessageCount } = useUnreadMessages(user?.id || null);
 
   useEffect(() => {
@@ -58,9 +65,49 @@ export const useNotifications = () => {
       loadRequests();
       loadPendingFriendships();
       loadNewReferences();
+      loadUnreadMessageSenders();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  useEffect(() => {
+    if (user && unreadMessageCount > 0) {
+      loadUnreadMessageSenders();
+    } else {
+      setUnreadMessageSenders([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unreadMessageCount]);
+
+  const loadUnreadMessageSenders = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("messages")
+      .select("from_user_id")
+      .eq("to_user_id", user.id)
+      .is("read_at", null);
+
+    if (error || !data || data.length === 0) {
+      setUnreadMessageSenders([]);
+      return;
+    }
+
+    const senderIds = [...new Set(data.map((m) => m.from_user_id))];
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", senderIds);
+
+    setUnreadMessageSenders(
+      (profiles || []).map((p) => ({
+        id: p.id,
+        display_name: p.display_name,
+        avatar_url: p.avatar_url,
+      }))
+    );
+  };
 
   const loadNewReferences = async () => {
     if (!user) return;
@@ -224,6 +271,7 @@ export const useNotifications = () => {
     pendingFriendships,
     newReferences,
     unreadMessageCount,
+    unreadMessageSenders,
     totalNotifications,
     dismissReferenceNotification,
     loadRequests,
