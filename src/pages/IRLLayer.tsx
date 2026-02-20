@@ -72,7 +72,7 @@ const IRLLayer = () => {
       <div className="flex justify-between items-center max-w-7xl mx-auto flex-wrap gap-4">
         <div>
           <h1 className="text-4xl md:text-5xl font-bold text-glow">The World</h1>
-          <p className="text-foreground/80 mt-2">Claim your hometown on the Laminate map</p>
+          <p className="text-foreground/80 mt-2">Claim your hometown on the Xcrol map</p>
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex gap-3 flex-wrap">
