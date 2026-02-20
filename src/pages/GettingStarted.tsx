@@ -29,7 +29,11 @@ import {
   Bell,
   Code,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Store,
+  Building2,
+  Image,
+  Video
 } from "lucide-react";
 import { useState } from "react";
 import { 
@@ -339,6 +343,118 @@ const GettingStarted = () => {
               <strong>Privacy first:</strong> Brooks are fully private—not visible on profiles, no public indicators, 
               no streaks, read receipts, typing indicators, or activity metrics. Just calm, daily awareness.
             </p>
+          </div>
+        </section>
+
+        {/* The Village - Groups */}
+        <section className="space-y-4 p-6 rounded-xl bg-card/50 border border-border/50">
+          <div className="flex items-center gap-3">
+            <Building2 className="w-8 h-8 text-primary" />
+            <h2 className="text-2xl md:text-3xl font-bold">The Village - Community Groups</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p>
+              The Village is XCROL's group system—community hubs where people with shared interests can gather, 
+              post updates, and organize together.
+            </p>
+            <div className="p-4 bg-secondary/30 rounded-lg">
+              <h4 className="font-semibold mb-2">How Groups Work</h4>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Create a group with a custom name, description, and unique slug (<code>/group/your-name</code>)</li>
+                <li>Membership uses an <strong>Invite + Request</strong> model—members request to join or are invited</li>
+                <li>Creators and co-admins manage membership, settings, and content</li>
+                <li>Public visitors can see the group name, avatar, and description</li>
+                <li>Internal content (posts, member list, shared links) is restricted based on trust levels</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-secondary/30 rounded-lg">
+              <h4 className="font-semibold mb-2">Group Features</h4>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Post updates with links and reactions</li>
+                <li>Comment threads on group posts</li>
+                <li>Admin controls for group metadata and avatar</li>
+                <li>Adjustable visibility thresholds via the Settings tab</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* The Town - Marketplace */}
+        <section className="space-y-4 p-6 rounded-xl bg-card/50 border border-border/50">
+          <div className="flex items-center gap-3">
+            <Store className="w-8 h-8 text-primary" />
+            <h2 className="text-2xl md:text-3xl font-bold">The Town - Community Marketplace</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p>
+              The Town is XCROL's community marketplace—a classifieds board inspired by the simplicity of early-2000s Craigslist, 
+              built for trust-based communities.
+            </p>
+            <div className="p-4 bg-secondary/30 rounded-lg">
+              <h4 className="font-semibold mb-2">Categories</h4>
+              <div className="grid md:grid-cols-2 gap-2 text-sm">
+                <div><strong>Community:</strong> Activities, artists, childcare, events, groups, local news, missed connections, music, pets, politics, rideshare, romance, volunteers</div>
+                <div><strong>Housing:</strong> Apartments, rooms, sublets, housing wanted, office/commercial, parking, real estate, storage</div>
+                <div><strong>For Sale:</strong> Antiques, appliances, bikes, books, electronics, furniture, free stuff, general, jewelry, materials, and more</div>
+                <div><strong>Services & Jobs:</strong> Professional services, lessons, skilled trades, job postings, resumes, and gigs</div>
+              </div>
+            </div>
+            <div className="p-4 bg-secondary/30 rounded-lg">
+              <h4 className="font-semibold mb-2">How It Works</h4>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Browse active listings without an account</li>
+                <li>Post listings with custom contact info or direct XCROL messaging</li>
+                <li>Search across listing titles and descriptions</li>
+                <li>Manage your own listings from "My Listings"</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Decentralized Media Hosting */}
+        <section className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/30">
+          <div className="flex items-center gap-3">
+            <Globe className="w-8 h-8 text-blue-500" />
+            <h2 className="text-2xl md:text-3xl font-bold">Decentralized Media Hosting</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p className="text-lg">
+              XCROL embraces the decentralized web by integrating with <strong>Pixelfed</strong> and <strong>PeerTube</strong> for 
+              media hosting—keeping your photos and videos outside the control of Big Tech.
+            </p>
+            
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Image className="w-5 h-5 text-pink-500" />
+                  <h3 className="font-bold">Pixelfed - Photo Hosting</h3>
+                </div>
+                <p className="text-sm">
+                  A federated, open-source alternative to Instagram. Your photos are hosted on decentralized servers, 
+                  giving you full ownership of your images while remaining accessible across the Fediverse.
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Video className="w-5 h-5 text-red-500" />
+                  <h3 className="font-bold">PeerTube - Video Hosting</h3>
+                </div>
+                <p className="text-sm">
+                  A federated, open-source alternative to YouTube. Videos are distributed peer-to-peer, reducing 
+                  reliance on centralized platforms and ensuring your content stays yours.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+              <h4 className="font-bold mb-2">Why Decentralized?</h4>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li><strong>You own your data:</strong> No corporation can delete, demonetize, or restrict your content</li>
+                <li><strong>Censorship-resistant:</strong> Federated networks can't be shut down by a single entity</li>
+                <li><strong>Interoperable:</strong> Content on Pixelfed and PeerTube is accessible across the entire Fediverse (Mastodon, Lemmy, etc.)</li>
+                <li><strong>No ads or algorithms:</strong> Your content reaches people chronologically, not based on engagement metrics</li>
+              </ul>
+            </div>
           </div>
         </section>
 
@@ -656,15 +772,23 @@ const GettingStarted = () => {
             <div className="grid gap-2">
               <div className="flex items-center gap-3 p-2 rounded bg-background/50">
                 <MapPin className="w-5 h-5 text-purple-500" />
-                <strong>THE WORLD</strong> - IRL Layer map, meetups, hometown claims
+                <strong>THE WORLD</strong> - IRL Layer map, meetups, hometown claims, Hearth Surf
               </div>
               <div className="flex items-center gap-3 p-2 rounded bg-background/50">
                 <Waves className="w-5 h-5 text-blue-500" />
-                <strong>THE RIVER</strong> - Friends' Xcrol feed, reactions
+                <strong>THE RIVER</strong> - Friends' Xcrol feed, reactions, replies
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                <Building2 className="w-5 h-5 text-orange-500" />
+                <strong>THE VILLAGE</strong> - Community groups, group posts, member management
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                <Store className="w-5 h-5 text-yellow-500" />
+                <strong>THE TOWN</strong> - Community marketplace, classifieds, listings
               </div>
               <div className="flex items-center gap-3 p-2 rounded bg-background/50">
                 <User className="w-5 h-5 text-green-500" />
-                <strong>YOU</strong> - Profile, friends, settings, Xcrol diary
+                <strong>YOU</strong> - Profile, friends, settings, Xcrol diary, Brooks
               </div>
             </div>
           </div>
