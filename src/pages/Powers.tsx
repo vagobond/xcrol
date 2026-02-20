@@ -252,15 +252,17 @@ const Powers = () => {
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="mystical" 
-                    size="xl"
-                    disabled
-                    className="w-full sm:w-auto min-w-[250px] opacity-60 cursor-not-allowed"
-                  >
-                    🏯
-                    <span className="ml-2">THE CASTLE</span>
-                  </Button>
+                  <span className="w-full sm:w-auto min-w-[250px]">
+                    <Button 
+                      variant="mystical" 
+                      size="xl"
+                      disabled
+                      className="w-full opacity-60 cursor-not-allowed pointer-events-none"
+                    >
+                      🏯
+                      <span className="ml-2">THE CASTLE</span>
+                    </Button>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Coming Soon</p>
