@@ -6,7 +6,8 @@ import CreateGroupDialog from "@/components/CreateGroupDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Users, Loader2 } from "lucide-react";
+import { Users, Loader2, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getFriendshipLabel } from "@/lib/friendship-labels";
 
 const TheVillage = () => {
@@ -23,6 +24,16 @@ const TheVillage = () => {
         <title>The Village | Xcrol</title>
         <meta name="description" content="User groups and communities" />
       </Helmet>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mb-2 -ml-2 text-muted-foreground hover:text-foreground"
+        onClick={() => navigate(-1)}
+      >
+        <ArrowLeft className="h-4 w-4 mr-1" />
+        Back
+      </Button>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
