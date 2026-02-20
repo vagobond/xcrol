@@ -179,6 +179,7 @@ const TownCreateListing = ({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={8}
+            maxLength={5000}
             placeholder="Describe your listing in detail..."
             className="mt-1"
           />
