@@ -2074,6 +2074,50 @@ export type Database = {
         Args: { profile_id: string; viewer_id: string }
         Returns: Database["public"]["Enums"]["friendship_level"]
       }
+      get_own_profile: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          bio: string | null
+          birthday_day: number | null
+          birthday_month: number | null
+          birthday_no_year_visibility: string | null
+          birthday_year: number | null
+          birthday_year_visibility: string | null
+          contact_email: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          home_address: string | null
+          home_address_visibility: string | null
+          hometown_city: string | null
+          hometown_country: string | null
+          hometown_description: string | null
+          hometown_latitude: number | null
+          hometown_longitude: number | null
+          id: string
+          instagram_url: string | null
+          invite_verified: boolean
+          last_hometown_change: string | null
+          link: string | null
+          linkedin_url: string | null
+          mailing_address: string | null
+          mailing_address_visibility: string | null
+          nicknames: string | null
+          nicknames_visibility: string | null
+          phone_number: string | null
+          private_email: string | null
+          updated_at: string
+          username: string | null
+          whatsapp: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_public_hometowns: {
         Args: never
         Returns: {
