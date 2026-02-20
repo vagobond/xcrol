@@ -11,11 +11,11 @@ const EveryCountry = () => {
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
-          size="icon"
           onClick={() => navigate("/irl-layer")}
           className="mb-4"
         >
           <ArrowLeft className="h-5 w-5" />
+          Back
         </Button>
 
         <EveryCountryGame />
