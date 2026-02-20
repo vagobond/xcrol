@@ -53,7 +53,7 @@ const TheTown = () => {
           Xcrol Town
         </h1>
         <p className="text-xs text-muted-foreground mt-1">
-          community classifieds · post it, find it, trade it
+          Community Marketplace · Post, Find, Trade
         </p>
       </div>
 
