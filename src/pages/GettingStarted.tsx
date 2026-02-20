@@ -33,7 +33,9 @@ import {
   Store,
   Building2,
   Image,
-  Video
+  Video,
+  CircleDollarSign,
+  Castle
 } from "lucide-react";
 import { useState } from "react";
 import { 
@@ -790,6 +792,86 @@ const GettingStarted = () => {
                 <User className="w-5 h-5 text-green-500" />
                 <strong>YOU</strong> - Profile, friends, settings, Xcrol diary, Brooks
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Earning Points */}
+        <section className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-amber-500/10 to-yellow-500/10 border border-amber-500/30">
+          <div className="flex items-center gap-3">
+            <CircleDollarSign className="w-8 h-8 text-amber-500" />
+            <h2 className="text-2xl md:text-3xl font-bold">Earning Points</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p>
+              Every action you take on XCROL earns you points. They accumulate silently, 
+              a quiet measure of your presence and participation.
+            </p>
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Write a daily Xcrol entry</span>
+                <span className="font-bold text-amber-500">+1</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Include a link in your Xcrol</span>
+                <span className="font-bold text-amber-500">+1</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>React or comment on a Xcrol</span>
+                <span className="font-bold text-amber-500">+1</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Each friend you have</span>
+                <span className="font-bold text-amber-500">+1</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Post in a group</span>
+                <span className="font-bold text-amber-500">+1</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Create a listing in The Town</span>
+                <span className="font-bold text-amber-500">+1</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Set up your hometown</span>
+                <span className="font-bold text-amber-500">+2</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Invite a friend to XCROL</span>
+                <span className="font-bold text-amber-500">+2</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Start a Brook with a friend</span>
+                <span className="font-bold text-amber-500">+2</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Invited friend accepts</span>
+                <span className="font-bold text-amber-500">+5</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Keep a Brook alive for 5 days</span>
+                <span className="font-bold text-amber-500">+5</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Complete your full profile</span>
+                <span className="font-bold text-amber-500">+10</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Create a group in The Village</span>
+                <span className="font-bold text-amber-500">+10</span>
+              </div>
+            </div>
+            <div className="mt-6 p-4 rounded-lg bg-background/30 border border-amber-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Castle className="w-5 h-5 text-amber-500" />
+                <strong className="text-amber-500">But why do points matter?</strong>
+              </div>
+              <p className="text-sm text-foreground/60 italic">
+                That remains to be seen. For now, know that your points are being counted. 
+                When the gates of <strong>The Castle</strong> finally open, those who have built something here 
+                will find the threshold more welcoming than those who have not. 
+                More will be revealed in time.
+              </p>
             </div>
           </div>
         </section>
