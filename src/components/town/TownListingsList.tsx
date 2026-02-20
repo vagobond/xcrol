@@ -46,7 +46,11 @@ const TownListingsList = ({
         if (category) query = query.eq("category", category);
         if (subcategory) query = query.eq("subcategory", subcategory);
         if (searchQuery) {
-          query = query.or(`title.ilike.%${searchQuery}%,body.ilike.%${searchQuery}%`);
+          // Sanitize search input: escape PostgREST special characters
+          const sanitized = searchQuery.replace(/[%_\\,().]/g, "");
+          if (sanitized) {
+            query = query.or(`title.ilike.%${sanitized}%,body.ilike.%${sanitized}%`);
+          }
         }
       }
 

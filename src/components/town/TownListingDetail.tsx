@@ -48,10 +48,12 @@ const TownListingDetail = ({ listingId, onBack }: TownListingDetailProps) => {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
+      if (!user?.id) throw new Error("Not authenticated");
       const { error } = await supabase
         .from("town_listings")
         .delete()
-        .eq("id", listingId);
+        .eq("id", listingId)
+        .eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {
