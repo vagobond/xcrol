@@ -1,4 +1,7 @@
 import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Helmet } from "react-helmet-async";
 import { useAuth } from "@/hooks/use-auth";
 import TownHomepage from "@/components/town/TownHomepage";
@@ -15,6 +18,7 @@ type TownView =
 
 const TheTown = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [view, setView] = useState<TownView>({ type: "home" });
   const [previousView, setPreviousView] = useState<TownView | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,6 +46,15 @@ const TheTown = () => {
 
       {/* Header */}
       <div className="mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-2 -ml-2 text-muted-foreground hover:text-foreground"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
+        </Button>
         <h1
           className="text-3xl font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => {
