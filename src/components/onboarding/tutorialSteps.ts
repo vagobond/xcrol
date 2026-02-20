@@ -84,6 +84,27 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     subtext: "Some layers connect to other worlds.",
   },
   {
+    id: "village",
+    anchor: "[data-tutorial='village']",
+    anchorLabel: "The Village",
+    text: "This is The Village.\nGroups form here — by invitation and request.\nEach one has its own culture, its own trust.",
+    subtext: "Post, discuss, and build together. Admins shape the space.",
+  },
+  {
+    id: "town",
+    anchor: "[data-tutorial='town']",
+    anchorLabel: "The Town",
+    text: "This is The Town.\nA marketplace for your community.\nOffer, seek, trade — no middleman, no algorithm.",
+    subtext: "Housing, services, goods, and community needs — all in one square.",
+  },
+  {
+    id: "castle",
+    anchor: "center",
+    anchorLabel: "The Castle",
+    text: "Beyond all of this… there is The Castle.\nNot everyone will see it.\nEntry is earned — through invitations, through use, through quests not yet revealed.",
+    subtext: "Imagine being invited to live in a castle. That is what awaits. Watch for the signs.",
+  },
+  {
     id: "complete",
     anchor: "center",
     anchorLabel: "The Map Is Yours",

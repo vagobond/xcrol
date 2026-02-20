@@ -223,6 +223,7 @@ const Powers = () => {
                     size="xl"
                     onClick={() => navigate("/the-village")}
                     className="w-full sm:w-auto min-w-[250px]"
+                    data-tutorial="village"
                   >
                     🏘️
                     <span className="ml-2">THE VILLAGE</span>
@@ -240,6 +241,7 @@ const Powers = () => {
                     size="xl"
                     onClick={() => navigate("/the-town")}
                     className="w-full sm:w-auto min-w-[250px]"
+                    data-tutorial="town"
                   >
                     🏰
                     <span className="ml-2">THE TOWN</span>
