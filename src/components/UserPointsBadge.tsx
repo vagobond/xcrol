@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Star } from "lucide-react";
+import { CircleDollarSign } from "lucide-react";
 
 interface UserPointsBadgeProps {
   userId: string;
@@ -26,7 +26,7 @@ export const UserPointsBadge = ({ userId }: UserPointsBadgeProps) => {
 
   return (
     <Badge variant="secondary" className="text-sm gap-1.5 px-3 py-1">
-      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+      <CircleDollarSign className="w-4 h-4 text-amber-500" />
       {points} {points === 1 ? "point" : "points"}
     </Badge>
   );
