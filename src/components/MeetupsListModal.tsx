@@ -29,9 +29,10 @@ interface MeetupsListModalProps {
   open: boolean;
   onClose: () => void;
   onSelectMeetup: (meetup: Meetup) => void;
+  onCreateMeetup?: () => void;
 }
 
-export const MeetupsListModal = ({ open, onClose, onSelectMeetup }: MeetupsListModalProps) => {
+export const MeetupsListModal = ({ open, onClose, onSelectMeetup, onCreateMeetup }: MeetupsListModalProps) => {
   const navigate = useNavigate();
   const [meetups, setMeetups] = useState<Meetup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,9 +90,19 @@ export const MeetupsListModal = ({ open, onClose, onSelectMeetup }: MeetupsListM
               {meetups.length} active meetup{meetups.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {onCreateMeetup && (
+              <button
+                onClick={onCreateMeetup}
+                className="text-sm text-yellow-500 hover:text-yellow-400 underline"
+              >
+                Create Meetup/Event
+              </button>
+            )}
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-y-auto flex-1 space-y-3">
