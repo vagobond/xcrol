@@ -32,6 +32,7 @@ const NotificationBell = () => {
     pendingFriendships,
     newReferences,
     unreadMessageCount,
+    unreadMessageSenders,
     totalNotifications,
     dismissReferenceNotification,
     loadRequests,
@@ -168,7 +169,7 @@ const NotificationBell = () => {
             ) : (
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {unreadMessageCount > 0 && (
-                  <UnreadMessagesItem count={unreadMessageCount} />
+                  <UnreadMessagesItem count={unreadMessageCount} senders={unreadMessageSenders} />
                 )}
 
                 {pendingFriendships.map((friendship) => (
