@@ -2019,6 +2019,13 @@ export type Database = {
         Args: { user1_id: string; user2_id: string }
         Returns: boolean
       }
+      calculate_all_user_points: {
+        Args: never
+        Returns: {
+          points: number
+          user_id: string
+        }[]
+      }
       calculate_layer_points: { Args: { layer_id: string }; Returns: number }
       calculate_user_points: { Args: { p_user_id: string }; Returns: number }
       can_create_brook: { Args: { p_user_id: string }; Returns: boolean }
