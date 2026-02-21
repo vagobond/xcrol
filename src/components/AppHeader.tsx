@@ -6,6 +6,7 @@ import NotificationBell from "./NotificationBell";
 import AudioMuteButton from "./AudioMuteButton";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
+import villageIconSrc from "@/assets/village-icon.png";
 
 const AppHeader = () => {
   const navigate = useNavigate();
@@ -32,6 +33,15 @@ const AppHeader = () => {
             title="The River"
           >
             <Waves className="h-5 w-5" />
+           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/the-village")}
+            className="h-9 w-9"
+            title="The Village"
+          >
+            <img src={villageIconSrc} alt="Village" className="h-5 w-5 invert dark:invert-0 brightness-150 contrast-150" />
           </Button>
           <Button
             variant="ghost"
