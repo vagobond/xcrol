@@ -105,6 +105,65 @@ const Powers = () => {
     </svg>
   );
 
+  // Town icon — buildings/storefronts outline
+  const TownIcon = ({ className }: { className?: string }) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {/* Left building */}
+      <rect x="2" y="10" width="7" height="11" />
+      <path d="M5.5 7L2 10h7L5.5 7z" />
+      <rect x="4" y="14" width="3" height="3" />
+      {/* Right building (taller) */}
+      <rect x="11" y="6" width="7" height="15" />
+      <path d="M14.5 3L11 6h7L14.5 3z" />
+      <rect x="13" y="10" width="3" height="3" />
+      <rect x="13" y="16" width="3" height="5" />
+      {/* Flag on right building */}
+      <path d="M18 6V3" />
+      <path d="M18 3h3" />
+    </svg>
+  );
+
+  // Japanese Castle icon — pagoda-style tiered roofs
+  const CastleIcon = ({ className }: { className?: string }) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {/* Base */}
+      <rect x="4" y="18" width="16" height="3" />
+      {/* Middle tier */}
+      <rect x="6" y="13" width="12" height="5" />
+      <path d="M4 13h16" />
+      {/* Top tier */}
+      <rect x="8" y="8" width="8" height="5" />
+      <path d="M6 8h12" />
+      {/* Top roof peak */}
+      <path d="M12 3L8 8" />
+      <path d="M12 3l4 5" />
+      {/* Spire */}
+      <path d="M12 1v2" />
+    </svg>
+  );
+
   // Two pine trees icon for The Forest
   const TwoTrees = ({ className }: { className?: string }) => (
     <div className={`inline-flex items-center ${className}`}>
@@ -271,8 +330,8 @@ const Powers = () => {
                     className="w-full sm:w-auto min-w-[250px]"
                     data-tutorial="town"
                   >
-                    🏰
-                    <span className="ml-2">THE TOWN</span>
+                    <TownIcon className="mr-2 h-5 w-5" />
+                    THE TOWN
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -289,8 +348,8 @@ const Powers = () => {
                       disabled
                       className="w-full opacity-60 cursor-not-allowed pointer-events-none"
                     >
-                      🏯
-                      <span className="ml-2">THE CASTLE</span>
+                      <CastleIcon className="mr-2 h-5 w-5" />
+                      THE CASTLE
                     </Button>
                   </span>
                 </TooltipTrigger>
