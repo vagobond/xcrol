@@ -77,6 +77,34 @@ const Powers = () => {
     </svg>
   );
 
+  // Village icon — people under a roof/hexagon outline
+  const VillageIcon = ({ className }: { className?: string }) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {/* Roof / pentagon top */}
+      <path d="M12 3L4 9v11h16V9L12 3z" />
+      {/* Center person (taller) */}
+      <circle cx="12" cy="13" r="1.5" />
+      <path d="M12 14.5v2.5" />
+      {/* Left person */}
+      <circle cx="8.5" cy="14" r="1.2" />
+      <path d="M8.5 15.2v2" />
+      {/* Right person */}
+      <circle cx="15.5" cy="14" r="1.2" />
+      <path d="M15.5 15.2v2" />
+    </svg>
+  );
+
   // Two pine trees icon for The Forest
   const TwoTrees = ({ className }: { className?: string }) => (
     <div className={`inline-flex items-center ${className}`}>
@@ -225,8 +253,8 @@ const Powers = () => {
                     className="w-full sm:w-auto min-w-[250px]"
                     data-tutorial="village"
                   >
-                    🏘️
-                    <span className="ml-2">THE VILLAGE</span>
+                    <VillageIcon className="mr-2 h-5 w-5" />
+                    THE VILLAGE
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
