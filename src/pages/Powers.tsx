@@ -10,7 +10,6 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useInviteNotification } from "@/hooks/use-invite-notification";
 import { InviteNotificationModal } from "@/components/InviteNotificationModal";
-import villageIcon from "@/assets/village-icon.png";
 
 const Powers = () => {
   const navigate = useNavigate();
@@ -78,7 +77,33 @@ const Powers = () => {
     </svg>
   );
 
-  // Village icon is imported as an image asset
+  // Village icon — people under a roof/hexagon outline
+  const VillageIcon = ({ className }: { className?: string }) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {/* Roof / pentagon top */}
+      <path d="M12 3L4 9v11h16V9L12 3z" />
+      {/* Center person (taller) */}
+      <circle cx="12" cy="13" r="1.5" />
+      <path d="M12 14.5v2.5" />
+      {/* Left person */}
+      <circle cx="8.5" cy="14" r="1.2" />
+      <path d="M8.5 15.2v2" />
+      {/* Right person */}
+      <circle cx="15.5" cy="14" r="1.2" />
+      <path d="M15.5 15.2v2" />
+    </svg>
+  );
 
   // Town icon — buildings/storefronts outline
   const TownIcon = ({ className }: { className?: string }) => (
@@ -287,7 +312,7 @@ const Powers = () => {
                     className="w-full sm:w-auto min-w-[250px]"
                     data-tutorial="village"
                   >
-                    <img src={villageIcon} alt="Village" className="mr-2 h-5 w-5 invert dark:invert-0" />
+                    <VillageIcon className="mr-2 h-5 w-5" />
                     THE VILLAGE
                   </Button>
                 </TooltipTrigger>
