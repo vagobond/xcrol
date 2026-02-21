@@ -50,6 +50,9 @@ export const useAuthPage = () => {
 
     const bounceIfAlreadySignedIn = (session: any | null) => {
       if (!session || authView === "update-password") return;
+      // Don't bounce if URL has recovery hash — let the recovery handler run first
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      if (hashParams.get("type") === "recovery") return;
       if (returnUrl) {
         redirectTo(returnUrl);
       } else {
@@ -180,6 +183,17 @@ export const useAuthPage = () => {
       });
 
       if (error) throw error;
+
+      // Check if this is a genuinely new user (has identities) vs already-exists case
+      const isNewUser = signUpData.user && 
+        signUpData.user.identities && 
+        signUpData.user.identities.length > 0;
+
+      if (!isNewUser) {
+        toast.error("An account with this email already exists. Please sign in instead.");
+        setLoading(false);
+        return;
+      }
 
       // Store invite code to be consumed AFTER email confirmation
       if (result.data.inviteCode) {
