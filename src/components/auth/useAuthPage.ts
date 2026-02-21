@@ -157,17 +157,18 @@ export const useAuthPage = () => {
       return;
     }
 
-      // inviteCode is now required by the schema, no manual check needed
-
     setLoading(true);
     try {
-      const { data: isValid, error: checkError } = await supabase
-        .rpc('check_invite_code', { p_invite_code: result.data.inviteCode });
+      // If an invite code was provided, validate it (optional referral tracking)
+      if (result.data.inviteCode) {
+        const { data: isValid, error: checkError } = await supabase
+          .rpc('check_invite_code', { p_invite_code: result.data.inviteCode });
 
-      if (checkError || !isValid) {
-        setErrors({ inviteCode: "Invalid or already used invite code" });
-        setLoading(false);
-        return;
+        if (checkError || !isValid) {
+          setErrors({ inviteCode: "Invalid or already used invite code" });
+          setLoading(false);
+          return;
+        }
       }
 
       const { data: signUpData, error } = await supabase.auth.signUp({

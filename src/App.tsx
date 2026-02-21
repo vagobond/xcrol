@@ -74,10 +74,9 @@ const App = () => (
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Welcome />} />
-                {/* Powers and tutorial are allowed without invite verification */}
-                <Route path="/powers" element={<ProtectedRoute requireInvite={false}><Powers /></ProtectedRoute>} />
+                <Route path="/powers" element={<ProtectedRoute><Powers /></ProtectedRoute>} />
                 <Route path="/auth" element={<Auth />} />
-                {/* Protected routes that require invite verification */}
+                {/* Protected routes */}
                 <Route path="/the-river" element={<ProtectedRoute><TheRiver /></ProtectedRoute>} />
                 <Route path="/the-forest" element={<ProtectedRoute><TheForest /></ProtectedRoute>} />
                 <Route path="/mini-games-hub" element={<ProtectedRoute><MiniGamesHub /></ProtectedRoute>} />
@@ -88,7 +87,7 @@ const App = () => (
                 <Route path="/u/:userId" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-                <Route path="/getting-started" element={<ProtectedRoute requireInvite={false}><GettingStarted /></ProtectedRoute>} />
+                <Route path="/getting-started" element={<ProtectedRoute><GettingStarted /></ProtectedRoute>} />
                 <Route path="/invite-friends" element={<ProtectedRoute><InviteFriends /></ProtectedRoute>} />
                 <Route path="/my-xcrol" element={<ProtectedRoute><MyXcrol /></ProtectedRoute>} />
                 <Route path="/my-xcrol/edit" element={<ProtectedRoute><MyXcrol /></ProtectedRoute>} />
