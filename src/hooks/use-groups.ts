@@ -56,7 +56,7 @@ export const useGroups = () => {
       const { data: groups, error } = await supabase
         .from("groups")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
       if (!groups.length) return [] as Group[];
