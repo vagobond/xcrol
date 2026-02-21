@@ -71,9 +71,28 @@ export const useAuthPage = () => {
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
-      }).then(({ data, error }) => {
+      }).then(async ({ data, error }) => {
         if (!error && data.session) {
           window.history.replaceState(null, '', window.location.pathname);
+
+          // Consume the pending invite code now that email is confirmed
+          const pendingInviteCode = sessionStorage.getItem('pendingInviteCode');
+          const pendingInviteEmail = sessionStorage.getItem('pendingInviteEmail');
+          if (pendingInviteCode && data.session.user) {
+            try {
+              await supabase.rpc('use_invite_code', {
+                p_invite_code: pendingInviteCode,
+                p_user_id: data.session.user.id,
+                p_email: pendingInviteEmail || data.session.user.email || '',
+              });
+            } catch (err) {
+              console.error('Failed to consume invite code:', err);
+            } finally {
+              sessionStorage.removeItem('pendingInviteCode');
+              sessionStorage.removeItem('pendingInviteEmail');
+            }
+          }
+
           toast.success("Email confirmed! Welcome to Xcrol!");
           setShowWelcomeModal(true);
         } else {
@@ -131,10 +150,7 @@ export const useAuthPage = () => {
       return;
     }
 
-    if (!result.data.inviteCode) {
-      setErrors({ inviteCode: "An invite code is required to sign up" });
-      return;
-    }
+      // inviteCode is now required by the schema, no manual check needed
 
     setLoading(true);
     try {
@@ -151,7 +167,7 @@ export const useAuthPage = () => {
         email: result.data.email,
         password: result.data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth`,
           data: {
             display_name: result.data.displayName,
             invite_code: result.data.inviteCode || null,
@@ -161,12 +177,10 @@ export const useAuthPage = () => {
 
       if (error) throw error;
 
-      if (signUpData.user) {
-        await supabase.rpc('use_invite_code', {
-          p_invite_code: result.data.inviteCode,
-          p_user_id: signUpData.user.id,
-          p_email: result.data.email
-        });
+      // Store invite code to be consumed AFTER email confirmation
+      if (result.data.inviteCode) {
+        sessionStorage.setItem('pendingInviteCode', result.data.inviteCode);
+        sessionStorage.setItem('pendingInviteEmail', result.data.email);
       }
 
       if (signUpData.user) {
@@ -331,7 +345,7 @@ export const useAuthPage = () => {
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth`,
         }
       });
       if (error) throw error;
