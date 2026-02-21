@@ -103,6 +103,18 @@ export const useAuthPage = () => {
       return;
     }
 
+    // Use getSession only for initial bounce check — no duplicate onAuthStateChange listener
+    // The AuthProvider already handles global auth state via onAuthStateChange.
+    // This hook only needs to react to hash-based flows (signup confirmation, recovery)
+    // and check if user is already signed in to bounce them away.
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        bounceIfAlreadySignedIn(session);
+      })
+      .catch(() => {});
+
+    // Listen only for PASSWORD_RECOVERY and SIGNED_IN events specific to auth page flows
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -111,26 +123,18 @@ export const useAuthPage = () => {
         return;
       }
 
-      if (event === "INITIAL_SESSION") {
-        bounceIfAlreadySignedIn(session);
-        return;
-      }
-
+      // Only handle SIGNED_IN from explicit login actions (not initial session)
       if (event === "SIGNED_IN" && session && authView !== "update-password") {
-        if (returnUrl) {
-          redirectTo(returnUrl);
-        } else {
-          setShowWelcomeModal(true);
-        }
+        // Use setTimeout to avoid conflicting with AuthProvider's state update
+        setTimeout(() => {
+          if (returnUrl) {
+            redirectTo(returnUrl);
+          } else {
+            setShowWelcomeModal(true);
+          }
+        }, 0);
       }
     });
-
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        bounceIfAlreadySignedIn(session);
-      })
-      .catch(() => {});
 
     return () => subscription.unsubscribe();
   }, [navigate, authView, returnUrl]);

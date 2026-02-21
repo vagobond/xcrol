@@ -13,7 +13,10 @@ export const signUpSchema = z.object({
   email: z.string().trim().email({ message: "Please enter a valid email address" }),
   password: z.string()
     .min(8, { message: "Password must be at least 8 characters" }),
-  inviteCode: z.string().trim().min(1, { message: "Invite code is required" }),
+  inviteCode: z.string().trim().min(1, { message: "Invite code is required" }).regex(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    { message: "Please enter a valid invite code format" }
+  ),
   agreedToTerms: z.literal(true, {
     errorMap: () => ({ message: "You must agree to the Terms and Privacy Policy" }),
   }),

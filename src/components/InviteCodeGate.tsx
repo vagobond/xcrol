@@ -29,6 +29,12 @@ export const InviteCodeGate = ({ onVerified }: InviteCodeGateProps) => {
       return;
     }
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(inviteCode.trim())) {
+      setError("Please enter a valid invite code format");
+      return;
+    }
+
     if (!user) {
       setError("You must be signed in");
       return;
