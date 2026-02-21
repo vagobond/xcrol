@@ -77,35 +77,49 @@ const Powers = () => {
     </svg>
   );
 
-  // Anvil & Hammer icon for The Village
+  // Anvil & Hammer icon for The Village — traced from reference image
   const VillageIcon = ({ className }: { className?: string }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
-      viewBox="0 0 24 24"
+      viewBox="0 0 100 100"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="4"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
     >
-      {/* Hammer head */}
-      <rect x="12" y="2" width="7" height="4" rx="0.5" />
-      {/* Hammer handle */}
-      <path d="M15.5 6L10 14" />
-      {/* Anvil body */}
-      <path d="M2 16.5c0 0 1-3 4-3h8c3 0 4 3 4 3" />
-      {/* Anvil horn (left beak) */}
-      <path d="M6 13.5L2 14.5" />
-      {/* Anvil top flat surface */}
-      <path d="M6 13.5h8" />
-      {/* Anvil base */}
-      <path d="M5 16.5h10" />
-      <path d="M6 16.5v3" />
-      <path d="M14 16.5v3" />
-      <path d="M4 19.5h12" />
+      {/* Anvil — horn points left, flat top, waisted body, broad base */}
+      <path d="
+        M 10 52
+        C 10 50, 14 46, 22 46
+        L 22 44
+        L 70 44
+        C 74 44, 76 46, 76 48
+        L 76 52
+        C 76 54, 74 56, 70 56
+        L 28 56
+        C 22 56, 18 54, 10 52
+        Z
+      " />
+      {/* Anvil waist and base */}
+      <path d="
+        M 32 56
+        L 30 64
+        L 24 68
+        L 24 74
+        L 68 74
+        L 68 68
+        L 62 64
+        L 60 56
+      " />
+      {/* Hammer handle — diagonal from lower-left to upper-right */}
+      <path d="M 42 42 L 62 16" />
+      {/* Hammer head — rectangular, angled to match handle */}
+      <rect x="52" y="6" width="22" height="12" rx="2"
+        transform="rotate(0, 63, 12)" />
     </svg>
   );
 
