@@ -77,7 +77,7 @@ const Powers = () => {
     </svg>
   );
 
-  // Village icon — people under a roof/hexagon outline
+  // Anvil & Hammer icon for The Village
   const VillageIcon = ({ className }: { className?: string }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -86,22 +86,26 @@ const Powers = () => {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
     >
-      {/* Roof / pentagon top */}
-      <path d="M12 3L4 9v11h16V9L12 3z" />
-      {/* Center person (taller) */}
-      <circle cx="12" cy="13" r="1.5" />
-      <path d="M12 14.5v2.5" />
-      {/* Left person */}
-      <circle cx="8.5" cy="14" r="1.2" />
-      <path d="M8.5 15.2v2" />
-      {/* Right person */}
-      <circle cx="15.5" cy="14" r="1.2" />
-      <path d="M15.5 15.2v2" />
+      {/* Hammer head */}
+      <rect x="12" y="2" width="7" height="4" rx="0.5" />
+      {/* Hammer handle */}
+      <path d="M15.5 6L10 14" />
+      {/* Anvil body */}
+      <path d="M2 16.5c0 0 1-3 4-3h8c3 0 4 3 4 3" />
+      {/* Anvil horn (left beak) */}
+      <path d="M6 13.5L2 14.5" />
+      {/* Anvil top flat surface */}
+      <path d="M6 13.5h8" />
+      {/* Anvil base */}
+      <path d="M5 16.5h10" />
+      <path d="M6 16.5v3" />
+      <path d="M14 16.5v3" />
+      <path d="M4 19.5h12" />
     </svg>
   );
 
