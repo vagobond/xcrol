@@ -77,7 +77,7 @@ const Powers = () => {
     </svg>
   );
 
-  // Anvil & Hammer icon for The Village — traced from reference image
+  // Anvil & Hammer icon for The Village — carefully traced from reference
   const VillageIcon = ({ className }: { className?: string }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -91,35 +91,27 @@ const Powers = () => {
       strokeLinejoin="round"
       className={className}
     >
-      {/* Anvil — horn points left, flat top, waisted body, broad base */}
+      {/* Anvil — single continuous outline */}
       <path d="
-        M 10 52
-        C 10 50, 14 46, 22 46
-        L 22 44
-        L 70 44
-        C 74 44, 76 46, 76 48
-        L 76 52
-        C 76 54, 74 56, 70 56
-        L 28 56
-        C 22 56, 18 54, 10 52
+        M 8,52
+        C 10,46 18,42 26,42
+        L 74,42
+        L 74,48
+        L 70,48
+        L 70,56
+        C 68,62 70,66 74,72
+        L 74,78
+        L 26,78
+        L 26,72
+        C 30,66 32,62 30,56
+        L 30,52
+        C 24,54 16,56 8,52
         Z
       " />
-      {/* Anvil waist and base */}
-      <path d="
-        M 32 56
-        L 30 64
-        L 24 68
-        L 24 74
-        L 68 74
-        L 68 68
-        L 62 64
-        L 60 56
-      " />
-      {/* Hammer handle — diagonal from lower-left to upper-right */}
-      <path d="M 42 42 L 62 16" />
-      {/* Hammer head — rectangular, angled to match handle */}
-      <rect x="52" y="6" width="22" height="12" rx="2"
-        transform="rotate(0, 63, 12)" />
+      {/* Hammer handle */}
+      <line x1="40" y1="42" x2="56" y2="18" />
+      {/* Hammer head — horizontal rectangle */}
+      <rect x="48" y="6" width="30" height="13" rx="2" />
     </svg>
   );
 
