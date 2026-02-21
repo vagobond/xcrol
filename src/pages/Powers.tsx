@@ -77,7 +77,7 @@ const Powers = () => {
     </svg>
   );
 
-  // Village icon — people under a roof/hexagon outline
+  // Village icon — group of people (community), no house shape
   const VillageIcon = ({ className }: { className?: string }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -91,17 +91,15 @@ const Powers = () => {
       strokeLinejoin="round"
       className={className}
     >
-      {/* Roof / pentagon top */}
-      <path d="M12 3L4 9v11h16V9L12 3z" />
-      {/* Center person (taller) */}
-      <circle cx="12" cy="13" r="1.5" />
-      <path d="M12 14.5v2.5" />
-      {/* Left person */}
-      <circle cx="8.5" cy="14" r="1.2" />
-      <path d="M8.5 15.2v2" />
-      {/* Right person */}
-      <circle cx="15.5" cy="14" r="1.2" />
-      <path d="M15.5 15.2v2" />
+      {/* Center person (front, taller) */}
+      <circle cx="12" cy="8" r="2" />
+      <path d="M9 21v-3a3 3 0 0 1 6 0v3" />
+      {/* Left person (behind) */}
+      <circle cx="6" cy="6" r="1.8" />
+      <path d="M3 19v-2a3 3 0 0 1 5 0" />
+      {/* Right person (behind) */}
+      <circle cx="18" cy="6" r="1.8" />
+      <path d="M16 17a3 3 0 0 1 5 0v2" />
     </svg>
   );
 
