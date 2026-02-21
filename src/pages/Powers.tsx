@@ -313,7 +313,7 @@ const Powers = () => {
                     className="w-full sm:w-auto min-w-[250px]"
                     data-tutorial="village"
                   >
-                    <img src={villageIconSrc} alt="Village" className="mr-2 h-5 w-5 invert dark:invert-0" />
+                    <img src={villageIconSrc} alt="Village" className="mr-2 h-5 w-5 invert dark:invert-0 brightness-150 contrast-150" />
                     THE VILLAGE
                   </Button>
                 </TooltipTrigger>
