@@ -275,7 +275,7 @@ const Powers = () => {
                     data-tutorial="brook"
                   >
                     <TwoWaves className="mr-2 h-5 w-5" />
-                    THE BROOK
+                    THE BROOKS
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
