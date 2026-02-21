@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useInviteNotification } from "@/hooks/use-invite-notification";
 import { InviteNotificationModal } from "@/components/InviteNotificationModal";
+import villageIcon from "@/assets/village-icon.png";
 
 const Powers = () => {
   const navigate = useNavigate();
@@ -77,43 +78,7 @@ const Powers = () => {
     </svg>
   );
 
-  // Anvil & Hammer icon for The Village — carefully traced from reference
-  const VillageIcon = ({ className }: { className?: string }) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 100 100"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      {/* Anvil — single continuous outline */}
-      <path d="
-        M 8,52
-        C 10,46 18,42 26,42
-        L 74,42
-        L 74,48
-        L 70,48
-        L 70,56
-        C 68,62 70,66 74,72
-        L 74,78
-        L 26,78
-        L 26,72
-        C 30,66 32,62 30,56
-        L 30,52
-        C 24,54 16,56 8,52
-        Z
-      " />
-      {/* Hammer handle */}
-      <line x1="40" y1="42" x2="56" y2="18" />
-      {/* Hammer head — horizontal rectangle */}
-      <rect x="48" y="6" width="30" height="13" rx="2" />
-    </svg>
-  );
+  // Village icon is imported as an image asset
 
   // Town icon — buildings/storefronts outline
   const TownIcon = ({ className }: { className?: string }) => (
@@ -322,7 +287,7 @@ const Powers = () => {
                     className="w-full sm:w-auto min-w-[250px]"
                     data-tutorial="village"
                   >
-                    <VillageIcon className="mr-2 h-5 w-5" />
+                    <img src={villageIcon} alt="Village" className="mr-2 h-5 w-5 invert dark:invert-0" />
                     THE VILLAGE
                   </Button>
                 </TooltipTrigger>
