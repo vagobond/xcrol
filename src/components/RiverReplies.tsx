@@ -1,13 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
-import { formatDistanceToNow } from "date-fns";
-import { useNavigate } from "react-router-dom";
-import { MessageSquare, Send, Lock, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import { MessageSquare, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { MentionText } from "@/components/MentionText";
+import { RiverReplyItem } from "@/components/river/RiverReplyItem";
 
 export interface RiverReply {
   id: string;
@@ -19,6 +16,7 @@ export interface RiverReply {
   author_avatar_url: string | null;
   author_username: string | null;
   can_view_content: boolean;
+  parent_reply_id: string | null;
 }
 
 interface RiverRepliesProps {
@@ -29,19 +27,19 @@ interface RiverRepliesProps {
 }
 
 export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange }: RiverRepliesProps) => {
-  const navigate = useNavigate();
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
+  // Top-level replies only (no parent)
+  const topLevelReplies = replies.filter(r => !r.parent_reply_id);
   const replyCount = replies.length;
-  const visibleReplies = expanded ? replies : replies.slice(0, 2);
-  const hasMore = replyCount > 2;
+  const visibleReplies = expanded ? topLevelReplies : topLevelReplies.slice(0, 2);
+  const hasMore = topLevelReplies.length > 2;
 
   const handleSubmitReply = async () => {
     if (!currentUserId || !replyContent.trim()) return;
-
     setSubmitting(true);
     try {
       const { error } = await supabase
@@ -51,9 +49,7 @@ export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange 
           user_id: currentUserId,
           content: replyContent.trim(),
         });
-
       if (error) throw error;
-
       setReplyContent("");
       setShowReplyInput(false);
       toast.success("Reply posted");
@@ -63,30 +59,6 @@ export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange 
       toast.error("Failed to post reply");
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleDeleteReply = async (replyId: string) => {
-    try {
-      const { error } = await supabase
-        .from("river_replies")
-        .delete()
-        .eq("id", replyId);
-
-      if (error) throw error;
-      toast.success("Reply deleted");
-      onRepliesChange?.();
-    } catch (error) {
-      console.error("Error deleting reply:", error);
-      toast.error("Failed to delete reply");
-    }
-  };
-
-  const handleAuthorClick = (reply: RiverReply) => {
-    if (reply.author_username) {
-      navigate(`/${reply.author_username}`);
-    } else {
-      navigate(`/u/${reply.user_id}`);
     }
   };
 
@@ -139,71 +111,14 @@ export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange 
       {visibleReplies.length > 0 && (
         <div className="space-y-2">
           {visibleReplies.map((reply) => (
-            <div key={reply.id} className="flex gap-2 group">
-              <Avatar
-                className="h-7 w-7 cursor-pointer hover:ring-2 hover:ring-primary transition-all shrink-0 mt-0.5"
-                onClick={() => handleAuthorClick(reply)}
-              >
-                <AvatarImage src={reply.author_avatar_url || undefined} optimizeSize={64} />
-                <AvatarFallback className="text-xs">
-                  {reply.author_display_name?.[0]?.toUpperCase() || "?"}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="flex-1 min-w-0">
-                {reply.can_view_content ? (
-                  // Full reply visible - viewer is friends with replier
-                  <div className="bg-muted/50 rounded-lg px-3 py-2">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="text-sm font-medium cursor-pointer hover:underline"
-                        onClick={() => handleAuthorClick(reply)}
-                      >
-                        {reply.author_display_name || "Anonymous"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                    <p className="text-sm mt-0.5 whitespace-pre-wrap break-words">
-                      <MentionText content={reply.content || ""} />
-                    </p>
-                  </div>
-                ) : (
-                  // Masked reply - viewer is NOT friends with replier
-                  <div className="bg-muted/30 rounded-lg px-3 py-2 border border-dashed border-border/50">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="text-sm font-medium cursor-pointer hover:underline"
-                        onClick={() => handleAuthorClick(reply)}
-                      >
-                        {reply.author_display_name || "Someone"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">replied</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-                      <Lock className="h-3 w-3" />
-                      <span>Connect with {reply.author_display_name || "this person"} to see their reply</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Delete own replies */}
-                {reply.user_id === currentUserId && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 px-1 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => handleDeleteReply(reply.id)}
-                  >
-                    Delete
-                  </Button>
-                )}
-              </div>
-            </div>
+            <RiverReplyItem
+              key={reply.id}
+              reply={reply}
+              currentUserId={currentUserId}
+              allReplies={replies}
+              entryId={entryId}
+              onRepliesChange={onRepliesChange}
+            />
           ))}
 
           {/* Show more/less */}
@@ -222,7 +137,7 @@ export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange 
               ) : (
                 <>
                   <ChevronDown className="h-3 w-3 mr-1" />
-                  Show {replyCount - 2} more {replyCount - 2 === 1 ? "reply" : "replies"}
+                  Show {topLevelReplies.length - 2} more {topLevelReplies.length - 2 === 1 ? "reply" : "replies"}
                 </>
               )}
             </Button>
