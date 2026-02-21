@@ -77,7 +77,7 @@ const Powers = () => {
     </svg>
   );
 
-  // Village icon — group of people (community), no house shape
+  // Village icon — blacksmith's anvil
   const VillageIcon = ({ className }: { className?: string }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -91,15 +91,18 @@ const Powers = () => {
       strokeLinejoin="round"
       className={className}
     >
-      {/* Center person (front, taller) */}
-      <circle cx="12" cy="8" r="2" />
-      <path d="M9 21v-3a3 3 0 0 1 6 0v3" />
-      {/* Left person (behind) */}
-      <circle cx="6" cy="6" r="1.8" />
-      <path d="M3 19v-2a3 3 0 0 1 5 0" />
-      {/* Right person (behind) */}
-      <circle cx="18" cy="6" r="1.8" />
-      <path d="M16 17a3 3 0 0 1 5 0v2" />
+      {/* Anvil top (flat working surface) */}
+      <path d="M4 10h16" />
+      {/* Horn (left beak) */}
+      <path d="M4 10c-2 0-3 1-3 2" />
+      {/* Right heel */}
+      <path d="M20 10c1 0 2 .5 2 2h-2" />
+      {/* Body tapering down */}
+      <path d="M6 10v4h12v-4" />
+      {/* Waist */}
+      <path d="M8 14v3h8v-3" />
+      {/* Base */}
+      <path d="M5 17h14" />
     </svg>
   );
 
