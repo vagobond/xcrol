@@ -188,7 +188,13 @@ export default function TheRiver() {
       if (!newRepliesMap[r.entry_id]) {
         newRepliesMap[r.entry_id] = [];
       }
-      newRepliesMap[r.entry_id].push(r);
+      newRepliesMap[r.entry_id].push({
+        ...r,
+        author_display_name: r.display_name,
+        author_avatar_url: r.avatar_url,
+        author_username: r.username,
+        parent_reply_id: r.parent_reply_id || null,
+      });
     });
 
     const entriesWithAuthors: RiverEntry[] = data.map((e: any) => ({
@@ -230,7 +236,13 @@ export default function TheRiver() {
     const newRepliesMap: RepliesMap = {};
     (data || []).forEach((r: any) => {
       if (!newRepliesMap[r.entry_id]) newRepliesMap[r.entry_id] = [];
-      newRepliesMap[r.entry_id].push(r);
+      newRepliesMap[r.entry_id].push({
+        ...r,
+        author_display_name: r.display_name,
+        author_avatar_url: r.avatar_url,
+        author_username: r.username,
+        parent_reply_id: r.parent_reply_id || null,
+      });
     });
     setRepliesMap(newRepliesMap);
   }, [entries, user?.id]);

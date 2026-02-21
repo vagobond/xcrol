@@ -1495,6 +1495,7 @@ export type Database = {
           created_at: string
           entry_id: string
           id: string
+          parent_reply_id: string | null
           user_id: string
         }
         Insert: {
@@ -1502,6 +1503,7 @@ export type Database = {
           created_at?: string
           entry_id: string
           id?: string
+          parent_reply_id?: string | null
           user_id: string
         }
         Update: {
@@ -1509,6 +1511,7 @@ export type Database = {
           created_at?: string
           entry_id?: string
           id?: string
+          parent_reply_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1517,6 +1520,45 @@ export type Database = {
             columns: ["entry_id"]
             isOneToOne: false
             referencedRelation: "xcrol_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "river_replies_parent_reply_id_fkey"
+            columns: ["parent_reply_id"]
+            isOneToOne: false
+            referencedRelation: "river_replies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      river_reply_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          reply_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          reply_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          reply_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "river_reply_reactions_reply_id_fkey"
+            columns: ["reply_id"]
+            isOneToOne: false
+            referencedRelation: "river_replies"
             referencedColumns: ["id"]
           },
         ]
@@ -2161,15 +2203,16 @@ export type Database = {
       get_river_replies: {
         Args: { p_entry_ids: string[]; p_viewer_id?: string }
         Returns: {
-          author_avatar_url: string
-          author_display_name: string
-          author_username: string
+          avatar_url: string
           can_view_content: boolean
           content: string
           created_at: string
+          display_name: string
           entry_id: string
           id: string
+          parent_reply_id: string
           user_id: string
+          username: string
         }[]
       }
       get_user_invite_stats: { Args: { p_user_id: string }; Returns: Json }
