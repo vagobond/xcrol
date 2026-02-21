@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Globe, Waves, TreePine, Layers } from "lucide-react";
+import villageIconSrc from "@/assets/village-icon.png";
 import {
   Tooltip,
   TooltipContent,
@@ -312,7 +313,7 @@ const Powers = () => {
                     className="w-full sm:w-auto min-w-[250px]"
                     data-tutorial="village"
                   >
-                    <VillageIcon className="mr-2 h-5 w-5" />
+                    <img src={villageIconSrc} alt="Village" className="mr-2 h-5 w-5 invert dark:invert-0" />
                     THE VILLAGE
                   </Button>
                 </TooltipTrigger>
