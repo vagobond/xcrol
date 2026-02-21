@@ -104,25 +104,17 @@ export const SignUpForm = ({
       </div>
       <div className="space-y-2">
         <Label htmlFor="signup-invite-code">
-          Invite Code <span className="text-destructive">*</span>
+          Invite Code <span className="text-muted-foreground text-xs">(optional)</span>
         </Label>
         <Input
           id="signup-invite-code"
           type="text"
-          placeholder="Enter your invite code"
+          placeholder="Have an invite code? Enter it here"
           value={inviteCode}
           onChange={(e) => setInviteCode(e.target.value)}
           className="bg-muted/20 border-primary/30"
-          required
         />
         {errors.inviteCode && <p className="text-sm text-destructive">{errors.inviteCode}</p>}
-        <button
-          type="button"
-          onClick={() => setAuthView("waitlist")}
-          className="text-xs text-primary hover:text-primary/80 underline cursor-pointer"
-        >
-          No invite code? Get on the waitlist
-        </button>
       </div>
       <div className="space-y-2">
         <div className="flex items-start space-x-2">
