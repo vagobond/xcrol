@@ -145,13 +145,25 @@ export function NostrIdentitySection() {
   };
 
   const exportNsec = async () => {
-    const sk = await getSecretKey();
-    if (sk) {
-      const nsecEncoded = nip19.nsecEncode(sk);
-      navigator.clipboard.writeText(nsecEncoded);
-      toast.success("nsec copied to clipboard — keep it safe!");
-    } else {
-      toast.error("No local private key found");
+    try {
+      const sk = await getSecretKey();
+      if (sk) {
+        const nsecEncoded = nip19.nsecEncode(sk);
+        await navigator.clipboard.writeText(nsecEncoded);
+        toast.success("nsec copied to clipboard — keep it safe!");
+      } else {
+        toast.error("No local private key found");
+      }
+    } catch (err) {
+      console.error("Clipboard write failed:", err);
+      // Fallback: show nsec in a prompt so user can manually copy
+      const sk = await getSecretKey();
+      if (sk) {
+        const nsecEncoded = nip19.nsecEncode(sk);
+        window.prompt("Copy your nsec (private key):", nsecEncoded);
+      } else {
+        toast.error("No local private key found");
+      }
     }
   };
 
