@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
       console.log("Looking up authorization code...");
       const { data: authCode, error: codeError } = await supabase
         .from("oauth_authorization_codes")
-        .select("*, oauth_clients!inner(id, client_id, client_secret)")
+        .select("*, oauth_clients!inner(id, client_id, client_secret_hash)")
         .eq("code", code)
         .single();
 
@@ -130,7 +130,12 @@ Deno.serve(async (req) => {
 
       // Verify client secret (if provided) or PKCE code_verifier
       if (client_secret) {
-        if (authCode.oauth_clients.client_secret !== client_secret) {
+        // Verify using pgcrypto crypt comparison
+        const { data: secretMatch } = await supabase.rpc("verify_oauth_client_secret", {
+          p_client_id: authCode.oauth_clients.id,
+          p_secret: client_secret,
+        });
+        if (!secretMatch) {
           return new Response(
             JSON.stringify({ error: "invalid_client", error_description: "Invalid client secret" }),
             { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -212,7 +217,7 @@ Deno.serve(async (req) => {
       // Find existing token
       const { data: existingToken, error: tokenError } = await supabase
         .from("oauth_tokens")
-        .select("*, oauth_clients!inner(client_id, client_secret)")
+        .select("*, oauth_clients!inner(client_id, client_secret_hash)")
         .eq("refresh_token", refresh_token)
         .or("revoked.is.null,revoked.eq.false")
         .single();
@@ -241,11 +246,17 @@ Deno.serve(async (req) => {
         );
       }
 
-      if (client_secret && existingToken.oauth_clients.client_secret !== client_secret) {
-        return new Response(
-          JSON.stringify({ error: "invalid_client" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      if (client_secret) {
+        const { data: secretMatch } = await supabase.rpc("verify_oauth_client_secret", {
+          p_client_id: existingToken.oauth_clients.id,
+          p_secret: client_secret,
+        });
+        if (!secretMatch) {
+          return new Response(
+            JSON.stringify({ error: "invalid_client" }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
       }
 
       // Revoke old token

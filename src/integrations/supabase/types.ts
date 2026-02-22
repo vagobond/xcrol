@@ -1166,6 +1166,7 @@ export type Database = {
         Row: {
           client_id: string
           client_secret: string
+          client_secret_hash: string | null
           created_at: string
           description: string | null
           homepage_url: string | null
@@ -1180,6 +1181,7 @@ export type Database = {
         Insert: {
           client_id?: string
           client_secret?: string
+          client_secret_hash?: string | null
           created_at?: string
           description?: string | null
           homepage_url?: string | null
@@ -1194,6 +1196,7 @@ export type Database = {
         Update: {
           client_id?: string
           client_secret?: string
+          client_secret_hash?: string | null
           created_at?: string
           description?: string | null
           homepage_url?: string | null
@@ -2302,6 +2305,10 @@ export type Database = {
           is_valid: boolean
           target_country: string
         }[]
+      }
+      verify_oauth_client_secret: {
+        Args: { p_client_id: string; p_secret: string }
+        Returns: boolean
       }
     }
     Enums: {

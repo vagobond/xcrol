@@ -41,11 +41,18 @@ interface OAuthApp {
   created_at: string;
 }
 
+// Generate a cryptographically random hex string
+function generateSecret(bytes = 32): string {
+  const array = new Uint8Array(bytes);
+  crypto.getRandomValues(array);
+  return Array.from(array, b => b.toString(16).padStart(2, "0")).join("");
+}
+
 const DeveloperAppsManager = () => {
   const [apps, setApps] = useState<OAuthApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showCredentialsDialog, setShowCredentialsDialog] = useState<OAuthApp | null>(null);
+  const [showCredentialsDialog, setShowCredentialsDialog] = useState<{ app: OAuthApp; plainSecret: string } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<OAuthApp | null>(null);
   const [showEditDialog, setShowEditDialog] = useState<OAuthApp | null>(null);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -125,6 +132,9 @@ const DeveloperAppsManager = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Generate secret client-side so we can show it once
+      const plainSecret = generateSecret();
+
       const { data, error } = await supabase
         .from("oauth_clients")
         .insert({
@@ -134,6 +144,7 @@ const DeveloperAppsManager = () => {
           redirect_uris: redirectUris,
           logo_url: newApp.logo_url.trim() || null,
           owner_id: user.id,
+          client_secret: plainSecret, // trigger will hash this and clear the column
         })
         .select()
         .single();
@@ -142,7 +153,7 @@ const DeveloperAppsManager = () => {
 
       setApps(prev => [data, ...prev]);
       setShowCreateDialog(false);
-      setShowCredentialsDialog(data);
+      setShowCredentialsDialog({ app: data, plainSecret });
       setNewApp({ name: "", description: "", homepage_url: "", redirect_uris: "", logo_url: "" });
       toast.success("App created successfully!");
     } catch (error) {
@@ -319,26 +330,13 @@ const DeveloperAppsManager = () => {
                       </Button>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground w-20">Secret:</span>
-                      <code className="text-xs bg-muted px-2 py-1 rounded flex-1 truncate">
-                        {showSecrets[app.id] ? app.client_secret : "••••••••••••••••"}
-                      </code>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleShowSecret(app.id)}
-                      >
-                        {showSecrets[app.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(app.client_secret, "Client Secret")}
-                      >
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                    </div>
+                     <div className="flex items-center gap-2">
+                       <span className="text-xs text-muted-foreground w-20">Secret:</span>
+                       <code className="text-xs bg-muted px-2 py-1 rounded flex-1 truncate">
+                         ••••••••••••••••
+                       </code>
+                       <span className="text-xs text-muted-foreground italic">hashed</span>
+                     </div>
 
                     <div className="flex items-start gap-2">
                       <span className="text-xs text-muted-foreground w-20">Redirects:</span>
@@ -476,12 +474,12 @@ const DeveloperAppsManager = () => {
                 <Label>Client ID</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="flex-1 text-sm bg-muted px-3 py-2 rounded">
-                    {showCredentialsDialog.client_id}
+                    {showCredentialsDialog.app.client_id}
                   </code>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => copyToClipboard(showCredentialsDialog.client_id, "Client ID")}
+                    onClick={() => copyToClipboard(showCredentialsDialog.app.client_id, "Client ID")}
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
@@ -492,12 +490,12 @@ const DeveloperAppsManager = () => {
                 <Label>Client Secret</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="flex-1 text-sm bg-muted px-3 py-2 rounded break-all">
-                    {showCredentialsDialog.client_secret}
+                    {showCredentialsDialog.plainSecret}
                   </code>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => copyToClipboard(showCredentialsDialog.client_secret, "Client Secret")}
+                    onClick={() => copyToClipboard(showCredentialsDialog.plainSecret, "Client Secret")}
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
