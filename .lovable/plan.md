@@ -1,73 +1,67 @@
 
 
-# Plan: Enhance Data Sovereignty for Xcrol Users
+## Per-Category Notification Toggles in Settings
 
-## What you already have
-- OAuth scope controls (users choose what third-party apps can access)
-- Granular profile field visibility by friendship level
-- Connected apps management with revoke access
-- Account deletion request flow
-- Blocked users management
+### What this adds
+Users will be able to individually enable/disable each notification category (river replies, brook interactions, hosting requests, meetup requests, group interactions) from their Settings page. Disabled categories will be filtered out so those notifications never appear in the bell dropdown.
 
-## What's missing
+### Database Change
 
-### 1. Data Export ("Download My Data")
-The most impactful sovereignty feature: let users download everything Xcrol holds about them in a single JSON/ZIP file. This is also a GDPR/privacy law requirement in many jurisdictions.
+Add 5 new boolean columns to `user_settings`, all defaulting to `true` (opt-out model):
 
-**What gets exported:**
-- Profile info (display name, bio, hometown, etc.)
-- All Xcrol diary entries
-- Friends list (names + levels)
-- Messages (sent and received)
-- Brook posts and comments
-- Group memberships and posts
-- River replies
-- References (given and received)
-- Social links
-- Settings and preferences
-- Hosting/meetup preferences
-- Town listings
+| Column | Controls |
+|---|---|
+| `notify_river_replies` | Xcrol entry replies and nested reply notifications |
+| `notify_brook_activity` | Brook posts, comments, and reactions |
+| `notify_hosting_requests` | Hosting request notifications |
+| `notify_meetup_requests` | Meetup request notifications |
+| `notify_group_activity` | Group post comments, reactions, and comment reactions |
 
-**Implementation:**
-- Add a "Download My Data" button in the Settings page under Data & Privacy Controls
-- Create a backend function that collects all user data across tables, packages it as a structured JSON file, and returns it for download
-- Show a brief loading state while the export is generated
+SQL migration:
+```text
+ALTER TABLE public.user_settings
+  ADD COLUMN notify_river_replies boolean NOT NULL DEFAULT true,
+  ADD COLUMN notify_brook_activity boolean NOT NULL DEFAULT true,
+  ADD COLUMN notify_hosting_requests boolean NOT NULL DEFAULT true,
+  ADD COLUMN notify_meetup_requests boolean NOT NULL DEFAULT true,
+  ADD COLUMN notify_group_activity boolean NOT NULL DEFAULT true;
+```
 
-### 2. Activity Log (optional, lighter lift)
-A read-only log showing when third-party apps accessed user data (OAuth token usage). This gives users visibility into how their data is being used.
+No RLS changes needed -- existing policies already allow users to SELECT/UPDATE/UPSERT their own row.
 
-**Implementation:**
-- Add an `oauth_access_log` table that records each time a token is used
-- Display a simple list in the Connected Apps section showing recent access events
+### Frontend Changes
 
----
+**1. `src/components/settings/useSettingsData.ts`**
+- Add the 5 new fields to the `UserSettings` interface and `DEFAULT_SETTINGS` object.
+- Update `loadUserSettings` and `handleSettingChange` to include them (they already handle the full settings object generically, so this is just adding keys).
 
-## Technical Details
+**2. `src/components/settings/NotificationsPrivacySection.tsx`**
+- Add a new sub-section under the existing "Notifications" card with 5 toggle switches, one per category:
+  - "Xcrol Replies" -- replies to your daily entries and comments
+  - "Brook Activity" -- posts, comments, and reactions in your brooks
+  - "Hosting Requests" -- when someone requests to stay with you
+  - "Meetup Requests" -- when someone requests to meet up
+  - "Group Activity" -- comments and reactions on your group posts
 
-### Data Export Backend Function
-- New edge function: `supabase/functions/export-user-data/index.ts`
-- Authenticates the requesting user via JWT
-- Queries all relevant tables filtered by `user_id`
-- Returns a JSON response with all data organized by category
-- Frontend triggers the download as a `.json` file
+**3. `src/hooks/use-notifications.ts`**
+- After loading interaction notifications from the `notifications` table, fetch the user's settings and filter out notifications whose `type` maps to a disabled category.
+- Mapping:
+  - `river_reply`, `river_reply_reply` -> `notify_river_replies`
+  - `brook_post`, `brook_comment`, `brook_reaction` -> `notify_brook_activity`
+  - `hosting_request` -> `notify_hosting_requests`
+  - `meetup_request` -> `notify_meetup_requests`
+  - `group_comment`, `group_reaction`, `group_comment_reaction` -> `notify_group_activity`
+- The notification count will automatically reflect only enabled categories.
 
-### Data Export Frontend
-- New "Download My Data" card in `src/pages/Settings.tsx`
-- Button calls the edge function, receives JSON, triggers browser download
-- Loading spinner while generating
+### What stays unchanged
+- The database triggers still fire and insert all notifications regardless of settings (preserving a complete audit trail).
+- Existing notification types (friend requests, pending friendships, messages, references) are unaffected -- they use separate loading logic and are not filtered by these new toggles.
+- No changes to any page components, routing, or other settings sections.
+- The two existing toggles ("Email Notifications" and "Friend Request Alerts") remain as-is.
 
-### Activity Log (if included)
-- New migration: `oauth_access_log` table with columns: `id`, `client_id`, `user_id`, `scope_used`, `endpoint`, `accessed_at`
-- Update OAuth edge functions to log access events
-- New UI section in Connected Apps showing recent access
-
----
-
-## Recommended approach
-Start with **Data Export only** -- it's the highest-value sovereignty feature and stands on its own. The Activity Log can be added later as a follow-up.
-
-## Files to create/modify
-- **Create:** `supabase/functions/export-user-data/index.ts` -- backend function to gather and return all user data
-- **Modify:** `src/pages/Settings.tsx` -- add Download My Data card
-- **Modify:** `src/components/settings/DataPrivacySection.tsx` -- add export button within existing Data & Privacy section (alternative placement)
+### Files touched (summary)
+- 1 new migration file (ALTER TABLE)
+- `src/components/settings/useSettingsData.ts` -- add 5 fields
+- `src/components/settings/NotificationsPrivacySection.tsx` -- add 5 toggle rows
+- `src/hooks/use-notifications.ts` -- filter interaction notifications by settings
 
