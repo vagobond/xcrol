@@ -1874,6 +1874,11 @@ export type Database = {
           email_notifications: boolean
           friend_request_notifications: boolean
           id: string
+          notify_brook_activity: boolean
+          notify_group_activity: boolean
+          notify_hosting_requests: boolean
+          notify_meetup_requests: boolean
+          notify_river_replies: boolean
           show_online_status: boolean
           updated_at: string
           user_id: string
@@ -1888,6 +1893,11 @@ export type Database = {
           email_notifications?: boolean
           friend_request_notifications?: boolean
           id?: string
+          notify_brook_activity?: boolean
+          notify_group_activity?: boolean
+          notify_hosting_requests?: boolean
+          notify_meetup_requests?: boolean
+          notify_river_replies?: boolean
           show_online_status?: boolean
           updated_at?: string
           user_id: string
@@ -1902,6 +1912,11 @@ export type Database = {
           email_notifications?: boolean
           friend_request_notifications?: boolean
           id?: string
+          notify_brook_activity?: boolean
+          notify_group_activity?: boolean
+          notify_hosting_requests?: boolean
+          notify_meetup_requests?: boolean
+          notify_river_replies?: boolean
           show_online_status?: boolean
           updated_at?: string
           user_id?: string

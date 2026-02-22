@@ -11,6 +11,11 @@ export interface UserSettings {
   default_share_hometown: boolean;
   default_share_connections: boolean;
   default_share_xcrol: boolean;
+  notify_river_replies: boolean;
+  notify_brook_activity: boolean;
+  notify_hosting_requests: boolean;
+  notify_meetup_requests: boolean;
+  notify_group_activity: boolean;
 }
 
 export interface DeletionRequest {
@@ -29,6 +34,11 @@ export const DEFAULT_SETTINGS: UserSettings = {
   default_share_hometown: false,
   default_share_connections: false,
   default_share_xcrol: false,
+  notify_river_replies: true,
+  notify_brook_activity: true,
+  notify_hosting_requests: true,
+  notify_meetup_requests: true,
+  notify_group_activity: true,
 };
 
 export function useSettingsData(userId: string | undefined) {
@@ -65,6 +75,11 @@ export function useSettingsData(userId: string | undefined) {
           default_share_hometown: data.default_share_hometown,
           default_share_connections: data.default_share_connections,
           default_share_xcrol: data.default_share_xcrol,
+          notify_river_replies: data.notify_river_replies ?? true,
+          notify_brook_activity: data.notify_brook_activity ?? true,
+          notify_hosting_requests: data.notify_hosting_requests ?? true,
+          notify_meetup_requests: data.notify_meetup_requests ?? true,
+          notify_group_activity: data.notify_group_activity ?? true,
         });
       }
       setSettingsLoaded(true);
