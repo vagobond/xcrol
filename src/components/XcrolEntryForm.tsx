@@ -11,6 +11,7 @@ import { Scroll, Link as LinkIcon, Save, Loader2, AlertTriangle, MapPin } from "
 import { useHometownDate } from "@/hooks/use-hometown-date";
 import { UserMentionInput } from "@/components/UserMentionInput";
 import { useNavigate } from "react-router-dom";
+import { isNostrPublishEnabled, publishToNostr as publishNoteToNostr } from "@/lib/nostr-publish";
 
 interface XcrolEntryFormProps {
   userId: string;
@@ -126,6 +127,23 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
 
         if (error) throw error;
         toast.success("Daily update posted!");
+      }
+
+      // Publish to NOSTR if enabled
+      if (isNostrPublishEnabled()) {
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("nostr_npub")
+            .eq("id", userId)
+            .maybeSingle();
+          if (profile?.nostr_npub) {
+            const ok = await publishNoteToNostr(content.trim());
+            if (ok) toast.success("Also published to NOSTR!");
+          }
+        } catch (e) {
+          console.error("NOSTR publish failed:", e);
+        }
       }
 
       await loadTodayEntry();
