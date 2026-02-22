@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
+import xcrolLogo from "@/assets/xcrol-logo.png";
 
 
 const Welcome = () => {
@@ -12,13 +13,7 @@ const Welcome = () => {
   const [animationPhase, setAnimationPhase] = useState<"gif" | "dissolve" | "complete">("gif");
   const [isGifLoading, setIsGifLoading] = useState(true);
   const [audioReady, setAudioReady] = useState(false);
-  const [logoSrc, setLogoSrc] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Lazy-load logo after GIF phase starts
-  useEffect(() => {
-    import("@/assets/xcrol-logo.png").then((mod) => setLogoSrc(mod.default));
-  }, []);
 
   // Check if user is already logged in - redirect to powers
   useEffect(() => {
@@ -164,13 +159,12 @@ const Welcome = () => {
         >
           <div className="space-y-6 animate-fade-in">
             {/* Logo Image */}
-            {logoSrc && (
-              <img 
-                src={logoSrc}
-                alt="XCROL"
-                className="w-[400px] md:w-[500px] lg:w-[600px] mx-auto drop-shadow-[0_0_40px_rgba(139,92,246,0.4)] animate-pulse-slow"
-              />
-            )}
+            <img 
+              src={xcrolLogo}
+              alt="XCROL"
+              fetchPriority="high"
+              className="w-[400px] md:w-[500px] lg:w-[600px] mx-auto drop-shadow-[0_0_40px_rgba(139,92,246,0.4)] animate-pulse-slow"
+            />
             <div className="space-y-3 max-w-2xl mx-auto">
               <p className="text-xl md:text-2xl text-foreground/90 font-bold italic">
                 Pronounced Scroll.
