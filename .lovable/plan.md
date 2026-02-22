@@ -1,72 +1,73 @@
 
 
-# Plan: Fix High Priority (Error Level) Security Findings
+# Plan: Enhance Data Sovereignty for Xcrol Users
 
-## Summary
+## What you already have
+- OAuth scope controls (users choose what third-party apps can access)
+- Granular profile field visibility by friendship level
+- Connected apps management with revoke access
+- Account deletion request flow
+- Blocked users management
 
-There are **2 error-level findings** from the security scan:
+## What's missing
 
-1. **Profiles table: email column exposed** -- Any authenticated user can SELECT the `email` column directly from the profiles table. While most sensitive fields (phone, addresses, WhatsApp, etc.) are already locked down via column-level privileges, `email` is still readable by any authenticated user.
+### 1. Data Export ("Download My Data")
+The most impactful sovereignty feature: let users download everything Xcrol holds about them in a single JSON/ZIP file. This is also a GDPR/privacy law requirement in many jurisdictions.
 
-2. **OAuth client secrets stored in plain text** -- The `oauth_clients` table has a `client_secret` column with secrets in plain text. A `client_secret_hash` column already exists but isn't used. If an account is compromised, secrets can be read directly.
+**What gets exported:**
+- Profile info (display name, bio, hometown, etc.)
+- All Xcrol diary entries
+- Friends list (names + levels)
+- Messages (sent and received)
+- Brook posts and comments
+- Group memberships and posts
+- River replies
+- References (given and received)
+- Social links
+- Settings and preferences
+- Hosting/meetup preferences
+- Town listings
 
----
+**Implementation:**
+- Add a "Download My Data" button in the Settings page under Data & Privacy Controls
+- Create a backend function that collects all user data across tables, packages it as a structured JSON file, and returns it for download
+- Show a brief loading state while the export is generated
 
-## Fix 1: Revoke direct email column access on profiles
+### 2. Activity Log (optional, lighter lift)
+A read-only log showing when third-party apps accessed user data (OAuth token usage). This gives users visibility into how their data is being used.
 
-**What changes:**
-- A database migration to revoke the `SELECT` privilege on the `email` column for the `authenticated` role
-- The `email` field is already properly gated through `get_visible_profile()` and `get_own_profile()`, so no frontend changes are needed
-
-**Migration:**
-```sql
-REVOKE SELECT (email) ON public.profiles FROM authenticated;
-```
-
-**Risk:** Low. All existing code accesses email through security definer functions, not direct table queries. This just closes the last gap.
-
----
-
-## Fix 2: Hash OAuth client secrets
-
-**What changes:**
-
-### A. Database migration
-- Populate the existing `client_secret_hash` column with bcrypt hashes of current plain-text secrets
-- Clear the plain-text `client_secret` column so secrets are no longer readable
-- Note: This is a one-way operation -- existing secrets cannot be viewed after hashing
-
-### B. Edge function update (`oauth-token/index.ts`)
-- Instead of comparing `client_secret` directly (`=== client_secret`), use bcrypt to verify the submitted secret against the stored hash
-- Applies to both the authorization_code and refresh_token grant flows
-- Import a Deno-compatible bcrypt library (e.g., `https://deno.land/x/bcrypt/mod.ts`)
-
-### C. Developer app registration flow
-- When a new OAuth app is registered, hash the secret before storing it
-- Show the plain-text secret to the developer only once at creation time (standard practice)
-
-**Technical details for the edge function change:**
-
-Current (insecure):
-```typescript
-if (authCode.oauth_clients.client_secret !== client_secret) { ... }
-```
-
-New (secure):
-```typescript
-import { compare } from "https://deno.land/x/bcrypt/mod.ts";
-// ...
-const isValid = await compare(client_secret, authCode.oauth_clients.client_secret_hash);
-if (!isValid) { ... }
-```
-
-The SELECT queries in the edge function will switch from reading `client_secret` to reading `client_secret_hash`.
+**Implementation:**
+- Add an `oauth_access_log` table that records each time a token is used
+- Display a simple list in the Connected Apps section showing recent access events
 
 ---
 
-## After implementation
+## Technical Details
 
-- Re-run the security scan to confirm both error-level findings are resolved
-- Mark the profiles finding as resolved once the email column grant is revoked
-- Mark the OAuth secrets finding as resolved once hashing is in place
+### Data Export Backend Function
+- New edge function: `supabase/functions/export-user-data/index.ts`
+- Authenticates the requesting user via JWT
+- Queries all relevant tables filtered by `user_id`
+- Returns a JSON response with all data organized by category
+- Frontend triggers the download as a `.json` file
+
+### Data Export Frontend
+- New "Download My Data" card in `src/pages/Settings.tsx`
+- Button calls the edge function, receives JSON, triggers browser download
+- Loading spinner while generating
+
+### Activity Log (if included)
+- New migration: `oauth_access_log` table with columns: `id`, `client_id`, `user_id`, `scope_used`, `endpoint`, `accessed_at`
+- Update OAuth edge functions to log access events
+- New UI section in Connected Apps showing recent access
+
+---
+
+## Recommended approach
+Start with **Data Export only** -- it's the highest-value sovereignty feature and stands on its own. The Activity Log can be added later as a follow-up.
+
+## Files to create/modify
+- **Create:** `supabase/functions/export-user-data/index.ts` -- backend function to gather and return all user data
+- **Modify:** `src/pages/Settings.tsx` -- add Download My Data card
+- **Modify:** `src/components/settings/DataPrivacySection.tsx` -- add export button within existing Data & Privacy section (alternative placement)
 
