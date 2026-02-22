@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.send-waitlist-acceptance]
 verify_jwt = true
+
+[functions.export-user-data]
+verify_jwt = true
