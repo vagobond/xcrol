@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xcrol-v1';
+const CACHE_NAME = 'xcrol-v2';
 const STATIC_ASSETS = [
   '/',
   '/favicon.png',
@@ -25,12 +25,20 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API/dynamic, cache-first for static
+// Check if a URL points to a Vite hashed asset (contains content hash in filename)
+function isHashedAsset(url) {
+  return url.pathname.startsWith('/assets/') && /[-_.][a-zA-Z0-9]{6,}\.\w+$/.test(url.pathname);
+}
+
+// Fetch handler with tiered caching strategy
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Network-first for API calls (Supabase, edge functions, dynamic data like River entries)
+  // Skip non-GET requests
+  if (request.method !== 'GET') return;
+
+  // Network-first for API calls (Supabase, edge functions, dynamic data)
   if (
     url.pathname.startsWith('/rest/') ||
     url.pathname.startsWith('/functions/') ||
@@ -39,7 +47,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response.ok && request.method === 'GET') {
+          if (response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
@@ -50,17 +58,60 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for static assets
+  // Cache-first with immutable treatment for hashed assets (/assets/*)
+  // These filenames change on every build, so they're safe to cache forever
+  if (isHashedAsset(url)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for unhashed static files (favicon, audio, og-image, etc.)
+  // Serve cached version instantly, then update cache in background
+  if (
+    url.pathname.startsWith('/audio/') ||
+    url.pathname.startsWith('/video/') ||
+    url.pathname === '/favicon.png' ||
+    url.pathname === '/favicon.ico' ||
+    url.pathname === '/og-image.png' ||
+    url.pathname === '/manifest.json'
+  ) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const fetchPromise = fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        }).catch(() => cached);
+
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // Default: network-first for navigation and other requests
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
-        if (response.ok && request.method === 'GET') {
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
         return response;
-      });
-    })
+      })
+      .catch(() => caches.match(request))
   );
 });
