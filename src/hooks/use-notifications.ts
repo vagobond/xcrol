@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useUnreadMessages } from "@/hooks/use-unread-messages";
+import type { InteractionNotification } from "@/components/notifications/InteractionNotificationItem";
 
 export interface FriendRequest {
   id: string;
@@ -58,6 +59,7 @@ export const useNotifications = () => {
   const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
   const [newReferences, setNewReferences] = useState<NewReference[]>([]);
   const [unreadMessageSenders, setUnreadMessageSenders] = useState<UnreadMessageSender[]>([]);
+  const [interactionNotifications, setInteractionNotifications] = useState<InteractionNotification[]>([]);
   const { unreadCount: unreadMessageCount } = useUnreadMessages(user?.id || null);
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export const useNotifications = () => {
       loadPendingFriendships();
       loadNewReferences();
       loadUnreadMessageSenders();
+      loadInteractionNotifications();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -259,11 +262,54 @@ export const useNotifications = () => {
     setNewReferences((prev) => prev.filter((ref) => ref.id !== refId));
   };
 
+  const loadInteractionNotifications = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", user.id)
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error || !data || data.length === 0) {
+      setInteractionNotifications([]);
+      return;
+    }
+
+    const actorIds = [...new Set(data.map((n: any) => n.actor_id))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", actorIds);
+
+    const profilesMap = new Map(
+      (profiles || []).map((p) => [p.id, p])
+    );
+
+    setInteractionNotifications(
+      data.map((n: any) => ({
+        ...n,
+        actor_profile: profilesMap.get(n.actor_id) || undefined,
+      }))
+    );
+  };
+
+  const markInteractionRead = useCallback(async (notifId: string) => {
+    await supabase
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("id", notifId);
+    setInteractionNotifications((prev) => prev.filter((n) => n.id !== notifId));
+  }, []);
+
   const totalNotifications =
     requests.length +
     pendingFriendships.length +
     unreadMessageCount +
-    newReferences.length;
+    newReferences.length +
+    interactionNotifications.length;
 
   return {
     user,
@@ -272,8 +318,10 @@ export const useNotifications = () => {
     newReferences,
     unreadMessageCount,
     unreadMessageSenders,
+    interactionNotifications,
     totalNotifications,
     dismissReferenceNotification,
+    markInteractionRead,
     loadRequests,
     loadPendingFriendships,
   };
