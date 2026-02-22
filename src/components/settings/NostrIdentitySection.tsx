@@ -67,6 +67,9 @@ export function NostrIdentitySection() {
   const handleGenerate = async () => {
     setLoading(true);
     try {
+      // Clear any existing key material first to guarantee a fresh keypair
+      await deleteSecretKey();
+
       const sk = generateSecretKey();
       const pk = getPublicKey(sk);
       const npubEncoded = nip19.npubEncode(pk);
