@@ -371,9 +371,9 @@ const Powers = () => {
           </button>
           <button 
             onClick={() => navigate("/install-app")}
-            className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-4 text-sm"
+            className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-4 text-sm font-bold"
           >
-            Install the Xcrol App
+            Install the XCROL App
           </button>
         </div>
       </div>
