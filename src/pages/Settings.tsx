@@ -14,6 +14,7 @@ import { DataPrivacySection } from "@/components/settings/DataPrivacySection";
 import { NotificationsPrivacySection } from "@/components/settings/NotificationsPrivacySection";
 import { PasswordSection } from "@/components/settings/PasswordSection";
 import { AccountDeletionSection } from "@/components/settings/AccountDeletionSection";
+import { NostrIdentitySection } from "@/components/settings/NostrIdentitySection";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -107,6 +108,8 @@ const Settings = () => {
                 <DeveloperAppsManager />
               </CardContent>
             </Card>
+
+            <NostrIdentitySection />
 
             {/* Help & Tutorial */}
             <Card>
