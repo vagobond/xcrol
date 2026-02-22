@@ -1,8 +1,7 @@
 import { finalizeEvent, verifyEvent } from "nostr-tools/pure";
-import * as nip19 from "nostr-tools/nip19";
 import { Relay } from "nostr-tools/relay";
+import { getSecretKey } from "@/lib/nostr-keystore";
 
-const STORAGE_KEY = "xcrol_nostr_nsec_encrypted";
 const PUBLISH_KEY = "xcrol_nostr_publish";
 
 const DEFAULT_RELAYS = [
@@ -10,14 +9,6 @@ const DEFAULT_RELAYS = [
   "wss://relay.nostr.band",
   "wss://nos.lol",
 ];
-
-function decryptNsec(encoded: string): string {
-  try {
-    return atob(encoded);
-  } catch {
-    return "";
-  }
-}
 
 export function isNostrPublishEnabled(): boolean {
   return localStorage.getItem(PUBLISH_KEY) === "true";
@@ -28,20 +19,8 @@ export function setNostrPublishEnabled(val: boolean) {
 }
 
 export async function publishToNostr(content: string): Promise<boolean> {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return false;
-
-  const nsec = decryptNsec(stored);
-  if (!nsec || !nsec.startsWith("nsec")) return false;
-
-  let sk: Uint8Array;
-  try {
-    const decoded = nip19.decode(nsec);
-    if (decoded.type !== "nsec") return false;
-    sk = decoded.data as Uint8Array;
-  } catch {
-    return false;
-  }
+  const sk = await getSecretKey();
+  if (!sk) return false;
 
   const event = finalizeEvent(
     {
@@ -56,7 +35,7 @@ export async function publishToNostr(content: string): Promise<boolean> {
   if (!verifyEvent(event)) return false;
 
   let published = false;
-  const results = await Promise.allSettled(
+  await Promise.allSettled(
     DEFAULT_RELAYS.map(async (url) => {
       const relay = await Relay.connect(url);
       try {
