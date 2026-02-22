@@ -38,6 +38,9 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
+  // Never intercept .well-known paths (NIP-05, etc.) — serve directly from origin
+  if (url.pathname.startsWith('/.well-known/')) return;
+
   // Network-first for API calls (Supabase, edge functions, dynamic data)
   if (
     url.pathname.startsWith('/rest/') ||
