@@ -1417,6 +1417,7 @@ export type Database = {
           mailing_address_visibility: string | null
           nicknames: string | null
           nicknames_visibility: string | null
+          nostr_handle: string | null
           nostr_npub: string | null
           phone_number: string | null
           private_email: string | null
@@ -1453,6 +1454,7 @@ export type Database = {
           mailing_address_visibility?: string | null
           nicknames?: string | null
           nicknames_visibility?: string | null
+          nostr_handle?: string | null
           nostr_npub?: string | null
           phone_number?: string | null
           private_email?: string | null
@@ -1489,6 +1491,7 @@ export type Database = {
           mailing_address_visibility?: string | null
           nicknames?: string | null
           nicknames_visibility?: string | null
+          nostr_handle?: string | null
           nostr_npub?: string | null
           phone_number?: string | null
           private_email?: string | null
@@ -2225,6 +2228,7 @@ export type Database = {
           mailing_address_visibility: string | null
           nicknames: string | null
           nicknames_visibility: string | null
+          nostr_handle: string | null
           nostr_npub: string | null
           phone_number: string | null
           private_email: string | null
