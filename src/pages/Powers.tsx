@@ -362,12 +362,20 @@ const Powers = () => {
           </div>
         </TooltipProvider>
 
-        <button 
-          onClick={() => navigate("/getting-started")}
-          className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-4 text-sm"
-        >
-          Getting Started / FAQ
-        </button>
+        <div className="flex flex-col items-center gap-2">
+          <button 
+            onClick={() => navigate("/getting-started")}
+            className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-4 text-sm"
+          >
+            Getting Started / FAQ
+          </button>
+          <button 
+            onClick={() => navigate("/install-app")}
+            className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-4 text-sm"
+          >
+            Install the Xcrol App
+          </button>
+        </div>
       </div>
 
       {user && (
