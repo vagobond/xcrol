@@ -2091,6 +2091,25 @@ export type Database = {
         Returns: boolean
       }
       check_invite_code: { Args: { p_invite_code: string }; Returns: boolean }
+      get_admin_profiles: {
+        Args: never
+        Returns: {
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          username: string
+        }[]
+      }
+      get_admin_profiles_by_ids: {
+        Args: { p_ids: string[] }
+        Returns: {
+          display_name: string
+          email: string
+          id: string
+          username: string
+        }[]
+      }
       get_authorized_app_info: {
         Args: { p_client_id: string }
         Returns: {

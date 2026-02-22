@@ -78,7 +78,7 @@ export function useAdminData() {
         refsResult,
         deletionResult,
       ] = await Promise.all([
-        supabase.from("profiles").select("id, display_name, username, email, created_at").order("created_at", { ascending: false }),
+        supabase.rpc("get_admin_profiles") as any,
         supabase.from("user_roles").select("id, user_id, role, created_at").order("created_at", { ascending: false }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("friendships").select("*", { count: "exact", head: true }),
@@ -109,9 +109,7 @@ export function useAdminData() {
         const inviterProfiles = new Map<string, { display_name: string | null; email: string | null }>();
         if (inviterIds.length > 0) {
           const { data: invProfiles } = await supabase
-            .from("profiles")
-            .select("id, display_name, email")
-            .in("id", inviterIds);
+            .rpc("get_admin_profiles_by_ids", { p_ids: inviterIds }) as any;
           (invProfiles || []).forEach((p) => {
             inviterProfiles.set(p.id, { display_name: p.display_name, email: p.email });
           });
@@ -151,8 +149,8 @@ export function useAdminData() {
 
       const profilesMap = new Map<string, { display_name: string | null; email: string | null; username?: string | null }>();
       if (allUserIds.size > 0) {
-        const { data: profiles } = await supabase.from("profiles").select("id, display_name, email, username").in("id", [...allUserIds]);
-        (profiles || []).forEach((p) => { profilesMap.set(p.id, { display_name: p.display_name, email: p.email, username: p.username }); });
+        const { data: profiles } = await supabase.rpc("get_admin_profiles_by_ids", { p_ids: [...allUserIds] }) as any;
+        (profiles || []).forEach((p: any) => { profilesMap.set(p.id, { display_name: p.display_name, email: p.email, username: p.username }); });
       }
 
       if (rolesResult.data && rolesResult.data.length > 0) {
