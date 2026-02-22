@@ -98,7 +98,7 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
                   href={entry.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm"
+                  className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm max-w-full truncate"
                 >
                   <ExternalLink className="h-3 w-3" />
                   {new URL(entry.link).hostname}
