@@ -23,6 +23,7 @@ import UnreadMessagesItem from "@/components/notifications/UnreadMessagesItem";
 import PendingFriendshipItem from "@/components/notifications/PendingFriendshipItem";
 import FriendRequestItem from "@/components/notifications/FriendRequestItem";
 import ReferenceItem from "@/components/notifications/ReferenceItem";
+import InteractionNotificationItem from "@/components/notifications/InteractionNotificationItem";
 
 const NotificationBell = () => {
   const navigate = useNavigate();
@@ -33,8 +34,10 @@ const NotificationBell = () => {
     newReferences,
     unreadMessageCount,
     unreadMessageSenders,
+    interactionNotifications,
     totalNotifications,
     dismissReferenceNotification,
+    markInteractionRead,
     loadRequests,
     loadPendingFriendships,
   } = useNotifications();
@@ -197,6 +200,14 @@ const NotificationBell = () => {
                     key={ref.id}
                     reference={ref}
                     onDismiss={dismissReferenceNotification}
+                  />
+                ))}
+
+                {interactionNotifications.map((notif) => (
+                  <InteractionNotificationItem
+                    key={notif.id}
+                    notification={notif}
+                    onMarkRead={markInteractionRead}
                   />
                 ))}
               </div>
