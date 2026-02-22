@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import * as nip19 from "nostr-tools/nip19";
-import { isNostrPublishEnabled, setNostrPublishEnabled } from "@/lib/nostr-publish";
+import { isNostrPublishEnabled, setNostrPublishEnabled, isBrookBridgeEnabled, setBrookBridgeEnabled } from "@/lib/nostr-publish";
 import { storeSecretKey, getSecretKey, hasLocalKey as checkHasLocalKey, deleteSecretKey } from "@/lib/nostr-keystore";
 
 export function NostrIdentitySection() {
@@ -22,6 +22,7 @@ export function NostrIdentitySection() {
   const [importValue, setImportValue] = useState("");
   const [showImport, setShowImport] = useState(false);
   const [publishToNostr, setPublishToNostr] = useState(isNostrPublishEnabled());
+  const [brookBridge, setBrookBridge] = useState(isBrookBridgeEnabled());
   const [localKeyExists, setLocalKeyExists] = useState(false);
 
   // Load existing npub from profile
@@ -223,6 +224,26 @@ export function NostrIdentitySection() {
                         setPublishToNostr(checked);
                         setNostrPublishEnabled(checked);
                         toast.success(checked ? "Xcrol entries will be published to NOSTR" : "NOSTR publishing disabled");
+                      }}
+                    />
+                  </div>
+                )}
+
+                {localKeyExists && (
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center gap-2">
+                      <Radio className="w-4 h-4 text-muted-foreground" />
+                      <Label htmlFor="brook-bridge-toggle" className="text-sm">
+                        Bridge Brook posts to NOSTR (NIP-17 DM)
+                      </Label>
+                    </div>
+                    <Switch
+                      id="brook-bridge-toggle"
+                      checked={brookBridge}
+                      onCheckedChange={(checked) => {
+                        setBrookBridge(checked);
+                        setBrookBridgeEnabled(checked);
+                        toast.success(checked ? "Brook posts will be bridged via NIP-17" : "Brook bridge disabled");
                       }}
                     />
                   </div>

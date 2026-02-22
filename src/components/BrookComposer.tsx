@@ -10,6 +10,11 @@ import { Link2, Send, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { useHometownDate } from "@/hooks/use-hometown-date";
 import { useNavigate } from "react-router-dom";
+import { isBrookBridgeEnabled } from "@/lib/nostr-publish";
+import { useNostrKey } from "@/hooks/use-nostr-key";
+import * as nip17 from "nostr-tools/nip17";
+import * as nip19 from "nostr-tools/nip19";
+import { Relay } from "nostr-tools/relay";
 
 interface BrookComposerProps {
   brookId: string;
@@ -19,6 +24,7 @@ interface BrookComposerProps {
 
 export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerProps) => {
   const navigate = useNavigate();
+  const { privateKey: nostrPrivateKey } = useNostrKey();
   const { todayDate, loading: dateLoading, timezone, hasHometown } = useHometownDate(userId);
   const [content, setContent] = useState("");
   const [link, setLink] = useState("");
@@ -111,6 +117,48 @@ export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerP
           content: `${senderName} posted in your Brook! Check it out.`,
           platform_suggestion: `brook_notification:${brookId}`
         });
+
+      // NIP-17 bridge: send encrypted DM to partner's npub if enabled
+      if (isBrookBridgeEnabled() && nostrPrivateKey) {
+        try {
+          // Get both users' npubs
+          const { data: partnerProfile } = await supabase
+            .from("profiles")
+            .select("nostr_npub")
+            .eq("id", otherUserId)
+            .maybeSingle();
+
+          const { data: myProfile2 } = await supabase
+            .from("profiles")
+            .select("nostr_npub")
+            .eq("id", userId)
+            .maybeSingle();
+
+          if (partnerProfile?.nostr_npub && myProfile2?.nostr_npub) {
+            // Decode partner npub to hex pubkey
+            const decoded = nip19.decode(partnerProfile.nostr_npub);
+            if (decoded.type === "npub") {
+              const recipientPubkeyHex = decoded.data as string;
+              const wrappedEvent = nip17.wrapEvent(
+                nostrPrivateKey,
+                { publicKey: recipientPubkeyHex },
+                content.trim()
+              );
+
+              const relays = ["wss://relay.damus.io", "wss://relay.nostr.band", "wss://nos.lol"];
+              await Promise.allSettled(
+                relays.map(async (url) => {
+                  const relay = await Relay.connect(url);
+                  try { await relay.publish(wrappedEvent); } finally { relay.close(); }
+                })
+              );
+              toast.success("Brook post also sent as NIP-17 DM!");
+            }
+          }
+        } catch (e) {
+          console.error("NIP-17 bridge failed:", e);
+        }
+      }
 
       toast.success("Posted to your Brook!");
       setContent("");

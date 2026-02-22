@@ -3,12 +3,21 @@ import { Relay } from "nostr-tools/relay";
 import { getSecretKey } from "@/lib/nostr-keystore";
 
 const PUBLISH_KEY = "xcrol_nostr_publish";
+const BROOK_BRIDGE_KEY = "xcrol_nostr_brook_bridge";
 
 const DEFAULT_RELAYS = [
   "wss://relay.damus.io",
   "wss://relay.nostr.band",
   "wss://nos.lol",
 ];
+
+export function isBrookBridgeEnabled(): boolean {
+  return localStorage.getItem(BROOK_BRIDGE_KEY) === "true";
+}
+
+export function setBrookBridgeEnabled(val: boolean) {
+  localStorage.setItem(BROOK_BRIDGE_KEY, val ? "true" : "false");
+}
 
 export function isNostrPublishEnabled(): boolean {
   return localStorage.getItem(PUBLISH_KEY) === "true";
