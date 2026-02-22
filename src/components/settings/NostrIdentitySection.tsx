@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Key, Copy, Download, Upload, Loader2 } from "lucide-react";
+import { Key, Copy, Download, Upload, Loader2, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import * as nip19 from "nostr-tools/nip19";
+import { isNostrPublishEnabled, setNostrPublishEnabled } from "@/lib/nostr-publish";
 
 const STORAGE_KEY = "xcrol_nostr_nsec_encrypted";
 
@@ -35,6 +36,7 @@ export function NostrIdentitySection() {
   const [loading, setLoading] = useState(false);
   const [importValue, setImportValue] = useState("");
   const [showImport, setShowImport] = useState(false);
+  const [publishToNostr, setPublishToNostr] = useState(isNostrPublishEnabled());
 
   // Load existing npub from profile
   useEffect(() => {
@@ -216,6 +218,26 @@ export function NostrIdentitySection() {
                   <p className="text-xs text-muted-foreground">
                     Private key not found on this device. Import it to sign events.
                   </p>
+                )}
+
+                {hasLocalKey() && (
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center gap-2">
+                      <Radio className="w-4 h-4 text-muted-foreground" />
+                      <Label htmlFor="publish-toggle" className="text-sm">
+                        Auto-publish Xcrol entries to NOSTR
+                      </Label>
+                    </div>
+                    <Switch
+                      id="publish-toggle"
+                      checked={publishToNostr}
+                      onCheckedChange={(checked) => {
+                        setPublishToNostr(checked);
+                        setNostrPublishEnabled(checked);
+                        toast.success(checked ? "Xcrol entries will be published to NOSTR" : "NOSTR publishing disabled");
+                      }}
+                    />
+                  </div>
                 )}
               </>
             ) : (
