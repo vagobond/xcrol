@@ -4,30 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Key, Copy, Download, Upload, Loader2, Radio } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Key, Copy, Download, Upload, Loader2, Radio, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import * as nip19 from "nostr-tools/nip19";
 import { isNostrPublishEnabled, setNostrPublishEnabled } from "@/lib/nostr-publish";
-
-const STORAGE_KEY = "xcrol_nostr_nsec_encrypted";
-
-function encryptNsec(nsec: string): string {
-  // Simple obfuscation for localStorage — not truly secure, but keeps the key
-  // from being stored in plaintext. A passphrase-based encryption layer can
-  // be added later.
-  return btoa(nsec);
-}
-
-function decryptNsec(encoded: string) {
-  try {
-    return atob(encoded);
-  } catch {
-    return "";
-  }
-}
+import { storeSecretKey, getSecretKey, hasLocalKey as checkHasLocalKey, deleteSecretKey } from "@/lib/nostr-keystore";
 
 export function NostrIdentitySection() {
   const { user } = useAuth();
@@ -37,6 +22,7 @@ export function NostrIdentitySection() {
   const [importValue, setImportValue] = useState("");
   const [showImport, setShowImport] = useState(false);
   const [publishToNostr, setPublishToNostr] = useState(isNostrPublishEnabled());
+  const [localKeyExists, setLocalKeyExists] = useState(false);
 
   // Load existing npub from profile
   useEffect(() => {
@@ -54,7 +40,10 @@ export function NostrIdentitySection() {
     })();
   }, [user]);
 
-  const hasLocalKey = () => !!localStorage.getItem(STORAGE_KEY);
+  // Check if local key exists (async)
+  useEffect(() => {
+    checkHasLocalKey().then(setLocalKeyExists);
+  }, [npub]);
 
   const saveNpubToProfile = async (npubValue: string) => {
     if (!user) return;
@@ -80,12 +69,12 @@ export function NostrIdentitySection() {
       const sk = generateSecretKey();
       const pk = getPublicKey(sk);
       const npubEncoded = nip19.npubEncode(pk);
-      const nsecEncoded = nip19.nsecEncode(sk);
 
-      localStorage.setItem(STORAGE_KEY, encryptNsec(nsecEncoded));
+      await storeSecretKey(sk);
       await saveNpubToProfile(npubEncoded);
       setNpub(npubEncoded);
-      toast.success("NOSTR keypair generated! Your private key is stored locally.");
+      setLocalKeyExists(true);
+      toast.success("NOSTR keypair generated! Private key stored securely in this browser.");
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate keypair");
@@ -106,17 +95,16 @@ export function NostrIdentitySection() {
         if (decoded.type !== "nsec") throw new Error("Invalid nsec");
         sk = decoded.data as Uint8Array;
       } else {
-        // Assume hex
         sk = new Uint8Array(trimmed.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
       }
 
       const pk = getPublicKey(sk);
       const npubEncoded = nip19.npubEncode(pk);
-      const nsecEncoded = nip19.nsecEncode(sk);
 
-      localStorage.setItem(STORAGE_KEY, encryptNsec(nsecEncoded));
+      await storeSecretKey(sk);
       await saveNpubToProfile(npubEncoded);
       setNpub(npubEncoded);
+      setLocalKeyExists(true);
       setImportValue("");
       setShowImport(false);
       toast.success("NOSTR key imported successfully!");
@@ -130,12 +118,12 @@ export function NostrIdentitySection() {
 
   const handleToggle = async (checked: boolean) => {
     if (!checked && npub) {
-      // Disable: remove npub from profile and clear local key
       try {
         await clearNpubFromProfile();
-        localStorage.removeItem(STORAGE_KEY);
+        await deleteSecretKey();
         setNpub(null);
         setEnabled(false);
+        setLocalKeyExists(false);
         toast.success("NOSTR identity disabled");
       } catch {
         toast.error("Failed to disable NOSTR identity");
@@ -152,11 +140,11 @@ export function NostrIdentitySection() {
     }
   };
 
-  const exportNsec = () => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const nsec = decryptNsec(stored);
-      navigator.clipboard.writeText(nsec);
+  const exportNsec = async () => {
+    const sk = await getSecretKey();
+    if (sk) {
+      const nsecEncoded = nip19.nsecEncode(sk);
+      navigator.clipboard.writeText(nsecEncoded);
       toast.success("nsec copied to clipboard — keep it safe!");
     } else {
       toast.error("No local private key found");
@@ -186,41 +174,41 @@ export function NostrIdentitySection() {
 
         {enabled && (
           <div className="space-y-4 pt-2">
+            <Alert variant="default" className="border-amber-500/40 bg-amber-500/5">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-xs">
+                Your private key is encrypted and stored in this browser's local database.
+                Clearing browser data, resetting the browser, or switching devices will
+                <strong> permanently delete</strong> it. Export your nsec and back it up safely.
+              </AlertDescription>
+            </Alert>
+
             {npub ? (
               <>
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Your public key (npub)</Label>
                   <div className="flex gap-2">
-                    <Input
-                      value={npub}
-                      readOnly
-                      className="font-mono text-xs"
-                    />
+                    <Input value={npub} readOnly className="font-mono text-xs" />
                     <Button variant="outline" size="icon" onClick={copyNpub}>
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
 
-                {hasLocalKey() && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={exportNsec}
-                    className="w-full"
-                  >
+                {localKeyExists && (
+                  <Button variant="outline" size="sm" onClick={exportNsec} className="w-full">
                     <Download className="w-4 h-4 mr-2" />
                     Copy private key (nsec)
                   </Button>
                 )}
 
-                {!hasLocalKey() && (
+                {!localKeyExists && (
                   <p className="text-xs text-muted-foreground">
                     Private key not found on this device. Import it to sign events.
                   </p>
                 )}
 
-                {hasLocalKey() && (
+                {localKeyExists && (
                   <div className="flex items-center justify-between pt-2 border-t">
                     <div className="flex items-center gap-2">
                       <Radio className="w-4 h-4 text-muted-foreground" />
@@ -242,16 +230,8 @@ export function NostrIdentitySection() {
               </>
             ) : (
               <div className="space-y-3">
-                <Button
-                  onClick={handleGenerate}
-                  disabled={loading}
-                  className="w-full"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Key className="w-4 h-4 mr-2" />
-                  )}
+                <Button onClick={handleGenerate} disabled={loading} className="w-full">
+                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Key className="w-4 h-4 mr-2" />}
                   Generate New Keypair
                 </Button>
 
@@ -274,31 +254,17 @@ export function NostrIdentitySection() {
                       type="password"
                     />
                     <div className="flex gap-2">
-                      <Button
-                        onClick={handleImport}
-                        disabled={loading || !importValue.trim()}
-                        className="flex-1"
-                      >
+                      <Button onClick={handleImport} disabled={loading || !importValue.trim()} className="flex-1">
                         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                         Import
                       </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setShowImport(false);
-                          setImportValue("");
-                        }}
-                      >
+                      <Button variant="ghost" onClick={() => { setShowImport(false); setImportValue(""); }}>
                         Cancel
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowImport(true)}
-                    className="w-full"
-                  >
+                  <Button variant="outline" onClick={() => setShowImport(true)} className="w-full">
                     <Upload className="w-4 h-4 mr-2" />
                     Import Existing Key
                   </Button>
