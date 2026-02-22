@@ -142,6 +142,8 @@ const Welcome = () => {
           <img 
             src={scrollOpenGif}
             alt="Scroll opening"
+            width={600}
+            height={600}
             onLoad={() => setIsGifLoading(false)}
             className={`w-[80vmin] h-[80vmin] max-w-[600px] max-h-[600px] object-contain drop-shadow-[0_0_60px_rgba(139,92,246,0.6)] transition-opacity duration-300 ${
               isGifLoading ? "opacity-0" : "opacity-100"
@@ -162,6 +164,8 @@ const Welcome = () => {
             <img 
               src={xcrolLogo}
               alt="XCROL"
+              width={600}
+              height={200}
               fetchPriority="high"
               className="w-[400px] md:w-[500px] lg:w-[600px] mx-auto drop-shadow-[0_0_40px_rgba(139,92,246,0.4)] animate-pulse-slow"
             />
