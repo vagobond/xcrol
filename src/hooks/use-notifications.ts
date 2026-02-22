@@ -265,20 +265,51 @@ export const useNotifications = () => {
   const loadInteractionNotifications = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", user.id)
-      .is("read_at", null)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    const [notifsResult, settingsResult] = await Promise.all([
+      supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .is("read_at", null)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("user_settings")
+        .select("notify_river_replies, notify_brook_activity, notify_hosting_requests, notify_meetup_requests, notify_group_activity")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+
+    const { data, error } = notifsResult;
 
     if (error || !data || data.length === 0) {
       setInteractionNotifications([]);
       return;
     }
 
-    const actorIds = [...new Set(data.map((n: any) => n.actor_id))];
+    // Build type-to-setting mapping for filtering
+    const s = settingsResult.data;
+    const typeSettingMap: Record<string, boolean> = {
+      river_reply: s?.notify_river_replies ?? true,
+      river_reply_reply: s?.notify_river_replies ?? true,
+      brook_post: s?.notify_brook_activity ?? true,
+      brook_comment: s?.notify_brook_activity ?? true,
+      brook_reaction: s?.notify_brook_activity ?? true,
+      hosting_request: s?.notify_hosting_requests ?? true,
+      meetup_request: s?.notify_meetup_requests ?? true,
+      group_comment: s?.notify_group_activity ?? true,
+      group_reaction: s?.notify_group_activity ?? true,
+      group_comment_reaction: s?.notify_group_activity ?? true,
+    };
+
+    const filteredData = data.filter((n: any) => typeSettingMap[n.type] !== false);
+
+    if (filteredData.length === 0) {
+      setInteractionNotifications([]);
+      return;
+    }
+
+    const actorIds = [...new Set(filteredData.map((n: any) => n.actor_id))];
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, display_name, avatar_url")
@@ -289,7 +320,7 @@ export const useNotifications = () => {
     );
 
     setInteractionNotifications(
-      data.map((n: any) => ({
+      filteredData.map((n: any) => ({
         ...n,
         actor_profile: profilesMap.get(n.actor_id) || undefined,
       }))

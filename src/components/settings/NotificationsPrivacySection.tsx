@@ -44,6 +44,63 @@ export const NotificationsPrivacySection = ({ settings, onSettingChange }: Notif
             onCheckedChange={(checked) => onSettingChange("friend_request_notifications", checked)}
           />
         </div>
+        <Separator />
+        <p className="text-sm font-medium text-muted-foreground pt-2">Activity Notifications</p>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="notify-river-replies">Xcrol Replies</Label>
+            <p className="text-sm text-muted-foreground">Replies to your daily entries and comments</p>
+          </div>
+          <Switch
+            id="notify-river-replies"
+            checked={settings.notify_river_replies}
+            onCheckedChange={(checked) => onSettingChange("notify_river_replies", checked)}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="notify-brook-activity">Brook Activity</Label>
+            <p className="text-sm text-muted-foreground">Posts, comments, and reactions in your brooks</p>
+          </div>
+          <Switch
+            id="notify-brook-activity"
+            checked={settings.notify_brook_activity}
+            onCheckedChange={(checked) => onSettingChange("notify_brook_activity", checked)}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="notify-hosting-requests">Hosting Requests</Label>
+            <p className="text-sm text-muted-foreground">When someone requests to stay with you</p>
+          </div>
+          <Switch
+            id="notify-hosting-requests"
+            checked={settings.notify_hosting_requests}
+            onCheckedChange={(checked) => onSettingChange("notify_hosting_requests", checked)}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="notify-meetup-requests">Meetup Requests</Label>
+            <p className="text-sm text-muted-foreground">When someone requests to meet up</p>
+          </div>
+          <Switch
+            id="notify-meetup-requests"
+            checked={settings.notify_meetup_requests}
+            onCheckedChange={(checked) => onSettingChange("notify_meetup_requests", checked)}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="notify-group-activity">Group Activity</Label>
+            <p className="text-sm text-muted-foreground">Comments and reactions on your group posts</p>
+          </div>
+          <Switch
+            id="notify-group-activity"
+            checked={settings.notify_group_activity}
+            onCheckedChange={(checked) => onSettingChange("notify_group_activity", checked)}
+          />
+        </div>
       </CardContent>
     </Card>
 
