@@ -11,7 +11,10 @@ import { Scroll, Link as LinkIcon, Save, Loader2, AlertTriangle, MapPin } from "
 import { useHometownDate } from "@/hooks/use-hometown-date";
 import { UserMentionInput } from "@/components/UserMentionInput";
 import { useNavigate } from "react-router-dom";
-import { isNostrPublishEnabled, publishToNostr as publishNoteToNostr } from "@/lib/nostr-publish";
+import { isNostrPublishEnabled } from "@/lib/nostr-publish";
+import { useNostrKey } from "@/hooks/use-nostr-key";
+import { finalizeEvent, verifyEvent } from "nostr-tools/pure";
+import { Relay } from "nostr-tools/relay";
 
 interface XcrolEntryFormProps {
   userId: string;
@@ -31,6 +34,7 @@ const PRIVACY_LEVELS = [
 
 export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillLink = "" }: XcrolEntryFormProps) => {
   const navigate = useNavigate();
+  const { privateKey: nostrPrivateKey } = useNostrKey();
   const { todayDate, loading: dateLoading, timezone, hasHometown } = useHometownDate(userId);
   const [content, setContent] = useState("");
   const [link, setLink] = useState("");
@@ -129,8 +133,8 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
         toast.success("Daily update posted!");
       }
 
-      // Publish to NOSTR if enabled
-      if (isNostrPublishEnabled()) {
+      // Publish to NOSTR if enabled and key available
+      if (isNostrPublishEnabled() && nostrPrivateKey) {
         try {
           const { data: profile } = await supabase
             .from("profiles")
@@ -138,8 +142,20 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
             .eq("id", userId)
             .maybeSingle();
           if (profile?.nostr_npub) {
-            const ok = await publishNoteToNostr(content.trim());
-            if (ok) toast.success("Also published to NOSTR!");
+            const event = finalizeEvent(
+              { kind: 1, created_at: Math.floor(Date.now() / 1000), tags: [], content: content.trim() },
+              nostrPrivateKey
+            );
+            if (verifyEvent(event)) {
+              const relays = ["wss://relay.damus.io", "wss://relay.nostr.band", "wss://nos.lol"];
+              await Promise.allSettled(
+                relays.map(async (url) => {
+                  const relay = await Relay.connect(url);
+                  try { await relay.publish(event); } finally { relay.close(); }
+                })
+              );
+              toast.success("Also published to NOSTR!");
+            }
           }
         } catch (e) {
           console.error("NOSTR publish failed:", e);
