@@ -342,6 +342,16 @@ export const useNotifications = () => {
     newReferences.length +
     interactionNotifications.length;
 
+  useEffect(() => {
+    if ("setAppBadge" in navigator) {
+      if (totalNotifications > 0) {
+        navigator.setAppBadge(totalNotifications).catch(() => {});
+      } else {
+        navigator.clearAppBadge?.().catch(() => {});
+      }
+    }
+  }, [totalNotifications]);
+
   return {
     user,
     requests,
