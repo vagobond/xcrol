@@ -34,9 +34,7 @@ export function NostrIdentitySection() {
     (async () => {
       try {
         const { data, error } = await supabase
-          .from("profiles")
-          .select("nostr_npub, nostr_handle")
-          .eq("id", user.id)
+          .rpc('get_own_profile')
           .maybeSingle();
         if (error) {
           console.error("Failed to load NOSTR profile:", error);
