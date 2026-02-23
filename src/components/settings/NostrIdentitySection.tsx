@@ -54,7 +54,7 @@ export function NostrIdentitySection() {
         setProfileLoading(false);
       }
     })();
-  }, [user]);
+  }, [user?.id]);
 
   // Check if local key exists (async)
   useEffect(() => {
