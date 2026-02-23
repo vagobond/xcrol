@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, UserPlus, Users, Clock, Inbox, ArrowLeft, Waves } from "lucide-react";
+import { Search, UserPlus, Users, Clock, Inbox, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import FriendsList from "@/components/FriendsList";
 import IntroductionRequestsManager from "@/components/IntroductionRequestsManager";
@@ -321,7 +321,7 @@ const TheForest = () => {
               <span className="hidden sm:inline">Friends</span>
             </TabsTrigger>
             <TabsTrigger value="brooks" className="flex items-center gap-1">
-              <Waves className="h-4 w-4" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M2 10c.6.5 1.2 1 2.5 1C7 11 7 9 9.5 9c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /><path d="M2 16c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /></svg>
               <span className="hidden sm:inline">Brooks</span>
             </TabsTrigger>
             <TabsTrigger value="requests" className="flex items-center gap-1">
