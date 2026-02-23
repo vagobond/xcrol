@@ -31,10 +31,22 @@ interface BrookCommentsProps {
 
 export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
+  const [commentCount, setCommentCount] = useState(0);
   const [newComment, setNewComment] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Fetch count on mount
+  useEffect(() => {
+    (async () => {
+      const { count } = await supabase
+        .from("brook_comments")
+        .select("*", { count: "exact", head: true })
+        .eq("post_id", postId);
+      setCommentCount(count ?? 0);
+    })();
+  }, [postId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -94,6 +106,7 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
       if (error) throw error;
 
       setNewComment("");
+      setCommentCount(prev => prev + 1);
       loadComments();
     } catch (error) {
       console.error("Error adding brook comment:", error);
@@ -112,6 +125,7 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
 
       if (error) throw error;
       setComments(prev => prev.filter(c => c.id !== commentId));
+      setCommentCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error("Error deleting brook comment:", error);
       toast.error("Failed to delete comment");
@@ -123,8 +137,8 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
       <CollapsibleTrigger asChild>
         <Button variant="ghost" size="sm" className="h-7 px-2 gap-1">
           <MessageCircle className="h-4 w-4 text-muted-foreground" />
-          {comments.length > 0 && (
-            <span className="text-xs text-muted-foreground">{comments.length}</span>
+          {commentCount > 0 && (
+            <span className="text-xs text-muted-foreground">{commentCount}</span>
           )}
           <span className="text-xs text-muted-foreground">
             {isOpen ? "Hide" : "Comments"}
