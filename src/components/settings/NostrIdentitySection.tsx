@@ -30,10 +30,7 @@ export function NostrIdentitySection() {
 
   // Load existing npub and handle from profile
   useEffect(() => {
-    if (!user) {
-      setProfileLoading(false);
-      return;
-    }
+    if (!user) return; // keep profileLoading=true until user session restores
     setProfileLoading(true);
     (async () => {
       try {
