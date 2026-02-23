@@ -60,6 +60,8 @@ const Settings = () => {
             <NotificationsPrivacySection settings={settings} onSettingChange={handleSettingChange} />
             <PasswordSection />
 
+            <NostrIdentitySection />
+
             {/* Blocked Users */}
             <Card>
               <CardHeader>
@@ -108,8 +110,6 @@ const Settings = () => {
                 <DeveloperAppsManager />
               </CardContent>
             </Card>
-
-            <NostrIdentitySection />
 
             {/* Help & Tutorial */}
             <Card>
