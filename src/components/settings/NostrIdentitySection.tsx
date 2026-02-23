@@ -31,14 +31,16 @@ export function NostrIdentitySection() {
   // Load existing npub and handle from profile
   useEffect(() => {
     if (!user) return; // keep profileLoading=true until user session restores
-    setProfileLoading(true);
     (async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
           .select("nostr_npub, nostr_handle")
           .eq("id", user.id)
           .maybeSingle();
+        if (error) {
+          console.error("Failed to load NOSTR profile:", error);
+        }
         if (data?.nostr_npub) {
           setNpub(data.nostr_npub);
           setEnabled(true);
@@ -46,6 +48,8 @@ export function NostrIdentitySection() {
         if (data?.nostr_handle) {
           setNostrHandle(data.nostr_handle);
         }
+      } catch (err) {
+        console.error("NOSTR profile fetch error:", err);
       } finally {
         setProfileLoading(false);
       }
@@ -190,18 +194,20 @@ export function NostrIdentitySection() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="nostr-toggle">Enable NOSTR Identity</Label>
-          {profileLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-          ) : (
-            <Switch
-              id="nostr-toggle"
-              checked={enabled}
-              onCheckedChange={handleToggle}
-            />
-          )}
-        </div>
+        {profileLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="nostr-toggle">Enable NOSTR Identity</Label>
+              <Switch
+                id="nostr-toggle"
+                checked={enabled}
+                onCheckedChange={handleToggle}
+              />
+            </div>
 
         {enabled && (
           <div className="space-y-4 pt-2">
@@ -365,6 +371,8 @@ export function NostrIdentitySection() {
               </div>
             )}
           </div>
+        )}
+          </>
         )}
       </CardContent>
     </Card>
