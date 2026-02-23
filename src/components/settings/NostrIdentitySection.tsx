@@ -19,6 +19,7 @@ export function NostrIdentitySection() {
   const [enabled, setEnabled] = useState(false);
   const [npub, setNpub] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [importValue, setImportValue] = useState("");
   const [showImport, setShowImport] = useState(false);
   const [publishToNostr, setPublishToNostr] = useState(isNostrPublishEnabled());
@@ -29,19 +30,27 @@ export function NostrIdentitySection() {
 
   // Load existing npub and handle from profile
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setProfileLoading(false);
+      return;
+    }
+    setProfileLoading(true);
     (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("nostr_npub, nostr_handle")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (data?.nostr_npub) {
-        setNpub(data.nostr_npub);
-        setEnabled(true);
-      }
-      if (data?.nostr_handle) {
-        setNostrHandle(data.nostr_handle);
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("nostr_npub, nostr_handle")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (data?.nostr_npub) {
+          setNpub(data.nostr_npub);
+          setEnabled(true);
+        }
+        if (data?.nostr_handle) {
+          setNostrHandle(data.nostr_handle);
+        }
+      } finally {
+        setProfileLoading(false);
       }
     })();
   }, [user]);
@@ -186,11 +195,15 @@ export function NostrIdentitySection() {
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <Label htmlFor="nostr-toggle">Enable NOSTR Identity</Label>
-          <Switch
-            id="nostr-toggle"
-            checked={enabled}
-            onCheckedChange={handleToggle}
-          />
+          {profileLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          ) : (
+            <Switch
+              id="nostr-toggle"
+              checked={enabled}
+              onCheckedChange={handleToggle}
+            />
+          )}
         </div>
 
         {enabled && (
