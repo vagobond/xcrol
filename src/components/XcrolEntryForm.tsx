@@ -134,7 +134,7 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
       }
 
       // Publish to NOSTR if enabled and key available
-      if (isNostrPublishEnabled() && nostrPrivateKey) {
+      if (privacyLevel === "public" && isNostrPublishEnabled() && nostrPrivateKey) {
         try {
           const { data: profile } = await supabase
             .from("profiles")
