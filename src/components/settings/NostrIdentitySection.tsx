@@ -140,6 +140,10 @@ export function NostrIdentitySection() {
       try {
         await clearNpubFromProfile();
         await deleteSecretKey();
+        setNostrPublishEnabled(false);
+        setPublishToNostr(false);
+        setBrookBridgeEnabled(false);
+        setBrookBridge(false);
         setNpub(null);
         setEnabled(false);
         setLocalKeyExists(false);
