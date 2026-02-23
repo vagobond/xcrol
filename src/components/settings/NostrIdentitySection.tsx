@@ -24,19 +24,24 @@ export function NostrIdentitySection() {
   const [publishToNostr, setPublishToNostr] = useState(isNostrPublishEnabled());
   const [brookBridge, setBrookBridge] = useState(isBrookBridgeEnabled());
   const [localKeyExists, setLocalKeyExists] = useState(false);
+  const [nostrHandle, setNostrHandle] = useState("");
+  const [savingHandle, setSavingHandle] = useState(false);
 
-  // Load existing npub from profile
+  // Load existing npub and handle from profile
   useEffect(() => {
     if (!user) return;
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("nostr_npub")
+        .select("nostr_npub, nostr_handle")
         .eq("id", user.id)
         .maybeSingle();
       if (data?.nostr_npub) {
         setNpub(data.nostr_npub);
         setEnabled(true);
+      }
+      if (data?.nostr_handle) {
+        setNostrHandle(data.nostr_handle);
       }
     })();
   }, [user]);
@@ -263,6 +268,48 @@ export function NostrIdentitySection() {
                     />
                   </div>
                 )}
+
+                {/* NIP-05 Handle */}
+                <div className="space-y-2 pt-2 border-t">
+                  <Label htmlFor="nostr-handle" className="text-sm">
+                    NOSTR Handle (e.g., cd for cd@xcrol.com)
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="nostr-handle"
+                      placeholder="yourhandle"
+                      value={nostrHandle}
+                      onChange={(e) => setNostrHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={savingHandle}
+                      onClick={async () => {
+                        if (!user) return;
+                        setSavingHandle(true);
+                        try {
+                          const { error } = await supabase
+                            .from("profiles")
+                            .update({ nostr_handle: nostrHandle || null })
+                            .eq("id", user.id);
+                          if (error) throw error;
+                          toast.success("NOSTR handle saved");
+                        } catch {
+                          toast.error("Failed to save handle");
+                        } finally {
+                          setSavingHandle(false);
+                        }
+                      }}
+                    >
+                      {savingHandle ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This enables @{nostrHandle || "yourhandle"}@xcrol.com discovery on NOSTR. Changes take effect within minutes after saving.
+                  </p>
+                </div>
               </>
             ) : (
               <div className="space-y-3">
