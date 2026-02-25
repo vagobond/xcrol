@@ -10,6 +10,7 @@ export interface Group {
   description: string | null;
   avatar_url: string | null;
   trust_level: string;
+  require_approval: boolean;
   creator_id: string;
   created_at: string;
   updated_at: string;
@@ -289,20 +290,23 @@ export const useJoinGroup = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (groupId: string) => {
+    mutationFn: async (params: { groupId: string; requireApproval: boolean }) => {
       if (!user) throw new Error("Not authenticated");
+      const status = params.requireApproval ? "pending" : "active";
       const { error } = await supabase.from("group_members").insert({
-        group_id: groupId,
+        group_id: params.groupId,
         user_id: user.id,
         role: "member",
-        status: "pending",
+        status,
       });
       if (error) throw error;
+      return { requireApproval: params.requireApproval };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       queryClient.invalidateQueries({ queryKey: ["group"] });
-      toast({ title: "Join request sent!" });
+      queryClient.invalidateQueries({ queryKey: ["group-members"] });
+      toast({ title: result.requireApproval ? "Join request sent!" : "Joined group!" });
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -375,7 +379,7 @@ export const useUpdateGroup = () => {
   return useMutation({
     mutationFn: async (params: {
       groupId: string;
-      updates: { name?: string; description?: string | null; avatar_url?: string | null; trust_level?: string };
+      updates: { name?: string; description?: string | null; avatar_url?: string | null; trust_level?: string; require_approval?: boolean };
     }) => {
       const { error } = await supabase
         .from("groups")

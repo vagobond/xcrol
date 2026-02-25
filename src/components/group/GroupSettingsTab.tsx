@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 import { Camera, Loader2 } from "lucide-react";
 import { getFriendshipLabel } from "@/lib/friendship-labels";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +22,7 @@ const TRUST_LEVELS = [
 
 interface GroupSettingsTabProps {
   group: Group;
-  onSave: (updates: { name?: string; description?: string | null; avatar_url?: string | null; trust_level?: string }) => Promise<void>;
+  onSave: (updates: { name?: string; description?: string | null; avatar_url?: string | null; trust_level?: string; require_approval?: boolean }) => Promise<void>;
   saving: boolean;
 }
 
@@ -29,6 +30,7 @@ const GroupSettingsTab = ({ group, onSave, saving }: GroupSettingsTabProps) => {
   const [name, setName] = useState(group.name);
   const [description, setDescription] = useState(group.description ?? "");
   const [trustLevel, setTrustLevel] = useState(group.trust_level);
+  const [requireApproval, setRequireApproval] = useState(group.require_approval);
   const [avatarUrl, setAvatarUrl] = useState(group.avatar_url);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,6 +77,7 @@ const GroupSettingsTab = ({ group, onSave, saving }: GroupSettingsTabProps) => {
       description: description.trim() || null,
       avatar_url: avatarUrl,
       trust_level: trustLevel,
+      require_approval: requireApproval,
     });
   };
 
@@ -150,6 +153,20 @@ const GroupSettingsTab = ({ group, onSave, saving }: GroupSettingsTabProps) => {
             <p className="text-xs text-muted-foreground">
               Only friends at this level or above with you can see group content
             </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="require-approval">Require approval to join</Label>
+              <p className="text-xs text-muted-foreground">
+                When enabled, new members must be approved by an admin before they can post
+              </p>
+            </div>
+            <Switch
+              id="require-approval"
+              checked={requireApproval}
+              onCheckedChange={setRequireApproval}
+            />
           </div>
 
           <Button type="submit" className="w-full" disabled={!name.trim() || saving || uploading}>

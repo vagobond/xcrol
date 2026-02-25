@@ -703,6 +703,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          require_approval: boolean
           slug: string
           trust_level: string
           updated_at: string
@@ -714,6 +715,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          require_approval?: boolean
           slug: string
           trust_level?: string
           updated_at?: string
@@ -725,6 +727,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          require_approval?: boolean
           slug?: string
           trust_level?: string
           updated_at?: string
