@@ -1,114 +1,120 @@
 
 
-## Make "Request to Join" Optional for Village Groups
+## Show References and "Ask for Introduction" on Friend Requests
 
 ### Overview
 
-Currently every group requires admin approval before a user can post. This change adds a toggle in Group Settings so admins can make their group "open" (anyone can join instantly) or "managed" (requires approval, the current behavior). The default for new groups will be **open**.
+When a user receives a friend request, they currently see only the requester's name, avatar, and optional message. This change adds two trust-building features:
+1. Display the requester's references (or explicitly note "No references yet") inline with the request
+2. Add an "Ask for Introduction" button that finds mutual friends and lets the receiver request a formal introduction before deciding
 
-### Database Changes
+### Changes
 
-**Add column to `groups` table:**
+---
 
-```text
-groups.require_approval  BOOLEAN  NOT NULL  DEFAULT false
-```
+### 1. New Component: `FriendRequestReferences`
 
-- `false` (default) = open group, anyone joins instantly as active member
-- `true` = managed group, join requests go to pending (current behavior)
+**File:** `src/components/friends/FriendRequestReferences.tsx` (new)
 
-**Update RLS policy on `group_members` INSERT:**
+A small, reusable component that takes a `userId` and fetches their references from `user_references`. Displays:
+- A compact summary: "3 references (2 Friendly, 1 Host)" with average rating stars
+- A collapsible section showing individual reference excerpts (first ~100 chars of content, author name, type badge)
+- If zero references: a clear note "This person has no references yet"
 
-The current INSERT policy forces `status = 'pending'`. It needs to also allow `status = 'active'` when the group has `require_approval = false`:
+Used in both the NotificationBell's `FriendRequestItem` and The Forest's `ReceivedRequestsSection`.
 
-```text
-Current:  status must be 'pending' (or admin self-insert)
-New:      status can be 'active' IF group.require_approval = false
-          status must be 'pending' IF group.require_approval = true
-```
+---
 
-**Update RLS policies on `group_posts` and related tables:**
+### 2. New Component: `AskIntroductionDialog`
 
-The `is_group_member()` function already checks for `status = 'active'`, so once a user joins as active they can post immediately -- no changes needed to post/comment/reaction policies.
+**File:** `src/components/friends/AskIntroductionDialog.tsx` (new)
 
-### Frontend Changes
+A dialog triggered by an "Ask for Introduction" button on received friend requests. It:
+- Queries for mutual friends: users who are friends with BOTH the receiver and the requester (using two queries on the `friendships` table, intersecting `friend_id` values)
+- If mutual friends exist: shows them in a list, lets the receiver select one as the introducer, write a message, and submit an `introduction_requests` row (reusing the existing table and RLS policies)
+- If no mutual friends: shows "You have no mutual friends with this person" and disables submission
 
-**1. `use-groups.ts` -- useJoinGroup hook**
+---
 
-Check the group's `require_approval` flag before inserting:
-- If `false`: insert with `status: 'active'`, show toast "Joined group!"
-- If `true`: insert with `status: 'pending'`, show toast "Join request sent!" (current behavior)
+### 3. Update `FriendRequestItem` (notifications)
 
-Update the `Group` interface to include `require_approval: boolean`.
-Update `useUpdateGroup` to accept `require_approval` in the updates object.
+**File:** `src/components/notifications/FriendRequestItem.tsx`
 
-**2. `GroupSettingsTab.tsx` -- Add toggle**
+- Import and render `FriendRequestReferences` below the requester info, passing `request.from_user_id`
+- Add an "Ask for Introduction" button next to existing Respond/Block buttons
+- The button opens `AskIntroductionDialog` with the requester's user ID and the current user's ID
 
-Add a Switch component labeled "Require approval to join" with helper text explaining the behavior. Wired to the `require_approval` field and included in the save payload.
+---
 
-**3. `GroupHeader.tsx` -- Update button label**
+### 4. Update `ReceivedRequestsSection` (The Forest)
 
-When `require_approval` is `false`, change the button from "Request to Join" to "Join Group". The join action will immediately make the user an active member.
+**File:** `src/components/friends/FriendRequestSections.tsx`
 
-**4. `GroupProfile.tsx` -- Conditional Requests tab**
+- Import and render `FriendRequestReferences` below each received request's name/message
+- Add an "Ask for Introduction" icon button (using the `UserPlus` or `Users` icon) that opens the `AskIntroductionDialog`
+- Pass an `onAskIntro` callback prop from the parent, or handle it inline
 
-The "Requests" tab already only shows when there are pending members, so no change needed. When a group is open, there will simply be no pending members.
+---
+
+### 5. Update `NotificationBell` accept dialog
+
+**File:** `src/components/NotificationBell.tsx`
+
+- In the "Accept Friend Request" dialog (shown when user clicks Respond), add the `FriendRequestReferences` component above the friendship level selector so the user can review references before choosing a level
+
+---
+
+### No Database Changes Required
+
+- References are read from the existing `user_references` table (SELECT policy already allows authenticated non-blocked users)
+- Introduction requests use the existing `introduction_requests` table and its RLS policies
+- Mutual friend lookups use the existing `friendships` table
+
+---
 
 ### Technical Details
 
-**Migration SQL:**
-
-```sql
-ALTER TABLE public.groups
-  ADD COLUMN require_approval boolean NOT NULL DEFAULT false;
-
--- Update the group_members INSERT policy to allow direct active join for open groups
-DROP POLICY IF EXISTS "Users can request to join groups" ON public.group_members;
-
-CREATE POLICY "Users can request to join groups" ON public.group_members
-  FOR INSERT WITH CHECK (
-    (auth.uid() = user_id)
-    AND (
-      -- Admin self-insert (group creation)
-      (
-        status = 'active' AND role = 'admin'
-        AND EXISTS (
-          SELECT 1 FROM groups WHERE groups.id = group_members.group_id AND groups.creator_id = auth.uid()
-        )
-      )
-      -- Open group: join directly as active
-      OR (
-        status = 'active' AND role = 'member'
-        AND EXISTS (
-          SELECT 1 FROM groups
-          WHERE groups.id = group_members.group_id AND groups.require_approval = false
-        )
-        AND NOT is_group_member(group_id, auth.uid())
-      )
-      -- Managed group: request as pending
-      OR (
-        status = 'pending'
-      )
-      -- Existing admin adding
-      OR is_group_admin(group_id, auth.uid())
-    )
-  );
-```
-
-**Frontend join logic change (pseudocode):**
+**Mutual friend query logic:**
 
 ```text
-// In useJoinGroup, accept the group object instead of just groupId
-if (group.require_approval) {
-  insert with status: 'pending'  ->  toast "Join request sent!"
-else
-  insert with status: 'active'   ->  toast "Joined group!"
+1. Fetch receiver's friend IDs:
+   SELECT friend_id FROM friendships WHERE user_id = receiverId
+   
+2. Fetch requester's friend IDs:
+   SELECT friend_id FROM friendships WHERE user_id = requesterId
+   
+3. Intersect to find mutual friends
+4. Fetch profiles for mutual friend IDs
 ```
 
-### What stays the same
+**References fetch:**
 
-- Groups that already exist will default to `require_approval = false` (open), matching the requested default
-- Trust level badge remains as a cosmetic indicator
-- Admin approval flow for managed groups is unchanged
-- All existing RLS on posts, comments, and reactions works as-is since it checks `is_group_member()` which looks for `status = 'active'`
+```text
+SELECT id, from_user_id, reference_type, rating, content, created_at
+FROM user_references
+WHERE to_user_id = requesterId
+ORDER BY created_at DESC
+LIMIT 10
+```
+
+Then batch-fetch author profiles via `profiles.id IN (...)`.
+
+**Introduction request insert (reuses existing table):**
+
+```text
+INSERT INTO introduction_requests (requester_id, introducer_id, target_id, message)
+VALUES (currentUserId, selectedMutualFriendId, fromUserId, userMessage)
+```
+
+Note: In this context, the receiver of the friend request becomes the `requester` of the introduction, the mutual friend is the `introducer`, and the person who sent the friend request is the `target`.
+
+### Files Summary
+
+| File | Action |
+|------|--------|
+| `src/components/friends/FriendRequestReferences.tsx` | Create |
+| `src/components/friends/AskIntroductionDialog.tsx` | Create |
+| `src/components/notifications/FriendRequestItem.tsx` | Edit |
+| `src/components/friends/FriendRequestSections.tsx` | Edit |
+| `src/components/NotificationBell.tsx` | Edit |
 
