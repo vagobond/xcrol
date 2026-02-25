@@ -1,120 +1,79 @@
 
 
-## Show References and "Ask for Introduction" on Friend Requests
+## Add More Trust Levels + Public Option for Groups
 
 ### Overview
 
-When a user receives a friend request, they currently see only the requester's name, avatar, and optional message. This change adds two trust-building features:
-1. Display the requester's references (or explicitly note "No references yet") inline with the request
-2. Add an "Ask for Introduction" button that finds mutual friends and lets the receiver request a formal introduction before deciding
+Currently, group trust levels are limited to four options (Wayfarer, Companion, Oath Bound, Blood Bound). This change expands the dropdown to include all friendship tiers plus a new "public" option that allows any authenticated Xcrol user to view and join the group, regardless of friendship status.
 
 ### Changes
 
 ---
 
-### 1. New Component: `FriendRequestReferences`
+### 1. Update `friendship-labels.ts` -- Add "public" label
 
-**File:** `src/components/friends/FriendRequestReferences.tsx` (new)
-
-A small, reusable component that takes a `userId` and fetches their references from `user_references`. Displays:
-- A compact summary: "3 references (2 Friendly, 1 Host)" with average rating stars
-- A collapsible section showing individual reference excerpts (first ~100 chars of content, author name, type badge)
-- If zero references: a clear note "This person has no references yet"
-
-Used in both the NotificationBell's `FriendRequestItem` and The Forest's `ReceivedRequestsSection`.
+Add a `"public"` entry to `friendshipLevelLabels` so `getFriendshipLabel("public")` returns a proper label like "Public (Any Xcrol Member)". This keeps the label system centralized.
 
 ---
 
-### 2. New Component: `AskIntroductionDialog`
+### 2. Update `TRUST_LEVELS` arrays in two files
 
-**File:** `src/components/friends/AskIntroductionDialog.tsx` (new)
+**Files:** `src/components/CreateGroupDialog.tsx` and `src/components/group/GroupSettingsTab.tsx`
 
-A dialog triggered by an "Ask for Introduction" button on received friend requests. It:
-- Queries for mutual friends: users who are friends with BOTH the receiver and the requester (using two queries on the `friendships` table, intersecting `friend_id` values)
-- If mutual friends exist: shows them in a list, lets the receiver select one as the introducer, write a message, and submit an `introduction_requests` row (reusing the existing table and RLS policies)
-- If no mutual friends: shows "You have no mutual friends with this person" and disables submission
-
----
-
-### 3. Update `FriendRequestItem` (notifications)
-
-**File:** `src/components/notifications/FriendRequestItem.tsx`
-
-- Import and render `FriendRequestReferences` below the requester info, passing `request.from_user_id`
-- Add an "Ask for Introduction" button next to existing Respond/Block buttons
-- The button opens `AskIntroductionDialog` with the requester's user ID and the current user's ID
-
----
-
-### 4. Update `ReceivedRequestsSection` (The Forest)
-
-**File:** `src/components/friends/FriendRequestSections.tsx`
-
-- Import and render `FriendRequestReferences` below each received request's name/message
-- Add an "Ask for Introduction" icon button (using the `UserPlus` or `Users` icon) that opens the `AskIntroductionDialog`
-- Pass an `onAskIntro` callback prop from the parent, or handle it inline
-
----
-
-### 5. Update `NotificationBell` accept dialog
-
-**File:** `src/components/NotificationBell.tsx`
-
-- In the "Accept Friend Request" dialog (shown when user clicks Respond), add the `FriendRequestReferences` component above the friendship level selector so the user can review references before choosing a level
-
----
-
-### No Database Changes Required
-
-- References are read from the existing `user_references` table (SELECT policy already allows authenticated non-blocked users)
-- Introduction requests use the existing `introduction_requests` table and its RLS policies
-- Mutual friend lookups use the existing `friendships` table
-
----
-
-### Technical Details
-
-**Mutual friend query logic:**
-
+Expand the `TRUST_LEVELS` array from:
 ```text
-1. Fetch receiver's friend IDs:
-   SELECT friend_id FROM friendships WHERE user_id = receiverId
-   
-2. Fetch requester's friend IDs:
-   SELECT friend_id FROM friendships WHERE user_id = requesterId
-   
-3. Intersect to find mutual friends
-4. Fetch profiles for mutual friend IDs
+["friendly_acquaintance", "buddy", "close_friend", "family"]
+```
+to:
+```text
+["public", "friendly_acquaintance", "buddy", "close_friend", "secret_friend", "family"]
 ```
 
-**References fetch:**
+This adds:
+- **public** -- any Xcrol user can see content and join (new, listed first)
+- **secret_friend** (Invisible Ally) -- between the existing tiers
 
-```text
-SELECT id, from_user_id, reference_type, rating, content, created_at
-FROM user_references
-WHERE to_user_id = requesterId
-ORDER BY created_at DESC
-LIMIT 10
+Note: `secret_enemy` and `not_friend` are excluded since they are adversarial/non-friendship levels that don't make sense for group access gating.
+
+---
+
+### 3. Update default trust level for new groups
+
+In `CreateGroupDialog.tsx`, change the default `trustLevel` state from `"friendly_acquaintance"` to `"public"` so new groups default to being open to all Xcrol members.
+
+---
+
+### 4. Update `GroupHeader.tsx` badge display
+
+No structural change needed -- it already calls `getFriendshipLabel(group.trust_level)`, so the new "public" label will render automatically.
+
+---
+
+### 5. Database default update (migration)
+
+Update the `groups` table column default from `'friendly_acquaintance'` to `'public'` so any future groups created default to public trust level:
+
+```sql
+ALTER TABLE public.groups 
+  ALTER COLUMN trust_level SET DEFAULT 'public';
 ```
 
-Then batch-fetch author profiles via `profiles.id IN (...)`.
+No data migration is needed -- existing groups keep their current trust_level values.
 
-**Introduction request insert (reuses existing table):**
+---
 
-```text
-INSERT INTO introduction_requests (requester_id, introducer_id, target_id, message)
-VALUES (currentUserId, selectedMutualFriendId, fromUserId, userMessage)
-```
+### Technical Notes
 
-Note: In this context, the receiver of the friend request becomes the `requester` of the introduction, the mutual friend is the `introducer`, and the person who sent the friend request is the `target`.
+- The trust_level column is `text`, not an enum, so no enum alteration is needed
+- Trust level is currently cosmetic (not enforced by RLS on join), so this change is purely about UI options and labeling
+- The "public" label entry is added to the centralized `friendship-labels.ts` so it works everywhere `getFriendshipLabel()` is called
 
 ### Files Summary
 
 | File | Action |
 |------|--------|
-| `src/components/friends/FriendRequestReferences.tsx` | Create |
-| `src/components/friends/AskIntroductionDialog.tsx` | Create |
-| `src/components/notifications/FriendRequestItem.tsx` | Edit |
-| `src/components/friends/FriendRequestSections.tsx` | Edit |
-| `src/components/NotificationBell.tsx` | Edit |
+| `src/lib/friendship-labels.ts` | Add "public" entry to labels |
+| `src/components/CreateGroupDialog.tsx` | Expand TRUST_LEVELS, change default to "public" |
+| `src/components/group/GroupSettingsTab.tsx` | Expand TRUST_LEVELS |
+| Migration SQL | Update column default to 'public' |
 
