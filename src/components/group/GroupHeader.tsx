@@ -15,7 +15,10 @@ interface GroupHeaderProps {
   joinPending: boolean;
 }
 
-const GroupHeader = ({ group, isCreator, userId, onJoin, onLeave, joinPending }: GroupHeaderProps) => (
+const GroupHeader = ({ group, isCreator, userId, onJoin, onLeave, joinPending }: GroupHeaderProps) => {
+  const joinLabel = group.require_approval ? "Request to Join" : "Join Group";
+
+  return (
   <Card className="mb-6">
     <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
       <Avatar className="h-16 w-16 shrink-0">
@@ -42,7 +45,7 @@ const GroupHeader = ({ group, isCreator, userId, onJoin, onLeave, joinPending }:
         {userId && !group.is_member && group.membership_status !== "pending" && (
           <Button onClick={onJoin} disabled={joinPending} size="sm" className="w-full sm:w-auto">
             <UserPlus className="mr-2 h-4 w-4" />
-            Request to Join
+            {joinLabel}
           </Button>
         )}
         {group.membership_status === "pending" && (
@@ -57,6 +60,7 @@ const GroupHeader = ({ group, isCreator, userId, onJoin, onLeave, joinPending }:
       </div>
     </CardHeader>
   </Card>
-);
+  );
+};
 
 export default GroupHeader;

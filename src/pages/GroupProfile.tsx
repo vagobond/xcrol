@@ -65,7 +65,7 @@ const GroupProfile = () => {
         group={group}
         isCreator={isCreator}
         userId={user?.id}
-        onJoin={() => joinGroup.mutate(group.id)}
+        onJoin={() => joinGroup.mutate({ groupId: group.id, requireApproval: group.require_approval })}
         onLeave={() => leaveGroup.mutate(group.id)}
         joinPending={joinGroup.isPending}
       />
