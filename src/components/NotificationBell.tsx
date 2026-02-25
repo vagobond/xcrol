@@ -24,6 +24,7 @@ import PendingFriendshipItem from "@/components/notifications/PendingFriendshipI
 import FriendRequestItem from "@/components/notifications/FriendRequestItem";
 import ReferenceItem from "@/components/notifications/ReferenceItem";
 import InteractionNotificationItem from "@/components/notifications/InteractionNotificationItem";
+import FriendRequestReferencesComponent from "@/components/friends/FriendRequestReferences";
 
 const NotificationBell = () => {
   const navigate = useNavigate();
@@ -227,6 +228,12 @@ const NotificationBell = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto pr-2">
+            {selectedRequest && (
+              <div className="mb-4 pb-3 border-b border-border">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Their references</p>
+                <FriendRequestReferencesComponent userId={selectedRequest.from_user_id} />
+              </div>
+            )}
             <FriendshipLevelSelector
               value={selectedLevel}
               onChange={setSelectedLevel}
