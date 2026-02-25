@@ -21,7 +21,12 @@ export interface FriendshipLevelInfo {
 /**
  * Full label mapping with new names + original in parentheses
  */
-export const friendshipLevelLabels: Record<FriendshipLevelKey, FriendshipLevelInfo> = {
+export const friendshipLevelLabels: Record<FriendshipLevelKey | "public", FriendshipLevelInfo> = {
+  public: {
+    label: "Public (Any Xcrol Member)",
+    shortLabel: "Public",
+    description: "Any authenticated Xcrol user can view and join, regardless of friendship status.",
+  },
   family: {
     label: "Blood Bound (Family)",
     shortLabel: "Blood Bound",

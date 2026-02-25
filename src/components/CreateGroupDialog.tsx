@@ -14,9 +14,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const TRUST_LEVELS = [
+  "public",
   "friendly_acquaintance",
   "buddy",
   "close_friend",
+  "secret_friend",
   "family",
 ];
 
@@ -24,7 +26,7 @@ const CreateGroupDialog = () => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [trustLevel, setTrustLevel] = useState("friendly_acquaintance");
+  const [trustLevel, setTrustLevel] = useState("public");
   const createGroup = useCreateGroup();
   const { user } = useAuth();
 
@@ -63,7 +65,7 @@ const CreateGroupDialog = () => {
     setOpen(false);
     setName("");
     setDescription("");
-    setTrustLevel("friendly_acquaintance");
+    setTrustLevel("public");
   };
 
   return (

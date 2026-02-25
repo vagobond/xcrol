@@ -1,0 +1,1 @@
+ALTER TABLE public.groups ALTER COLUMN trust_level SET DEFAULT 'public';

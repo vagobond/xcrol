@@ -14,9 +14,11 @@ import { toast } from "@/hooks/use-toast";
 import type { Group } from "@/hooks/use-groups";
 
 const TRUST_LEVELS = [
+  "public",
   "friendly_acquaintance",
   "buddy",
   "close_friend",
+  "secret_friend",
   "family",
 ];
 
