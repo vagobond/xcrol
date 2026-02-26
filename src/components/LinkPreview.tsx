@@ -25,25 +25,29 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-// Simple check for known PixelFed/PeerTube domains (client-side, to avoid unnecessary calls)
+// Big Tech domains — never send to edge function
+const BIG_TECH_DOMAINS = [
+  "youtube.com", "youtu.be", "facebook.com", "fb.com", "instagram.com",
+  "twitter.com", "x.com", "tiktok.com", "reddit.com", "linkedin.com",
+  "threads.net", "snapchat.com", "pinterest.com",
+];
+
 function isPreviewableUrl(url: string): boolean {
-  const pixelfedDomains = [
-    "pixelfed.social", "pixelfed.de", "pixelfed.art", "pixel.tchncs.de",
-    "pixelfed.uno", "pxlmo.com", "pixelfed.tokyo", "pixey.org",
-    "pixelfed.au", "pixelfed.cz", "gram.social", "pixelfed.fr",
-  ];
-  const peertubeDomains = [
-    "peertube.social", "tilvids.com", "tube.tchncs.de", "peertube.tv",
-    "peertube.co.uk", "peertube.live", "framatube.org", "diode.zone",
-    "video.antopie.org", "peertube.debian.social",
-  ];
   try {
     const parsed = new URL(url);
-    const hostname = parsed.hostname;
-    const allDomains = [...pixelfedDomains, ...peertubeDomains];
-    if (allDomains.some((d) => hostname === d || hostname.endsWith("." + d))) return true;
-    // PeerTube URL path patterns
+    const hostname = parsed.hostname.toLowerCase();
+
+    // Block Big Tech
+    if (BIG_TECH_DOMAINS.some((d) => hostname === d || hostname.endsWith("." + d))) {
+      return false;
+    }
+
+    // PeerTube path patterns
     if (/^\/(w|videos\/watch)\//.test(parsed.pathname)) return true;
+
+    // PixelFed path pattern
+    if (/^\/p\/[^/]+\/\d+/.test(parsed.pathname)) return true;
+
     return false;
   } catch {
     return false;
@@ -78,7 +82,6 @@ export const LinkPreview = ({ url }: LinkPreviewProps) => {
   }, [url]);
 
   if (!isPreviewableUrl(url) || loading || !data) {
-    // Fallback: render nothing special, let parent render the normal link
     return null;
   }
 
