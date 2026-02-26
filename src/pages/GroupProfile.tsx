@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { getGroupLastVisit, setGroupLastVisit } from "@/hooks/use-group-activity";
 import {
   useGroupBySlug,
   useGroupMembers,
@@ -33,6 +35,23 @@ const GroupProfile = () => {
   const updateMember = useUpdateMember();
   const deletePost = useDeleteGroupPost();
   const updateGroup = useUpdateGroup();
+
+  // Track last visit for notification badges
+  const [lastVisitedAt, setLastVisitedAt] = useState<string | null>(null);
+  const groupIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!group?.id) return;
+    groupIdRef.current = group.id;
+    const stored = getGroupLastVisit(group.id);
+    setLastVisitedAt(stored);
+
+    return () => {
+      if (groupIdRef.current) {
+        setGroupLastVisit(groupIdRef.current);
+      }
+    };
+  }, [group?.id]);
 
   if (isLoading) {
     return (
@@ -93,6 +112,7 @@ const GroupProfile = () => {
               }}
               onDeletePost={(postId) => deletePost.mutate({ postId, groupId: group.id })}
               createPending={createPost.isPending}
+              lastVisitedAt={lastVisitedAt}
             />
           </TabsContent>
 

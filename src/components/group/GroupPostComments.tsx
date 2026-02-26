@@ -24,9 +24,10 @@ interface Comment {
 interface GroupPostCommentsProps {
   postId: string;
   currentUserId: string | null;
+  lastVisitedAt?: string | null;
 }
 
-export const GroupPostComments = ({ postId, currentUserId }: GroupPostCommentsProps) => {
+export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt }: GroupPostCommentsProps) => {
   const navigate = useNavigate();
   const [comments, setComments] = useState<Comment[]>([]);
   const [showInput, setShowInput] = useState(false);
@@ -117,6 +118,9 @@ export const GroupPostComments = ({ postId, currentUserId }: GroupPostCommentsPr
   };
 
   const count = comments.length;
+  const newCommentCount = lastVisitedAt
+    ? comments.filter((c) => new Date(c.created_at) > new Date(lastVisitedAt)).length
+    : 0;
   const visible = expanded ? comments : comments.slice(0, 2);
   const hasMore = count > 2;
 
@@ -139,6 +143,11 @@ export const GroupPostComments = ({ postId, currentUserId }: GroupPostCommentsPr
         {count > 0 && (
           <span className="text-xs text-muted-foreground">
             {count} {count === 1 ? "comment" : "comments"}
+            {newCommentCount > 0 && (
+              <span className="ml-1 inline-flex items-center rounded-full bg-destructive px-1.5 py-0 text-[10px] font-bold text-destructive-foreground">
+                {newCommentCount} new
+              </span>
+            )}
           </span>
         )}
       </div>
