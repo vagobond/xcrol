@@ -35,7 +35,7 @@ const NotificationBell = () => {
     newReferences,
     unreadMessageCount,
     unreadMessageSenders,
-    interactionNotifications,
+    groupedNotifications,
     totalNotifications,
     dismissReferenceNotification,
     markInteractionRead,
@@ -204,9 +204,9 @@ const NotificationBell = () => {
                   />
                 ))}
 
-                {interactionNotifications.map((notif) => (
+                {groupedNotifications.map((notif, idx) => (
                   <InteractionNotificationItem
-                    key={notif.id}
+                    key={notif.notificationIds[0] || idx}
                     notification={notif}
                     onMarkRead={markInteractionRead}
                   />
