@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useUnreadMessages } from "@/hooks/use-unread-messages";
-import type { InteractionNotification } from "@/components/notifications/InteractionNotificationItem";
+import { resolveNotifications, getGroupBucket } from "@/lib/notification-resolver";
+import type { ResolvedNotification } from "@/lib/notification-resolver";
 
 export interface FriendRequest {
   id: string;
@@ -53,13 +54,43 @@ export interface UnreadMessageSender {
   avatar_url: string | null;
 }
 
+export interface ActorInfo {
+  name: string;
+  avatar_url: string | null;
+}
+
+export interface GroupedNotification {
+  /** IDs of all notifications in this group */
+  notificationIds: string[];
+  type: string;
+  actors: ActorInfo[];
+  count: number;
+  contentPreview: string | null;
+  resolvedRoute: string | null;
+  created_at: string;
+  label: string;
+}
+
+const typeLabels: Record<string, string> = {
+  river_reply: "commented on your Xcrol entry",
+  river_reply_reply: "replied to your comment",
+  brook_post: "posted in your Brook",
+  brook_comment: "commented on your Brook post",
+  brook_reaction: "reacted to your Brook post",
+  hosting_request: "sent you a hosting request",
+  meetup_request: "sent you a meetup request",
+  group_comment: "commented on your group post",
+  group_reaction: "reacted to your group post",
+  group_comment_reaction: "reacted to your group comment",
+};
+
 export const useNotifications = () => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
   const [newReferences, setNewReferences] = useState<NewReference[]>([]);
   const [unreadMessageSenders, setUnreadMessageSenders] = useState<UnreadMessageSender[]>([]);
-  const [interactionNotifications, setInteractionNotifications] = useState<InteractionNotification[]>([]);
+  const [groupedNotifications, setGroupedNotifications] = useState<GroupedNotification[]>([]);
   const { unreadCount: unreadMessageCount } = useUnreadMessages(user?.id || null);
 
   useEffect(() => {
@@ -283,7 +314,7 @@ export const useNotifications = () => {
     const { data, error } = notifsResult;
 
     if (error || !data || data.length === 0) {
-      setInteractionNotifications([]);
+      setGroupedNotifications([]);
       return;
     }
 
@@ -305,10 +336,11 @@ export const useNotifications = () => {
     const filteredData = data.filter((n: any) => typeSettingMap[n.type] !== false);
 
     if (filteredData.length === 0) {
-      setInteractionNotifications([]);
+      setGroupedNotifications([]);
       return;
     }
 
+    // Fetch actor profiles
     const actorIds = [...new Set(filteredData.map((n: any) => n.actor_id))];
     const { data: profiles } = await supabase
       .from("profiles")
@@ -319,28 +351,102 @@ export const useNotifications = () => {
       (profiles || []).map((p) => [p.id, p])
     );
 
-    setInteractionNotifications(
-      filteredData.map((n: any) => ({
-        ...n,
-        actor_profile: profilesMap.get(n.actor_id) || undefined,
-      }))
+    // Resolve deep links and content previews
+    const resolved = await resolveNotifications(
+      filteredData.map((n: any) => ({ id: n.id, type: n.type, entity_id: n.entity_id }))
     );
+
+    // Group notifications by (bucket, parentEntityId)
+    const groupMap = new Map<string, {
+      notificationIds: string[];
+      type: string;
+      actors: ActorInfo[];
+      actorIdSet: Set<string>;
+      contentPreview: string | null;
+      resolvedRoute: string | null;
+      created_at: string;
+    }>();
+
+    for (const n of filteredData as any[]) {
+      const bucket = getGroupBucket(n.type);
+      const resolution = resolved.get(n.id);
+      const parentId = resolution?.parentEntityId || n.entity_id;
+      const groupKey = `${bucket}::${parentId}`;
+
+      const existing = groupMap.get(groupKey);
+      const actorProfile = profilesMap.get(n.actor_id);
+      const actorInfo: ActorInfo = {
+        name: actorProfile?.display_name?.split(" ")[0] || "Someone",
+        avatar_url: actorProfile?.avatar_url || null,
+      };
+
+      if (existing) {
+        existing.notificationIds.push(n.id);
+        if (!existing.actorIdSet.has(n.actor_id)) {
+          existing.actorIdSet.add(n.actor_id);
+          existing.actors.push(actorInfo);
+        }
+        // Keep most recent created_at
+        if (n.created_at > existing.created_at) {
+          existing.created_at = n.created_at;
+        }
+        // Use first resolved route / preview found
+        if (!existing.resolvedRoute && resolution?.resolvedRoute) {
+          existing.resolvedRoute = resolution.resolvedRoute;
+        }
+        if (!existing.contentPreview && resolution?.contentPreview) {
+          existing.contentPreview = resolution.contentPreview;
+        }
+      } else {
+        groupMap.set(groupKey, {
+          notificationIds: [n.id],
+          type: n.type,
+          actors: [actorInfo],
+          actorIdSet: new Set([n.actor_id]),
+          contentPreview: resolution?.contentPreview || null,
+          resolvedRoute: resolution?.resolvedRoute || null,
+          created_at: n.created_at,
+        });
+      }
+    }
+
+    // Convert to array sorted by most recent
+    const grouped: GroupedNotification[] = Array.from(groupMap.values())
+      .map((g) => ({
+        notificationIds: g.notificationIds,
+        type: g.type,
+        actors: g.actors,
+        count: g.actors.length,
+        contentPreview: g.contentPreview,
+        resolvedRoute: g.resolvedRoute,
+        created_at: g.created_at,
+        label: typeLabels[g.type] || "interacted with your content",
+      }))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+    setGroupedNotifications(grouped);
   };
 
-  const markInteractionRead = useCallback(async (notifId: string) => {
+  const markInteractionRead = useCallback(async (notifIds: string | string[]) => {
+    const ids = Array.isArray(notifIds) ? notifIds : [notifIds];
     await supabase
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
-      .eq("id", notifId);
-    setInteractionNotifications((prev) => prev.filter((n) => n.id !== notifId));
+      .in("id", ids);
+    setGroupedNotifications((prev) =>
+      prev.filter((g) => !g.notificationIds.some((id) => ids.includes(id)))
+    );
   }, []);
+
+  // Count grouped notifications (each group = 1 notification item)
+  const interactionCount = groupedNotifications.length;
 
   const totalNotifications =
     requests.length +
     pendingFriendships.length +
     unreadMessageCount +
     newReferences.length +
-    interactionNotifications.length;
+    interactionCount;
 
   useEffect(() => {
     if ("setAppBadge" in navigator) {
@@ -359,7 +465,7 @@ export const useNotifications = () => {
     newReferences,
     unreadMessageCount,
     unreadMessageSenders,
-    interactionNotifications,
+    groupedNotifications,
     totalNotifications,
     dismissReferenceNotification,
     markInteractionRead,
