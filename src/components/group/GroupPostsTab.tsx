@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Trash2, ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { MentionText } from "@/components/MentionText";
 import { LinkPreview } from "@/components/LinkPreview";
@@ -20,9 +21,10 @@ interface GroupPostsTabProps {
   onCreatePost: (content: string, link?: string) => Promise<void>;
   onDeletePost: (postId: string) => void;
   createPending: boolean;
+  lastVisitedAt?: string | null;
 }
 
-const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, createPending }: GroupPostsTabProps) => {
+const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, createPending, lastVisitedAt }: GroupPostsTabProps) => {
   const navigate = useNavigate();
   const [postContent, setPostContent] = useState("");
   const [postLink, setPostLink] = useState("");
@@ -90,6 +92,11 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                     </span>
+                    {lastVisitedAt && new Date(post.created_at) > new Date(lastVisitedAt) && (
+                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 leading-none">
+                        New
+                      </Badge>
+                    )}
                   </div>
                   {(post.user_id === userId || group.is_admin) && (
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeletePost(post.id)}>
@@ -125,7 +132,7 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
                 </div>
 
                 {/* Threaded Comments */}
-                <GroupPostComments postId={post.id} currentUserId={userId ?? null} />
+                <GroupPostComments postId={post.id} currentUserId={userId ?? null} lastVisitedAt={lastVisitedAt} />
               </div>
             </div>
           </CardContent>
