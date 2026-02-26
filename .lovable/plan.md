@@ -1,86 +1,82 @@
 
 
-## Support All PeerTube and PixelFed Instances + Block Big Tech
+## Group Activity Notifications (Red Dot Badges)
 
-### Problem
+### Overview
 
-MakerTube (and hundreds of other PeerTube/PixelFed instances) don't display previews because the edge function uses a hardcoded domain allowlist. The client-side code already detects PeerTube path patterns (`/w/`, `/videos/watch/`) and sends the request, but the edge function rejects any domain not on its list.
+Add red dot notification badges with counts to group cards on The Village page, showing new posts since the user's last visit. Inside a group, show new comment indicators on individual posts. All counts reset when the user leaves the group page.
 
-### Isolation Verification
+### Approach: Client-Side "Last Visited" Tracking
 
-I checked every consumer and dependency:
+Rather than adding a database table, this uses **localStorage** to track the last time a user visited each group. This is lightweight, requires no database migration, no new RLS policies, and keeps the feature entirely client-side.
 
-- **`LinkPreview` component** -- used in 4 places: `RiverEntryCard`, `MyXcrol`, `BrookPostCard`, `GroupPostsTab`. All usage is identical: pass a URL, render preview or `null`. No changes to any of these consumers.
-- **`link-preview` edge function** -- called only from `LinkPreview.tsx` via `supabase.functions.invoke`. No other code references it.
-- **`isPreviewableUrl`** -- private function inside `LinkPreview.tsx`. Not exported.
-- **`isPeerTubeUrl` / `isPixelFedUrl`** -- private functions inside the edge function. Not imported elsewhere.
-- **No database tables, RLS policies, triggers, or other edge functions are involved.**
-- **No changes to any page component, routing, auth, privacy logic, or profile visibility.**
+- `localStorage` key pattern: `group_last_visit_{groupId}` storing an ISO timestamp
+- On entering a group page, record the current timestamp when leaving (via `useEffect` cleanup or `beforeunload`)
+- On The Village page, compare each group's latest post timestamp against the stored last-visit timestamp
 
-### What Changes (2 files only)
+### Changes
 
----
+#### 1. New hook: `src/hooks/use-group-activity.ts`
 
-#### 1. `supabase/functions/link-preview/index.ts`
+A custom hook that:
+- Accepts the list of groups the user is a member of
+- For each group, queries `group_posts` to count posts with `created_at` after the stored `localStorage` timestamp
+- Returns a `Map<groupId, newPostCount>`
+- Uses a single batched query (fetch recent posts for all member group IDs, then count client-side)
 
-Replace `isPeerTubeUrl()` / `isPixelFedUrl()` domain allowlists with path-based detection + API probing:
+#### 2. Update `src/pages/TheVillage.tsx`
 
-- **PeerTube detection**: If path matches `/w/{id}` or `/videos/watch/{id}`, probe `{origin}/api/v1/videos/{id}` with a 3-second timeout. If it returns valid PeerTube JSON (has `name`, `uuid` fields), treat as PeerTube. This covers MakerTube, TILVids, and every other instance automatically.
-- **PixelFed detection**: If path matches `/p/{user}/{id}`, probe `{origin}/api/v1/oembed?url=...` with a 3-second timeout. If it returns valid oEmbed JSON, treat as PixelFed.
-- **Big Tech blocklist**: Add an explicit domain blocklist that rejects YouTube, Facebook, Instagram, X/Twitter, TikTok, Reddit, LinkedIn, and Threads. These return `type: 'unknown'` immediately -- no outbound requests made.
-- **Keep all existing SSRF protections** (`isBlockedUrl`) completely unchanged.
-- **Keep JWT authentication** completely unchanged.
-- **Add 50KB HTML read limit** on the OG fallback scraper to prevent abuse.
+- Import and use the new hook
+- Pass `newPostCount` to `GroupCard`
+- Render a red dot badge on the group avatar when `newPostCount > 0`
 
-```text
-Detection flow:
-1. SSRF check (isBlockedUrl) -- reject internal URLs
-2. Big Tech blocklist -- reject corporate platforms immediately
-3. PeerTube path pattern? -> probe API (3s timeout)
-4. PixelFed path pattern? -> probe oEmbed (3s timeout)
-5. Neither? -> return 'unknown' (no outbound request)
-```
+#### 3. Update `src/pages/GroupProfile.tsx`
 
-#### 2. `src/components/LinkPreview.tsx`
+- On mount, read the last-visit timestamp from localStorage for this group
+- Pass it to `GroupPostsTab` as `lastVisitedAt`
+- On unmount (or route change), update localStorage with current timestamp -- this dismisses notifications
 
-Update `isPreviewableUrl()` to match the edge function's new logic:
+#### 4. Update `src/components/group/GroupPostsTab.tsx`
 
-- Keep PeerTube path pattern matching (`/w/`, `/videos/watch/`) -- this already exists on line 46
-- Add PixelFed path pattern matching (`/p/`)
-- Add the same Big Tech blocklist so those URLs never even reach the edge function
-- Remove the hardcoded domain lists (no longer needed since detection is path-based)
+- Accept `lastVisitedAt` prop
+- For each post, if `created_at > lastVisitedAt`, show a subtle "New" badge
+- For comments on each post, pass `lastVisitedAt` to `GroupPostComments`
 
-### What Does NOT Change
+#### 5. Update `src/components/group/GroupPostComments.tsx`
 
-| Area | Status |
+- Accept optional `lastVisitedAt` prop
+- Show count of new comments (those with `created_at > lastVisitedAt`) as a small indicator next to the comment count
+
+#### 6. Red dot badge styling
+
+- Small red circle with white number, positioned on the top-right corner of the group avatar on The Village page
+- Uses absolute positioning within a `relative` container
+- Consistent with common notification badge patterns
+
+### Technical Details
+
+**Why localStorage instead of a database table:**
+- No migration needed, no RLS policies to manage
+- Instant reads/writes with no network latency
+- Per-device tracking is acceptable here (notifications are a convenience, not critical data)
+- If a user clears localStorage, they simply see all posts as "new" once -- harmless
+
+**Query efficiency:**
+- The Village page makes one query: fetch the `MAX(created_at)` from `group_posts` grouped by `group_id` for the user's member groups
+- Inside a group, the existing posts query already fetches all posts -- no extra query needed, just client-side filtering against the timestamp
+
+**Dismissal behavior:**
+- Timestamp is written to localStorage when the user **leaves** the group page (useEffect cleanup)
+- This means while browsing the group, new post badges remain visible
+- On next visit to The Village, the counts will reflect only activity after the last departure
+
+### Files Changed
+
+| File | Change |
 |------|--------|
-| `RiverEntryCard.tsx` | Untouched |
-| `BrookPostCard.tsx` | Untouched (already has LinkPreview from previous edit) |
-| `GroupPostsTab.tsx` | Untouched (already has LinkPreview) |
-| `MyXcrol.tsx` | Untouched |
-| All page components | Untouched |
-| Database schema / tables | No changes |
-| RLS policies | No changes |
-| Auth / privacy / profiles | No changes |
-| Other edge functions | No changes |
-| `isBlockedUrl` SSRF protection | Unchanged |
-| JWT validation | Unchanged |
-
-### Big Tech Domains Blocked
-
-```text
-youtube.com, youtu.be, facebook.com, fb.com, instagram.com,
-twitter.com, x.com, tiktok.com, reddit.com, linkedin.com,
-threads.net, snapchat.com, pinterest.com
-```
-
-These will be checked by exact domain match (including subdomains like `www.youtube.com`). URLs from these domains will return `null` from LinkPreview -- the plain text link still displays as before.
-
-### Resource Cost
-
-Minimal. The client-side filter ensures only URLs with fediverse path patterns (`/w/`, `/videos/watch/`, `/p/`) ever call the edge function. Regular links (no matching path) never trigger a request. The 3-second timeout on API probes prevents slow instances from consuming resources.
-
-### Risk Assessment
-
-**Zero risk to existing functionality.** The only behavioral change: URLs from unknown PeerTube/PixelFed instances that have the right path patterns will now get previews instead of being silently ignored. All non-matching URLs continue to behave exactly as before.
+| `src/hooks/use-group-activity.ts` | New hook for fetching unread post counts per group |
+| `src/pages/TheVillage.tsx` | Add red dot badges to GroupCard |
+| `src/pages/GroupProfile.tsx` | Record last-visit timestamp on unmount, pass to posts tab |
+| `src/components/group/GroupPostsTab.tsx` | Add "New" indicators on posts since last visit |
+| `src/components/group/GroupPostComments.tsx` | Add new comment count indicator |
 
