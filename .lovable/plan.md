@@ -1,82 +1,113 @@
 
 
-## Group Activity Notifications (Red Dot Badges)
+## Improve Notification UX: Deep Linking, Grouping, and Context
 
-### Overview
+### The Problems
 
-Add red dot notification badges with counts to group cards on The Village page, showing new posts since the user's last visit. Inside a group, show new comment indicators on individual posts. All counts reset when the user leaves the group page.
+1. **Notifications don't take you to the right place.** Clicking "Alice commented on your group post" takes you to `/the-village` (the groups listing page), not to the actual group or post. Same issue for River replies, Brook activity, etc.
+2. **Multiple notifications from the same context are listed individually.** If 3 people react to your Brook post, you see 3 separate notification items instead of "Alice, Bob, and Carol reacted to your Brook post."
+3. **No content preview.** You can't tell which post or comment is being referenced without clicking through.
 
-### Approach: Client-Side "Last Visited" Tracking
+### The Solution
 
-Rather than adding a database table, this uses **localStorage** to track the last time a user visited each group. This is lightweight, requires no database migration, no new RLS policies, and keeps the feature entirely client-side.
+#### 1. Deep-link notifications to the actual content
 
-- `localStorage` key pattern: `group_last_visit_{groupId}` storing an ISO timestamp
-- On entering a group page, record the current timestamp when leaving (via `useEffect` cleanup or `beforeunload`)
-- On The Village page, compare each group's latest post timestamp against the stored last-visit timestamp
+Each notification already stores an `entity_id` that references the specific reply, comment, reaction, or request. The plan is to resolve that entity to a navigable URL:
 
-### Changes
+| Notification Type | Current Route | Improved Route |
+|---|---|---|
+| `river_reply` | `/the-river` | `/the-river?post={xcrol_entry_id}` (scrolls + highlights) |
+| `river_reply_reply` | `/the-river` | `/the-river?post={xcrol_entry_id}` |
+| `brook_post` | `/the-forest` | `/brook/{brook_id}` (directly to the Brook page) |
+| `brook_comment` | `/the-forest` | `/brook/{brook_id}` |
+| `brook_reaction` | `/the-forest` | `/brook/{brook_id}` |
+| `group_comment` | `/the-village` | `/group/{slug}` (directly to the group) |
+| `group_reaction` | `/the-village` | `/group/{slug}` |
+| `group_comment_reaction` | `/the-village` | `/group/{slug}` |
+| `hosting_request` | `/hearthsurfing` | `/hearthsurf` (already correct route name) |
+| `meetup_request` | `/hearthsurfing` | `/hearthsurf` (fix broken route) |
 
-#### 1. New hook: `src/hooks/use-group-activity.ts`
+This requires a lookup query when the notification is clicked, to resolve entity_id into the correct parent IDs (e.g., reply -> entry_id, comment -> post -> group slug).
 
-A custom hook that:
-- Accepts the list of groups the user is a member of
-- For each group, queries `group_posts` to count posts with `created_at` after the stored `localStorage` timestamp
-- Returns a `Map<groupId, newPostCount>`
-- Uses a single batched query (fetch recent posts for all member group IDs, then count client-side)
+#### 2. Group notifications by context
 
-#### 2. Update `src/pages/TheVillage.tsx`
+Instead of showing 5 individual "reacted to your post" items, group them:
 
-- Import and use the new hook
-- Pass `newPostCount` to `GroupCard`
-- Render a red dot badge on the group avatar when `newPostCount > 0`
+- **Same entity, same type**: "Alice, Bob, and 3 others reacted to your Brook post"
+- **Same actor, different types in the same area**: Keep separate (different actions warrant separate items)
 
-#### 3. Update `src/pages/GroupProfile.tsx`
+Grouping happens client-side in the notification hook by bucketing notifications that share the same `type` and `entity_id` (for reactions) or same parent entity (for comments on the same post).
 
-- On mount, read the last-visit timestamp from localStorage for this group
-- Pass it to `GroupPostsTab` as `lastVisitedAt`
-- On unmount (or route change), update localStorage with current timestamp -- this dismisses notifications
+#### 3. Add content preview snippets
 
-#### 4. Update `src/components/group/GroupPostsTab.tsx`
+Show a truncated preview of the content being referenced:
 
-- Accept `lastVisitedAt` prop
-- For each post, if `created_at > lastVisitedAt`, show a subtle "New" badge
-- For comments on each post, pass `lastVisitedAt` to `GroupPostComments`
+- For River replies: first 60 chars of the original Xcrol entry
+- For Brook posts/comments: first 60 chars of the post content
+- For group comments: first 60 chars of the group post
 
-#### 5. Update `src/components/group/GroupPostComments.tsx`
+This requires fetching a small amount of extra data when loading notifications.
 
-- Accept optional `lastVisitedAt` prop
-- Show count of new comments (those with `created_at > lastVisitedAt`) as a small indicator next to the comment count
+### Technical Changes
 
-#### 6. Red dot badge styling
+#### File 1: `src/hooks/use-notifications.ts`
+- Modify `loadInteractionNotifications()` to also fetch entity context (parent IDs, content snippets) via joined queries or a small RPC
+- Group notifications by `(type_category, parent_entity_id)` before setting state
+- Store resolved route paths on each notification object
 
-- Small red circle with white number, positioned on the top-right corner of the group avatar on The Village page
-- Uses absolute positioning within a `relative` container
-- Consistent with common notification badge patterns
+#### File 2: `src/components/notifications/InteractionNotificationItem.tsx`
+- Accept grouped notification data (multiple actors, content preview)
+- Display grouped actor names ("Alice, Bob, and 2 others")
+- Show content preview snippet below the action label
+- Use the resolved deep-link route instead of the static `typeConfig.route`
+- Navigate with the resolved URL on click
 
-### Technical Details
+#### File 3: New helper `src/lib/notification-resolver.ts`
+- Contains async functions to resolve `entity_id` to a navigable URL:
+  - `river_reply` / `river_reply_reply`: query `river_replies` to get `entry_id`, navigate to `/the-river?post={entry_id}`
+  - `brook_post` / `brook_comment` / `brook_reaction`: query to get `brook_id`, navigate to `/brook/{brook_id}`
+  - `group_comment` / `group_reaction` / `group_comment_reaction`: query to get group `slug`, navigate to `/group/{slug}`
+  - `hosting_request` / `meetup_request`: navigate to `/hearthsurf`
+- Also fetches content snippets (first 60 chars of the related post/entry)
 
-**Why localStorage instead of a database table:**
-- No migration needed, no RLS policies to manage
-- Instant reads/writes with no network latency
-- Per-device tracking is acceptable here (notifications are a convenience, not critical data)
-- If a user clears localStorage, they simply see all posts as "new" once -- harmless
+#### File 4: `src/hooks/use-notifications.ts` (grouping logic)
+- After fetching and resolving notifications, group by `(type_bucket, resolved_parent_id)`:
+  - `river_reply` + `river_reply_reply` on same entry -> group
+  - `brook_reaction` on same post -> group
+  - `group_reaction` on same post -> group
+- Each grouped notification has: `actors: {name, avatar}[]`, `count`, `content_preview`, `resolved_route`
 
-**Query efficiency:**
-- The Village page makes one query: fetch the `MAX(created_at)` from `group_posts` grouped by `group_id` for the user's member groups
-- Inside a group, the existing posts query already fetches all posts -- no extra query needed, just client-side filtering against the timestamp
+### What Does NOT Change
 
-**Dismissal behavior:**
-- Timestamp is written to localStorage when the user **leaves** the group page (useEffect cleanup)
-- This means while browsing the group, new post badges remain visible
-- On next visit to The Village, the counts will reflect only activity after the last departure
+- Database schema (no migrations needed)
+- RLS policies
+- Notification trigger functions (they already store the right `entity_id`)
+- Friend request notifications (already work well with their own dialogs)
+- Reference notifications (already work well)
+- Unread message notifications (already link to `/messages`)
+- Any page component routing or content rendering
+- The `notifications` table structure
+- Authentication or privacy logic
 
-### Files Changed
+### Grouping Example
 
-| File | Change |
-|------|--------|
-| `src/hooks/use-group-activity.ts` | New hook for fetching unread post counts per group |
-| `src/pages/TheVillage.tsx` | Add red dot badges to GroupCard |
-| `src/pages/GroupProfile.tsx` | Record last-visit timestamp on unmount, pass to posts tab |
-| `src/components/group/GroupPostsTab.tsx` | Add "New" indicators on posts since last visit |
-| `src/components/group/GroupPostComments.tsx` | Add new comment count indicator |
+Before:
+```
+[icon] Alice reacted to your Brook post
+[icon] Bob reacted to your Brook post  
+[icon] Carol reacted to your Brook post
+[icon] Alice commented on your group post
+```
+
+After:
+```
+[icon] Alice, Bob, and Carol reacted to your Brook post
+       "Just finished building the new garden shed..."
+[icon] Alice commented on your group post
+       "Here's the recipe I was talking about..."
+```
+
+### Route Fix
+
+The `hosting_request` and `meetup_request` notifications currently point to `/hearthsurfing` but the actual route is `/hearthsurf`. This will be corrected.
 
