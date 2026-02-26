@@ -15,73 +15,114 @@ interface LinkPreviewResult {
   original_url: string;
 }
 
-const PIXELFED_DOMAINS = [
-  'pixelfed.social', 'pixelfed.de', 'pixelfed.art', 'pixel.tchncs.de',
-  'pixelfed.uno', 'pxlmo.com', 'pixelfed.tokyo', 'pixey.org',
-  'pixelfed.au', 'pixelfed.cz', 'gram.social', 'pixelfed.fr',
+// Big Tech domains — blocked immediately, no outbound requests
+const BIG_TECH_DOMAINS = [
+  'youtube.com', 'youtu.be', 'facebook.com', 'fb.com', 'instagram.com',
+  'twitter.com', 'x.com', 'tiktok.com', 'reddit.com', 'linkedin.com',
+  'threads.net', 'snapchat.com', 'pinterest.com',
 ];
 
-const PEERTUBE_DOMAINS = [
-  'peertube.social', 'videos.lukesmith.xyz', 'tilvids.com',
-  'tube.tchncs.de', 'video.ploud.fr', 'peertube.tv',
-  'tube.spdns.org', 'peertube.co.uk', 'peertube.live',
-  'videos.pair2jeux.tube', 'peertube.debian.social',
-  'framatube.org', 'diode.zone', 'video.antopie.org',
-];
-
-function isAllowedDomain(hostname: string, domains: string[]): boolean {
-  return domains.some(d => hostname === d || hostname.endsWith('.' + d));
-}
-
-function isPixelFedUrl(url: string): boolean {
+function isBigTechUrl(url: string): boolean {
   try {
-    const hostname = new URL(url).hostname;
-    return isAllowedDomain(hostname, PIXELFED_DOMAINS);
+    const hostname = new URL(url).hostname.toLowerCase();
+    return BIG_TECH_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d));
   } catch {
     return false;
   }
 }
 
-function isPeerTubeUrl(url: string): boolean {
-  try {
-    const hostname = new URL(url).hostname;
-    // Only match known PeerTube domains — no longer matching arbitrary domains by path pattern
-    return isAllowedDomain(hostname, PEERTUBE_DOMAINS);
-  } catch {
-    return false;
-  }
-}
-
-// Block private/internal IP ranges and localhost
+// Block private/internal IP ranges and localhost (unchanged SSRF protection)
 function isBlockedUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
     const hostname = parsed.hostname.toLowerCase();
-
-    // Block non-http(s) schemes
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return true;
-
-    // Block localhost variants
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') return true;
-
-    // Block private IP ranges (RFC1918, link-local, metadata)
     if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.)/.test(hostname)) return true;
-
-    // Block cloud metadata endpoints
     if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') return true;
-
     return false;
   } catch {
-    return true; // Block malformed URLs
+    return true;
   }
 }
 
-async function fetchPixelFedPreview(url: string): Promise<LinkPreviewResult> {
+// Extract PeerTube video ID from path patterns
+function extractPeerTubeVideoId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const wMatch = parsed.pathname.match(/^\/w\/([^/?]+)/);
+    const watchMatch = parsed.pathname.match(/^\/videos\/watch\/([^/?]+)/);
+    return wMatch?.[1] || watchMatch?.[1] || null;
+  } catch {
+    return null;
+  }
+}
+
+// Check if URL has PixelFed path pattern (/p/{user}/{id})
+function hasPixelFedPath(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return /^\/p\/[^/]+\/\d+/.test(parsed.pathname);
+  } catch {
+    return false;
+  }
+}
+
+// Probe PeerTube API with timeout
+async function probePeerTube(url: string, videoId: string): Promise<LinkPreviewResult> {
+  const parsed = new URL(url);
+  const apiUrl = `${parsed.origin}/api/v1/videos/${videoId}`;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const res = await fetch(apiUrl, {
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      // Validate it's actually PeerTube JSON
+      if (data.name && (data.uuid || data.id)) {
+        return {
+          type: 'peertube',
+          title: data.name,
+          description: data.description?.substring(0, 200),
+          image_url: data.previewPath
+            ? `${parsed.origin}${data.previewPath}`
+            : (data.thumbnailPath ? `${parsed.origin}${data.thumbnailPath}` : undefined),
+          video_embed_url: `${parsed.origin}/videos/embed/${data.uuid || videoId}`,
+          duration: data.duration,
+          original_url: url,
+        };
+      }
+    }
+  } catch (e) {
+    console.error('PeerTube API probe failed:', e);
+  }
+
+  // Fall back to OG scraping
+  return fetchOgPreview(url, 'peertube');
+}
+
+// Probe PixelFed oEmbed with timeout
+async function probePixelFed(url: string): Promise<LinkPreviewResult> {
   const parsed = new URL(url);
   const oembedUrl = `${parsed.origin}/api/v1/oembed?url=${encodeURIComponent(url)}`;
 
   try {
-    const res = await fetch(oembedUrl, { headers: { 'Accept': 'application/json' } });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const res = await fetch(oembedUrl, {
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
     if (res.ok) {
       const data = await res.json();
       if (data.url || data.thumbnail_url) {
@@ -94,50 +135,42 @@ async function fetchPixelFedPreview(url: string): Promise<LinkPreviewResult> {
       }
     }
   } catch (e) {
-    console.error('oEmbed fetch failed, trying OG fallback:', e);
+    console.error('PixelFed oEmbed probe failed:', e);
   }
 
   return fetchOgPreview(url, 'pixelfed');
 }
 
-async function fetchPeerTubePreview(url: string): Promise<LinkPreviewResult> {
-  const parsed = new URL(url);
-
-  const wMatch = parsed.pathname.match(/^\/w\/([^/?]+)/);
-  const watchMatch = parsed.pathname.match(/^\/videos\/watch\/([^/?]+)/);
-  const videoId = wMatch?.[1] || watchMatch?.[1];
-
-  if (videoId) {
-    try {
-      const apiUrl = `${parsed.origin}/api/v1/videos/${videoId}`;
-      const res = await fetch(apiUrl, { headers: { 'Accept': 'application/json' } });
-      if (res.ok) {
-        const data = await res.json();
-        return {
-          type: 'peertube',
-          title: data.name,
-          description: data.description?.substring(0, 200),
-          image_url: data.previewPath ? `${parsed.origin}${data.previewPath}` : (data.thumbnailPath ? `${parsed.origin}${data.thumbnailPath}` : undefined),
-          video_embed_url: `${parsed.origin}/videos/embed/${data.uuid || videoId}`,
-          duration: data.duration,
-          original_url: url,
-        };
-      }
-    } catch (e) {
-      console.error('PeerTube API fetch failed:', e);
-    }
-  }
-
-  return fetchOgPreview(url, 'peertube');
-}
-
+// OG fallback with 50KB limit
 async function fetchOgPreview(url: string, type: 'pixelfed' | 'peertube'): Promise<LinkPreviewResult> {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; XcrolBot/1.0)' },
       redirect: 'follow',
+      signal: controller.signal,
     });
-    const html = await res.text();
+    clearTimeout(timeout);
+
+    // Read only first 50KB to prevent abuse
+    const reader = res.body?.getReader();
+    if (!reader) return { type: 'unknown', original_url: url };
+
+    let html = '';
+    const decoder = new TextDecoder();
+    const MAX_BYTES = 50 * 1024;
+    let totalBytes = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.length;
+      html += decoder.decode(value, { stream: true });
+      if (totalBytes >= MAX_BYTES) break;
+    }
+    reader.cancel();
 
     const getOg = (property: string): string | undefined => {
       const match = html.match(new RegExp(`<meta[^>]*property=["']og:${property}["'][^>]*content=["']([^"']*)["']`, 'i'))
@@ -155,6 +188,10 @@ async function fetchOgPreview(url: string, type: 'pixelfed' | 'peertube'): Promi
     const ogDescription = getOg('description') || getMeta('description');
     const ogVideo = getOg('video:url') || getOg('video');
     const ogDuration = getOg('video:duration');
+
+    if (!ogImage && !ogTitle && !ogVideo) {
+      return { type: 'unknown', original_url: url };
+    }
 
     return {
       type,
@@ -177,7 +214,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Require authentication
+    // Require authentication (unchanged)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -209,8 +246,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Block internal/private URLs to prevent SSRF
+    // 1. SSRF check
     if (isBlockedUrl(url)) {
+      return new Response(JSON.stringify({ type: 'unknown', original_url: url }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 2. Big Tech blocklist
+    if (isBigTechUrl(url)) {
       return new Response(JSON.stringify({ type: 'unknown', original_url: url }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -218,11 +262,17 @@ Deno.serve(async (req) => {
 
     let result: LinkPreviewResult;
 
-    if (isPixelFedUrl(url)) {
-      result = await fetchPixelFedPreview(url);
-    } else if (isPeerTubeUrl(url)) {
-      result = await fetchPeerTubePreview(url);
-    } else {
+    // 3. PeerTube path pattern? -> probe API
+    const peerTubeVideoId = extractPeerTubeVideoId(url);
+    if (peerTubeVideoId) {
+      result = await probePeerTube(url, peerTubeVideoId);
+    }
+    // 4. PixelFed path pattern? -> probe oEmbed
+    else if (hasPixelFedPath(url)) {
+      result = await probePixelFed(url);
+    }
+    // 5. Neither -> unknown
+    else {
       result = { type: 'unknown', original_url: url };
     }
 
