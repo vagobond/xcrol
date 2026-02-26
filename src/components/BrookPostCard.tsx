@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BrookReactions } from "./BrookReactions";
 import { BrookComments } from "./BrookComments";
 import { MentionText } from "@/components/MentionText";
+import { LinkPreview } from "@/components/LinkPreview";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -99,23 +100,25 @@ export const BrookPostCard = ({ post, currentUserId, onDelete }: BrookPostCardPr
               <MentionText content={post.content} />
             </p>
 
-            {post.link && (
-              <a
-                href={post.link.startsWith("http") ? post.link : `https://${post.link}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm"
-              >
-                <ExternalLink className="h-3 w-3" />
-                {(() => {
-                  try {
-                    return new URL(post.link.startsWith("http") ? post.link : `https://${post.link}`).hostname;
-                  } catch {
-                    return post.link;
-                  }
-                })()}
-              </a>
-            )}
+            {post.link && (() => {
+              const normalizedUrl = post.link.startsWith("http") ? post.link : `https://${post.link}`;
+              return (
+                <div className="mt-2 space-y-2">
+                  <LinkPreview url={normalizedUrl} />
+                  <a
+                    href={normalizedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline text-sm"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    {(() => {
+                      try { return new URL(normalizedUrl).hostname; } catch { return post.link; }
+                    })()}
+                  </a>
+                </div>
+              );
+            })()}
 
             <div className="mt-3 space-y-2">
               <BrookReactions postId={post.id} currentUserId={currentUserId} />
