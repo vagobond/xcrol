@@ -1,79 +1,38 @@
 
 
-## Add More Trust Levels + Public Option for Groups
+## Add PixelFed/PeerTube Rich Link Previews to Brook Posts and Group Posts
 
 ### Overview
 
-Currently, group trust levels are limited to four options (Wayfarer, Companion, Oath Bound, Blood Bound). This change expands the dropdown to include all friendship tiers plus a new "public" option that allows any authenticated Xcrol user to view and join the group, regardless of friendship status.
+Brook post cards and group post cards currently show links as plain text URLs. This change adds the same rich media previews (PixelFed images, PeerTube video thumbnails/embeds) that already work in The River, by reusing the existing `LinkPreview` component. No database, edge function, or other component changes are needed.
 
 ### Changes
 
 ---
 
-### 1. Update `friendship-labels.ts` -- Add "public" label
+### 1. `src/components/BrookPostCard.tsx`
 
-Add a `"public"` entry to `friendshipLevelLabels` so `getFriendshipLabel("public")` returns a proper label like "Public (Any Xcrol Member)". This keeps the label system centralized.
-
----
-
-### 2. Update `TRUST_LEVELS` arrays in two files
-
-**Files:** `src/components/CreateGroupDialog.tsx` and `src/components/group/GroupSettingsTab.tsx`
-
-Expand the `TRUST_LEVELS` array from:
-```text
-["friendly_acquaintance", "buddy", "close_friend", "family"]
-```
-to:
-```text
-["public", "friendly_acquaintance", "buddy", "close_friend", "secret_friend", "family"]
-```
-
-This adds:
-- **public** -- any Xcrol user can see content and join (new, listed first)
-- **secret_friend** (Invisible Ally) -- between the existing tiers
-
-Note: `secret_enemy` and `not_friend` are excluded since they are adversarial/non-friendship levels that don't make sense for group access gating.
+- Import `LinkPreview` from `@/components/LinkPreview`
+- Inside the `{post.link && (...)}` block, add `<LinkPreview url={normalizedUrl} />` above the existing hostname anchor
+- Normalize the URL the same way already done for the anchor (prepend `https://` if no protocol)
 
 ---
 
-### 3. Update default trust level for new groups
+### 2. `src/components/group/GroupPostsTab.tsx`
 
-In `CreateGroupDialog.tsx`, change the default `trustLevel` state from `"friendly_acquaintance"` to `"public"` so new groups default to being open to all Xcrol members.
-
----
-
-### 4. Update `GroupHeader.tsx` badge display
-
-No structural change needed -- it already calls `getFriendshipLabel(group.trust_level)`, so the new "public" label will render automatically.
+- Already imports `LinkPreview` and renders it for group posts
+- No changes needed -- group posts already have rich link previews
 
 ---
 
-### 5. Database default update (migration)
+### What stays the same
 
-Update the `groups` table column default from `'friendly_acquaintance'` to `'public'` so any future groups created default to public trust level:
+- `LinkPreview` component -- no changes
+- `link-preview` edge function -- no changes
+- `RiverEntryCard` -- untouched
+- All other pages, components, database schema -- untouched
 
-```sql
-ALTER TABLE public.groups 
-  ALTER COLUMN trust_level SET DEFAULT 'public';
-```
+### Risk
 
-No data migration is needed -- existing groups keep their current trust_level values.
-
----
-
-### Technical Notes
-
-- The trust_level column is `text`, not an enum, so no enum alteration is needed
-- Trust level is currently cosmetic (not enforced by RLS on join), so this change is purely about UI options and labeling
-- The "public" label entry is added to the centralized `friendship-labels.ts` so it works everywhere `getFriendshipLabel()` is called
-
-### Files Summary
-
-| File | Action |
-|------|--------|
-| `src/lib/friendship-labels.ts` | Add "public" entry to labels |
-| `src/components/CreateGroupDialog.tsx` | Expand TRUST_LEVELS, change default to "public" |
-| `src/components/group/GroupSettingsTab.tsx` | Expand TRUST_LEVELS |
-| Migration SQL | Update column default to 'public' |
+Zero. `LinkPreview` is fully self-contained: it checks the URL against known PixelFed/PeerTube domains client-side and renders `null` for non-matching URLs, so non-media links display exactly as before.
 
