@@ -24,6 +24,7 @@ export const useMessagesData = () => {
           .from("messages")
           .select("*")
           .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+          .is("deleted_at", null)
           .order("created_at", { ascending: false }),
         supabase
           .from("friend_requests")
@@ -220,7 +221,7 @@ export const useMessagesData = () => {
       if (type === "message") {
         const { error } = await supabase
           .from("messages")
-          .delete()
+          .update({ deleted_at: new Date().toISOString() })
           .eq("id", messageId);
 
         if (error) throw error;
@@ -228,11 +229,29 @@ export const useMessagesData = () => {
 
       setMessages(prev => prev.filter(m => m.id !== messageId));
       toast({ title: "Message deleted" });
+      return messageId;
     } catch (error) {
       console.error("Error deleting message:", error);
       toast({ title: "Failed to delete", variant: "destructive" });
+      return null;
     }
   }, [toast]);
+
+  const recoverMessage = useCallback(async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from("messages")
+        .update({ deleted_at: null })
+        .eq("id", messageId);
+
+      if (error) throw error;
+      toast({ title: "Message recovered" });
+      loadMessages();
+    } catch (error) {
+      console.error("Error recovering message:", error);
+      toast({ title: "Failed to recover", variant: "destructive" });
+    }
+  }, [toast, loadMessages]);
 
   const totalUnreadCount = threads.reduce((sum, t) => sum + t.unreadCount, 0);
   const friendRequestCount = threads.filter(t => t.hasFriendRequest).length;
@@ -245,6 +264,7 @@ export const useMessagesData = () => {
     friendRequestCount,
     markAsRead,
     deleteMessage,
+    recoverMessage,
     loadMessages,
   };
 };
