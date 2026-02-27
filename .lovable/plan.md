@@ -1,48 +1,96 @@
 
 
-## Fix: Notification Bell Freezes the Page
+## Fix: "Let's Connect On..." Platform Links
 
-### The Problem
+### Root Cause
 
-The Radix `DropdownMenu` component is modal by default. When opened, it renders an invisible backdrop that captures all pointer events and traps keyboard focus. This makes the rest of the site feel "frozen" until you click the bell again to close it.
+The `getPlatformUrl` function in `src/components/messages/types.ts` has three bugs:
 
-### Options
+1. **Ignores the platform parameter** -- always returns `sender.link` (a generic profile link) regardless of which platform was selected
+2. **Uses the wrong profile** -- shows the sender's link instead of the recipient's platform-specific URL
+3. **Missing data** -- `SenderProfile` only fetches `id, display_name, avatar_url, link` from the profiles table. It never fetches the platform-specific fields (`linkedin_url`, `instagram_url`, `whatsapp`, `contact_email`, `phone_number`)
 
-#### Option A: Add `modal={false}` to the DropdownMenu (Simplest)
+This is why JD saw a link to "INdignified" (the sender's generic `link` field) when clicking "Let's connect on WhatsApp."
 
-Set `<DropdownMenu modal={false}>` so the dropdown no longer blocks interaction with the rest of the page. Users can scroll, click links, and interact normally while the notification panel is open. Clicking outside still closes it.
+### Fix
 
-- **Pros:** One-line change. Keeps the existing dropdown component. Matches how most social sites handle notification panels.
-- **Cons:** Keyboard focus is no longer trapped inside the dropdown (minor accessibility tradeoff, acceptable for a notification list).
-- **Files changed:** `src/components/NotificationBell.tsx` (1 line)
+#### 1. Expand `SenderProfile` type and query (`src/components/messages/types.ts` + `useMessagesData.ts`)
 
-#### Option B: Replace DropdownMenu with a Popover
+Add platform-specific fields to `SenderProfile`:
 
-Swap the `DropdownMenu` for a `Popover` component (already installed via Radix). Popovers are non-modal by default and designed for richer content like notification panels, rather than simple menu item lists.
-
-- **Pros:** Semantically correct for notification content. Non-modal by default. Better suited for scrollable, interactive content. Still closes on outside click.
-- **Cons:** Slightly more code to swap. Notification items would need minor style tweaks (remove dropdown-specific hover states, use standard clickable divs).
-- **Files changed:** `src/components/NotificationBell.tsx` (swap imports and wrapper elements)
-
-#### Option C: Replace with a Sheet (Slide-out Panel)
-
-Use the existing `Sheet` (drawer) component to slide in a notification panel from the right side. This is the pattern used by Instagram, LinkedIn, and many modern apps.
-
-- **Pros:** More room for content. Feels polished and modern. Works well on mobile. Non-modal scrolling underneath is possible.
-- **Cons:** More significant UI change. Takes up more screen space. Requires reworking the layout of notification items.
-- **Files changed:** `src/components/NotificationBell.tsx` (larger rewrite), possibly notification item components for layout adjustments.
-
-### Recommendation
-
-**Option A** is the fastest fix and immediately solves the problem. It is literally adding `modal={false}` to one element. If you want a more polished feel later, Option B or C can be done as a follow-up.
-
-### Implementation (Option A)
-
-Change line 157 in `NotificationBell.tsx`:
-
-```text
-Before:  <DropdownMenu>
-After:   <DropdownMenu modal={false}>
+```typescript
+export interface SenderProfile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  link: string | null;
+  linkedin_url: string | null;
+  instagram_url: string | null;
+  whatsapp: string | null;
+  contact_email: string | null;
+  phone_number: string | null;
+}
 ```
 
-That is the entire change. The dropdown will no longer block interaction with the rest of the page.
+Update the profiles query in `useMessagesData.ts` to fetch these fields:
+
+```typescript
+.select("id, display_name, avatar_url, link, linkedin_url, instagram_url, whatsapp, contact_email, phone_number")
+```
+
+#### 2. Fix `getPlatformUrl` to use the correct field per platform (`src/components/messages/types.ts`)
+
+```typescript
+export const getPlatformUrl = (platform: string, profile?: SenderProfile): string | null => {
+  if (!profile) return null;
+  switch (platform) {
+    case "linkedin":
+      return profile.linkedin_url || null;
+    case "instagram":
+      return profile.instagram_url || null;
+    case "whatsapp":
+      return profile.whatsapp
+        ? `https://wa.me/${profile.whatsapp.replace(/\D/g, '')}`
+        : null;
+    case "email":
+      return profile.contact_email
+        ? `mailto:${profile.contact_email}`
+        : null;
+    case "phone":
+      return profile.phone_number
+        ? `tel:${profile.phone_number}`
+        : null;
+    default:
+      return profile.link || null;
+  }
+};
+```
+
+#### 3. Use the correct profile in `MessageBubble.tsx`
+
+The `PlatformSuggestion` component currently passes `message.sender` to `getPlatformUrl`. For "Let's connect on X" links, we need the **other user's** profile -- when you receive a message saying "let's connect on WhatsApp," the link should go to the sender's WhatsApp. When you sent the message, the link should go to the recipient's WhatsApp.
+
+Update `PlatformSuggestion` to pick the right profile:
+
+- For received messages: use `message.sender` (the other person who sent the suggestion)
+- For sent messages: use `message.recipient` (the person you want to connect with)
+
+Since `MessageBubble` already receives `isReceived`, pass it down to `PlatformSuggestion`:
+
+```typescript
+const contactProfile = isReceived ? message.sender : message.recipient;
+const platformUrl = getPlatformUrl(message.platform_suggestion, contactProfile);
+```
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/messages/types.ts` | Expand `SenderProfile` with platform fields; rewrite `getPlatformUrl` to map each platform to the correct URL field |
+| `src/components/messages/useMessagesData.ts` | Add platform fields to the profiles SELECT query |
+| `src/components/messages/MessageBubble.tsx` | Pass `isReceived` to `PlatformSuggestion`; use correct profile (sender vs recipient) for the link |
+
+### Privacy Note
+
+The profiles query already respects RLS policies. The platform-specific fields (linkedin_url, instagram_url, etc.) are stored on public profiles and are already visible on the public profile page via `ProfileInfoCard`. No new data exposure occurs.
+
