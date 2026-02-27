@@ -64,29 +64,36 @@ export const useGroups = () => {
 
       const groupIds = groups.map((g) => g.id);
 
-      // Batch: get all active members for counts
-      const { data: allMembers } = await supabase
-        .from("group_members")
-        .select("group_id, user_id, status, role")
-        .in("group_id", groupIds);
+      // Get member counts using SECURITY DEFINER function (visible even for non-members)
+      const countPromises = groupIds.map((id) =>
+        supabase.rpc("get_group_member_count", { target_group_id: id })
+      );
+      const countResults = await Promise.all(countPromises);
+      const countMap = new Map<string, number>();
+      groupIds.forEach((id, i) => {
+        countMap.set(id, (countResults[i].data as number) ?? 0);
+      });
 
-      const membersByGroup = new Map<string, typeof allMembers>();
-      for (const m of allMembers ?? []) {
-        const list = membersByGroup.get(m.group_id) ?? [];
-        list.push(m);
-        membersByGroup.set(m.group_id, list);
+      // Get current user's membership info (RLS will return only rows the user can see)
+      let myMembershipMap = new Map<string, { status: string; role: string }>();
+      if (user) {
+        const { data: myMemberships } = await supabase
+          .from("group_members")
+          .select("group_id, status, role")
+          .eq("user_id", user.id)
+          .in("group_id", groupIds);
+
+        for (const m of myMemberships ?? []) {
+          myMembershipMap.set(m.group_id, { status: m.status, role: m.role });
+        }
       }
 
       return groups.map((g) => {
-        const members = membersByGroup.get(g.id) ?? [];
-        const activeCount = members.filter((m) => m.status === "active").length;
-        const myMembership = user
-          ? members.find((m) => m.user_id === user.id)
-          : undefined;
+        const myMembership = myMembershipMap.get(g.id);
 
         return {
           ...g,
-          member_count: activeCount,
+          member_count: countMap.get(g.id) ?? 0,
           is_member: myMembership?.status === "active",
           is_admin: false,
           membership_status: myMembership?.status ?? null,
