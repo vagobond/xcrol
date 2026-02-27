@@ -2203,6 +2203,10 @@ export type Database = {
         Args: { profile_id: string; viewer_id: string }
         Returns: Database["public"]["Enums"]["friendship_level"]
       }
+      get_group_member_count: {
+        Args: { target_group_id: string }
+        Returns: number
+      }
       get_own_profile: {
         Args: never
         Returns: {
