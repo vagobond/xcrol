@@ -1074,6 +1074,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          deleted_at: string | null
           entry_id: string | null
           from_user_id: string
           id: string
@@ -1084,6 +1085,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          deleted_at?: string | null
           entry_id?: string | null
           from_user_id: string
           id?: string
@@ -1094,6 +1096,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          deleted_at?: string | null
           entry_id?: string | null
           from_user_id?: string
           id?: string
