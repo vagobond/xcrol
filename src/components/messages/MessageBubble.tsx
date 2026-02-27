@@ -88,7 +88,7 @@ const MessageBubble = ({ message, isReceived, isExpanded, onToggleExpand, onDele
             </div>
           )}
 
-          <PlatformSuggestion message={message} />
+          <PlatformSuggestion message={message} isReceived={isReceived} />
 
           <p className="mt-1 text-xs text-muted-foreground">
             {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
@@ -109,7 +109,7 @@ const MessageBubble = ({ message, isReceived, isExpanded, onToggleExpand, onDele
   );
 };
 
-const PlatformSuggestion = ({ message }: { message: Message }) => {
+const PlatformSuggestion = ({ message, isReceived }: { message: Message; isReceived: boolean }) => {
   const navigate = useNavigate();
 
   if (!message.platform_suggestion || message.platform_suggestion === "none") return null;
@@ -143,7 +143,8 @@ const PlatformSuggestion = ({ message }: { message: Message }) => {
     );
   }
 
-  const platformUrl = getPlatformUrl(message.platform_suggestion, message.sender);
+  const contactProfile = isReceived ? message.sender : message.recipient;
+  const platformUrl = getPlatformUrl(message.platform_suggestion, contactProfile);
   if (!platformUrl) return null;
 
   return (

@@ -49,7 +49,7 @@ export const useMessagesData = () => {
       if (allUserIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("id, display_name, avatar_url, link")
+          .select("id, display_name, avatar_url, link, linkedin_url, instagram_url, whatsapp, contact_email, phone_number")
           .in("id", allUserIds);
 
         profileMap = new Map(profiles?.map(p => [p.id, p as SenderProfile]) || []);

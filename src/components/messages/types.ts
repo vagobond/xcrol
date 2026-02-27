@@ -3,6 +3,11 @@ export interface SenderProfile {
   display_name: string | null;
   avatar_url: string | null;
   link: string | null;
+  linkedin_url: string | null;
+  instagram_url: string | null;
+  whatsapp: string | null;
+  contact_email: string | null;
+  phone_number: string | null;
 }
 
 export interface Message {
@@ -40,9 +45,28 @@ export const platformLabels: Record<string, string> = {
   phone: "Phone",
 };
 
-export const getPlatformUrl = (platform: string, sender?: SenderProfile): string | null => {
-  if (!sender) return null;
-  return sender.link || null;
+export const getPlatformUrl = (platform: string, profile?: SenderProfile): string | null => {
+  if (!profile) return null;
+  switch (platform) {
+    case "linkedin":
+      return profile.linkedin_url || null;
+    case "instagram":
+      return profile.instagram_url || null;
+    case "whatsapp":
+      return profile.whatsapp
+        ? `https://wa.me/${profile.whatsapp.replace(/\D/g, '')}`
+        : null;
+    case "email":
+      return profile.contact_email
+        ? `mailto:${profile.contact_email}`
+        : null;
+    case "phone":
+      return profile.phone_number
+        ? `tel:${profile.phone_number}`
+        : null;
+    default:
+      return profile.link || null;
+  }
 };
 
 export const getFirstSentence = (text: string, maxLength = 60): string => {
