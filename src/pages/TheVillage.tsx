@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useGroups } from "@/hooks/use-groups";
 import { useAuth } from "@/hooks/use-auth";
 import { useGroupActivity } from "@/hooks/use-group-activity";
@@ -63,7 +63,7 @@ const TheVillage = () => {
                     key={group.id}
                     group={group}
                     newPostCount={activityCounts.get(group.id) ?? 0}
-                    onClick={() => navigate(`/group/${group.slug}`)}
+                    to={`/group/${group.slug}`}
                   />
                 ))}
               </div>
@@ -75,7 +75,7 @@ const TheVillage = () => {
               <h2 className="text-xl font-semibold mb-4">Discover Groups</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {otherGroups.map((group) => (
-                  <GroupCard key={group.id} group={group} newPostCount={0} onClick={() => navigate(`/group/${group.slug}`)} />
+                  <GroupCard key={group.id} group={group} newPostCount={0} to={`/group/${group.slug}`} />
                 ))}
               </div>
             </section>
@@ -96,15 +96,15 @@ const TheVillage = () => {
 const GroupCard = ({
   group,
   newPostCount,
-  onClick,
+  to,
 }: {
   group: ReturnType<typeof useGroups>["data"] extends (infer T)[] | undefined ? T : never;
   newPostCount: number;
-  onClick: () => void;
+  to: string;
 }) => (
+  <Link to={to} className="block no-underline">
   <Card
     className="cursor-pointer hover:border-primary/50 transition-colors"
-    onClick={onClick}
   >
     <CardHeader className="flex flex-row items-center gap-3 pb-2">
       <div className="relative shrink-0">
@@ -140,6 +140,7 @@ const GroupCard = ({
       </div>
     </CardContent>
   </Card>
+  </Link>
 );
 
 export default TheVillage;
