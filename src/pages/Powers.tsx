@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Globe, Waves, TreePine, Layers } from "lucide-react";
 import villageIconSrc from "@/assets/village-icon.png";
 import {
@@ -13,17 +13,8 @@ import { useInviteNotification } from "@/hooks/use-invite-notification";
 import { InviteNotificationModal } from "@/components/InviteNotificationModal";
 
 const Powers = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { showNotification, dismissNotification } = useInviteNotification();
-
-  const handleProfileClick = () => {
-    if (user) {
-      navigate("/profile");
-    } else {
-      navigate("/auth");
-    }
-  };
 
   // Custom two-wave icon (like Waves but with 2 lines instead of 3)
   const TwoWaves = ({ className }: { className?: string }) => (
@@ -195,12 +186,13 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    onClick={handleProfileClick}
+                    asChild
                     className="w-full sm:w-auto min-w-[250px]"
-                    data-tutorial="you"
                   >
-                    <TreeOfLife className="mr-2 h-5 w-5" />
-                    YOU
+                    <Link to={user ? "/profile" : "/auth"} data-tutorial="you">
+                      <TreeOfLife className="mr-2 h-5 w-5" />
+                      YOU
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -213,12 +205,13 @@ const Powers = () => {
                   <Button 
                     variant="divine" 
                     size="xl"
-                    onClick={() => navigate("/the-river")}
+                    asChild
                     className="w-full sm:w-auto min-w-[250px]"
-                    data-tutorial="river"
                   >
-                    <Waves className="mr-2 h-5 w-5" />
-                    THE RIVER
+                    <Link to="/the-river" data-tutorial="river">
+                      <Waves className="mr-2 h-5 w-5" />
+                      THE RIVER
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -231,12 +224,13 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    onClick={() => navigate("/irl-layer")}
+                    asChild
                     className="w-full sm:w-auto min-w-[250px]"
-                    data-tutorial="world"
                   >
-                    <Globe className="mr-2 h-5 w-5" />
-                    THE WORLD
+                    <Link to="/irl-layer" data-tutorial="world">
+                      <Globe className="mr-2 h-5 w-5" />
+                      THE WORLD
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -252,12 +246,13 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    onClick={() => navigate("/the-forest")}
+                    asChild
                     className="w-full sm:w-auto min-w-[250px]"
-                    data-tutorial="forest"
                   >
-                    <TwoTrees className="mr-2" />
-                    THE FOREST
+                    <Link to="/the-forest" data-tutorial="forest">
+                      <TwoTrees className="mr-2" />
+                      THE FOREST
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -270,12 +265,13 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    onClick={() => navigate("/the-forest?tab=brooks")}
+                    asChild
                     className="w-full sm:w-auto min-w-[250px]"
-                    data-tutorial="brook"
                   >
-                    <TwoWaves className="mr-2 h-5 w-5" />
-                    THE BROOKS
+                    <Link to="/the-forest?tab=brooks" data-tutorial="brook">
+                      <TwoWaves className="mr-2 h-5 w-5" />
+                      THE BROOKS
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -288,12 +284,13 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    onClick={() => navigate("/settings")}
+                    asChild
                     className="w-full sm:w-auto min-w-[250px]"
-                    data-tutorial="strata"
                   >
-                    <Layers className="mr-2 h-5 w-5" />
-                    THE STRATA
+                    <Link to="/settings" data-tutorial="strata">
+                      <Layers className="mr-2 h-5 w-5" />
+                      THE STRATA
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -309,12 +306,13 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    onClick={() => navigate("/the-village")}
+                    asChild
                     className="w-full sm:w-auto min-w-[250px]"
-                    data-tutorial="village"
                   >
-                    <img src={villageIconSrc} alt="Village" className="mr-2 h-5 w-5 invert dark:invert-0 brightness-150 contrast-150" />
-                    THE VILLAGE
+                    <Link to="/the-village" data-tutorial="village">
+                      <img src={villageIconSrc} alt="Village" className="mr-2 h-5 w-5 invert dark:invert-0 brightness-150 contrast-150" />
+                      THE VILLAGE
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -327,12 +325,13 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    onClick={() => navigate("/the-town")}
+                    asChild
                     className="w-full sm:w-auto min-w-[250px]"
-                    data-tutorial="town"
                   >
-                    <TownIcon className="mr-2 h-5 w-5" />
-                    THE TOWN
+                    <Link to="/the-town" data-tutorial="town">
+                      <TownIcon className="mr-2 h-5 w-5" />
+                      THE TOWN
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -363,18 +362,18 @@ const Powers = () => {
         </TooltipProvider>
 
         <div className="flex flex-col items-center gap-2">
-          <button 
-            onClick={() => navigate("/getting-started")}
+          <Link 
+            to="/getting-started"
             className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-4 text-sm"
           >
             Getting Started / FAQ
-          </button>
-          <button 
-            onClick={() => navigate("/install-app")}
+          </Link>
+          <Link 
+            to="/install-app"
             className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-4 text-sm font-bold"
           >
             Install the XCROL App
-          </button>
+          </Link>
         </div>
       </div>
 
