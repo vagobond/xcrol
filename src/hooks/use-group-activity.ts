@@ -25,6 +25,12 @@ export function setGroupLastVisit(groupId: string): void {
  */
 export function useGroupActivity(memberGroupIds: string[]) {
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
+  const [mountKey, setMountKey] = useState(0);
+
+  // Bump mountKey every time the hook mounts (e.g. navigating back to Village)
+  useEffect(() => {
+    setMountKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     if (memberGroupIds.length === 0) {
@@ -35,15 +41,12 @@ export function useGroupActivity(memberGroupIds: string[]) {
     let cancelled = false;
 
     const fetchCounts = async () => {
-      // Build a map of groupId -> lastVisit timestamp
       const lastVisits = new Map<string, string>();
       for (const gid of memberGroupIds) {
         const lv = getGroupLastVisit(gid);
         if (lv) lastVisits.set(gid, lv);
-        // If no stored visit, all posts are "new" — we'll use epoch
       }
 
-      // Fetch all posts for these groups, but only the id, group_id, created_at
       const { data, error } = await supabase
         .from("group_posts")
         .select("group_id, created_at")
@@ -55,10 +58,7 @@ export function useGroupActivity(memberGroupIds: string[]) {
       const result = new Map<string, number>();
       for (const post of data || []) {
         const lastVisit = lastVisits.get(post.group_id);
-        if (!lastVisit) {
-          // Never visited — don't show a badge (would be overwhelming on first load)
-          continue;
-        }
+        if (!lastVisit) continue;
         if (new Date(post.created_at) > new Date(lastVisit)) {
           result.set(post.group_id, (result.get(post.group_id) || 0) + 1);
         }
@@ -72,7 +72,7 @@ export function useGroupActivity(memberGroupIds: string[]) {
     return () => {
       cancelled = true;
     };
-  }, [memberGroupIds.join(",")]);
+  }, [memberGroupIds.join(","), mountKey]);
 
   return counts;
 }
