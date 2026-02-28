@@ -2207,6 +2207,20 @@ export type Database = {
         Args: { target_group_id: string }
         Returns: number
       }
+      get_message_profiles: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          contact_email: string
+          display_name: string
+          id: string
+          instagram_url: string
+          link: string
+          linkedin_url: string
+          phone_number: string
+          whatsapp: string
+        }[]
+      }
       get_own_profile: {
         Args: never
         Returns: {

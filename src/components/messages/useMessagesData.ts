@@ -49,11 +49,9 @@ export const useMessagesData = () => {
 
       if (allUserIds.length > 0) {
         const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, display_name, avatar_url, link, linkedin_url, instagram_url, whatsapp, contact_email, phone_number")
-          .in("id", allUserIds);
+          .rpc("get_message_profiles", { p_user_ids: allUserIds });
 
-        profileMap = new Map(profiles?.map(p => [p.id, p as SenderProfile]) || []);
+        profileMap = new Map(profiles?.map((p: SenderProfile) => [p.id, p]) || []);
       }
 
       const regularMessages: Message[] = (messagesData || []).map(m => ({
