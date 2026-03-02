@@ -1,27 +1,41 @@
 
-
-## Convert Group Cards to Links for Right-Click Support
+## Improve Messages UX: Auto-Scroll to Newest Messages
 
 ### Problem
-Group cards on The Village page use `onClick={() => navigate("/group/slug")}` on a `<Card>` div. This means no `<a>` tag is rendered, so browsers don't offer "Open in new tab" on right-click or middle-click.
+When opening a conversation thread, messages are displayed oldest-first (chronologically correct for a chat), but the scroll position starts at the top. Users must manually scroll to the bottom to see the latest messages.
 
 ### Solution
-Wrap each `<Card>` in a React Router `<Link>` component, moving the navigation from `onClick` to a proper `href`.
+Add an auto-scroll behavior that scrolls the message container to the bottom when the thread opens and when new messages arrive. This is the standard pattern used by every major messaging app (iMessage, WhatsApp, etc.).
 
-### Changes (single file: `src/pages/TheVillage.tsx`)
+### Changes (single file: `src/components/messages/ThreadDetailView.tsx`)
 
-1. Import `Link` from `react-router-dom`
-2. Update the `GroupCard` component:
-   - Change the `onClick: () => void` prop to `to: string`
-   - Wrap the `<Card>` in a `<Link to={to}>` with no underline styling
-   - Remove the `onClick` from `<Card>`
-3. Update both call sites to pass `to={"/group/" + group.slug}` instead of `onClick`
-4. Remove `useNavigate` import (no longer used after this -- but check the Back button still uses it, so keep it)
+1. Add a `useRef` for the scroll container
+2. Add a `useEffect` that scrolls the container to the bottom:
+   - On initial render (thread opens)
+   - When `thread.messages.length` changes (new message arrives)
+3. Use `scrollTop = scrollHeight` to jump to the bottom instantly on mount, keeping it snappy
+
+### Technical Detail
+
+```text
+Before:
+  [Message 1 - oldest]  <-- viewport starts here
+  [Message 2]
+  [Message 3]
+  ...
+  [Message N - newest]  <-- user must scroll here
+
+After:
+  [Message 1 - oldest]
+  [Message 2]
+  ...
+  [Message N - newest]  <-- viewport starts here automatically
+```
+
+The scroll container on line 115 (`div.space-y-3.max-h-[60vh].overflow-y-auto`) gets a ref. A `useEffect` sets `ref.scrollTop = ref.scrollHeight` after render.
 
 ### What does NOT change
-- No styling changes -- cards look identical
+- Message ordering stays chronological (oldest to newest) -- this is correct for chat UX
+- No styling changes
 - No other files modified
-- No database or backend changes
-- The Back button keeps using `navigate(-1)` as before
-- No new dependencies
-
+- No database changes
