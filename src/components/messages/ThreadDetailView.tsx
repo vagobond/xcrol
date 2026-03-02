@@ -30,6 +30,14 @@ const ThreadDetailView = ({
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
   const markedAsRead = useRef<Set<string>>(new Set());
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom on mount and when new messages arrive
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  }, [thread.messages.length]);
 
   // Mark unread messages as read via effect, not during render
   useEffect(() => {
@@ -112,7 +120,7 @@ const ThreadDetailView = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+        <div ref={scrollContainerRef} className="space-y-3 max-h-[60vh] overflow-y-auto">
           {thread.messages.map((message) => {
             const isReceived = message.to_user_id === currentUserId;
 
