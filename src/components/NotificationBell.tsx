@@ -58,7 +58,7 @@ const NotificationBell = () => {
         toast.info(
           `You have ${unreadMessageCount} unread message${unreadMessageCount > 1 ? "s" : ""}`,
           {
-            action: { label: "View", onClick: () => navigate("/messages") },
+            action: { label: "View", onClick: () => setTimeout(() => navigate("/messages"), 0) },
             duration: 5000,
           }
         );
@@ -75,7 +75,7 @@ const NotificationBell = () => {
         const firstName =
           newReferences[0].from_profile?.display_name?.split(" ")[0] || "Someone";
         toast.info(`${firstName} left you a reference!`, {
-          action: { label: "View", onClick: () => navigate("/profile") },
+          action: { label: "View", onClick: () => setTimeout(() => navigate("/profile"), 0) },
           duration: 5000,
         });
         setHasShownReferenceToast(true);
