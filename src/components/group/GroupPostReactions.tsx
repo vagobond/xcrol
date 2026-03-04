@@ -153,10 +153,10 @@ export const GroupPostReactions = ({ targetId, targetType }: GroupPostReactionsP
           }
         } else {
           if (targetType === "post") {
-            const { error } = await supabase.from("group_post_reactions").insert({ post_id: targetId, user_id: userId, emoji });
+            const { error } = await supabase.from("group_post_reactions").upsert({ post_id: targetId, user_id: userId, emoji }, { onConflict: 'post_id,user_id,emoji' });
             if (error) throw error;
           } else {
-            const { error } = await supabase.from("group_comment_reactions").insert({ comment_id: targetId, user_id: userId, emoji });
+            const { error } = await supabase.from("group_comment_reactions").upsert({ comment_id: targetId, user_id: userId, emoji }, { onConflict: 'comment_id,user_id,emoji' });
             if (error) throw error;
           }
         }

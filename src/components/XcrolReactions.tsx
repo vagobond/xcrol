@@ -198,7 +198,7 @@ export const XcrolReactions = ({ entryId, compact = false, authorId, authorName,
       } else {
         const { error } = await supabase
           .from("xcrol_reactions")
-          .insert({ entry_id: entryId, user_id: userId, emoji });
+          .upsert({ entry_id: entryId, user_id: userId, emoji }, { onConflict: 'entry_id,user_id,emoji' });
 
         if (error) throw error;
       }
