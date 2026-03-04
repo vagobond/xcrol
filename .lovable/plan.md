@@ -1,41 +1,43 @@
 
 
-## Fix: Toast "View" Button Not Navigating to Messages
-
-### Problem
-When users log in and have unread messages, a Sonner toast popup appears saying "You have X unread messages" with a "View" button. Clicking "View" does nothing -- the toast dismisses but no navigation occurs.
-
-This happens because Sonner's `action.onClick` fires synchronously during toast dismissal, and React Router's `navigate()` call gets swallowed during that process.
+## Fix: "Failed to Update Reaction" on River Reply Reactions
 
 ### Root Cause
-In `src/components/NotificationBell.tsx` (lines 58-64), the toast action uses:
-```
-action: { label: "View", onClick: () => navigate("/messages") }
-```
-Sonner dismisses the toast on action click, and the `navigate()` call from React Router conflicts with this dismissal timing.
 
-### Fix (single file: `src/components/NotificationBell.tsx`)
+The bug is a **race condition** in the `RiverReplyReactions` component. Here's the sequence:
 
-Wrap the `navigate()` calls inside the toast action handlers in a `setTimeout(..., 0)` to defer navigation until after Sonner finishes dismissing the toast. This ensures the React Router navigation fires on the next tick.
+1. Component mounts and starts two parallel async operations:
+   - Fetching the current user via `supabase.auth.getUser()` (sets `userId`)
+   - Loading reactions via `loadReactions()` (triggered by `useEffect`)
+2. `loadReactions` often runs **before** `userId` is set. Since `userId` is `null`, all reactions load with `hasReacted: false` — even if the current user has already reacted.
+3. When `userId` resolves, `loadReactions` runs again, but if the user clicks the ❤️ emoji **before** the second load completes, `toggleReaction` reads stale state where `hasReacted = false`.
+4. The code thinks the user hasn't reacted and tries to INSERT, but the reaction already exists in the database → **unique constraint violation** → "Failed to update reaction" toast.
+5. The optimistic update showed the heart, but the catch block calls `loadReactions()` which reverts the state. The net result is confusing: toast error, heart might flash, and on refresh the reaction is either missing (if an earlier attempt truly failed) or present (if a retry succeeded).
 
-**Line 61** -- change:
-```typescript
-action: { label: "View", onClick: () => navigate("/messages") },
-```
-to:
-```typescript
-action: { label: "View", onClick: () => setTimeout(() => navigate("/messages"), 0) },
-```
+The same race condition pattern exists in `BrookReactions` (though it gets `currentUserId` as a prop, avoiding this specific issue) but `XcrolReactions` and `GroupPostReactions` have the identical bug since they also fetch `userId` internally.
 
-**Line 78** -- apply the same fix to the reference toast:
-```typescript
-action: { label: "View", onClick: () => setTimeout(() => navigate("/profile"), 0) },
-```
+### Fix (3 files)
+
+**Strategy**: Use `upsert` with `onConflict` instead of `insert` for adding reactions, and add `{ count: 'exact' }` or simply ignore the unique constraint error. The simplest and most robust fix is to:
+
+1. **Use `upsert` instead of `insert`** for reaction creation — this gracefully handles the case where the reaction already exists (it becomes a no-op).
+2. **Ignore "duplicate key" errors on insert** as a secondary guard — if the reaction already exists, that's actually the desired state.
+
+#### File 1: `src/components/river/RiverReplyReactions.tsx`
+- Line ~136: Change `.insert(...)` to `.upsert(..., { onConflict: 'reply_id,user_id,emoji' })`
+
+#### File 2: `src/components/XcrolReactions.tsx`
+- Line ~201: Change `.insert(...)` to `.upsert(..., { onConflict: 'entry_id,user_id,emoji' })`
+
+#### File 3: `src/components/group/GroupPostReactions.tsx`
+- Line ~143 (post reactions): Change `.insert(...)` to `.upsert(..., { onConflict: 'post_id,user_id,emoji' })`
+- Line ~147 (comment reactions): Change `.insert(...)` to `.upsert(..., { onConflict: 'comment_id,user_id,emoji' })`
 
 ### What does NOT change
-- No styling changes
-- No other files modified
-- No database or backend changes
-- Toast appearance and timing remain identical
-- All other notification behavior is untouched
+- No styling or UI changes
+- No database migrations or RLS policy changes
+- No changes to the delete path (removing reactions)
+- No changes to the optimistic update logic
+- `BrookReactions` is not affected (it receives `currentUserId` as a prop, avoiding the race)
+- All other reaction behavior remains identical
 
