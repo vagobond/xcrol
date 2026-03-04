@@ -133,7 +133,7 @@ export const RiverReplyReactions = ({ replyId, initialReactions, onReactionsChan
       } else {
         const { error } = await supabase
           .from("river_reply_reactions")
-          .insert({ reply_id: replyId, user_id: userId, emoji });
+          .upsert({ reply_id: replyId, user_id: userId, emoji }, { onConflict: 'reply_id,user_id,emoji' });
         if (error) throw error;
       }
       onReactionsChange?.();
