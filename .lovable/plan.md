@@ -1,43 +1,56 @@
 
 
-## Fix: "Failed to Update Reaction" on River Reply Reactions
+## Add Notification Badge to Village Icon in AppHeader
 
-### Root Cause
+### Goal
+Show a red badge on the Village icon in the header nav bar when there is new activity (posts) in groups the user has joined. This is independent of the bell icon notifications, which handle reactions/comments/mentions on the user's own content.
 
-The bug is a **race condition** in the `RiverReplyReactions` component. Here's the sequence:
+### Approach
 
-1. Component mounts and starts two parallel async operations:
-   - Fetching the current user via `supabase.auth.getUser()` (sets `userId`)
-   - Loading reactions via `loadReactions()` (triggered by `useEffect`)
-2. `loadReactions` often runs **before** `userId` is set. Since `userId` is `null`, all reactions load with `hasReacted: false` — even if the current user has already reacted.
-3. When `userId` resolves, `loadReactions` runs again, but if the user clicks the ❤️ emoji **before** the second load completes, `toggleReaction` reads stale state where `hasReacted = false`.
-4. The code thinks the user hasn't reacted and tries to INSERT, but the reaction already exists in the database → **unique constraint violation** → "Failed to update reaction" toast.
-5. The optimistic update showed the heart, but the catch block calls `loadReactions()` which reverts the state. The net result is confusing: toast error, heart might flash, and on refresh the reaction is either missing (if an earlier attempt truly failed) or present (if a retry succeeded).
+**New hook: `src/hooks/use-village-activity.ts`**
+A lightweight hook that:
+1. Fetches the current user's active group memberships (just group IDs)
+2. For each group, reads the `group_last_visit_{groupId}` timestamp from localStorage (reusing the existing convention from `use-group-activity.ts`)
+3. Queries `group_posts` to count posts newer than each group's last-visit timestamp
+4. Returns a single total number (sum across all groups)
 
-The same race condition pattern exists in `BrookReactions` (though it gets `currentUserId` as a prop, avoiding this specific issue) but `XcrolReactions` and `GroupPostReactions` have the identical bug since they also fetch `userId` internally.
+This reuses the same localStorage-based tracking already in place — no database changes needed.
 
-### Fix (3 files)
+**Modified file: `src/components/AppHeader.tsx`**
+- Import and call `useVillageActivityCount`
+- Wrap the Village `<Button>` in a `relative` container
+- When count > 0, render a small red badge (same styling as NotificationBell) on the Village icon
 
-**Strategy**: Use `upsert` with `onConflict` instead of `insert` for adding reactions, and add `{ count: 'exact' }` or simply ignore the unique constraint error. The simplest and most robust fix is to:
+### Technical Detail
 
-1. **Use `upsert` instead of `insert`** for reaction creation — this gracefully handles the case where the reaction already exists (it becomes a no-op).
-2. **Ignore "duplicate key" errors on insert** as a secondary guard — if the reaction already exists, that's actually the desired state.
+```text
+AppHeader Village button:
+  <Button className="relative ...">
+    <img ... />
+    {count > 0 && <span className="absolute -top-1 -right-1 ...">count</span>}
+  </Button>
+```
 
-#### File 1: `src/components/river/RiverReplyReactions.tsx`
-- Line ~136: Change `.insert(...)` to `.upsert(..., { onConflict: 'reply_id,user_id,emoji' })`
+The hook query:
+```typescript
+// 1. Get user's active group memberships
+const { data } = await supabase
+  .from("group_members")
+  .select("group_id")
+  .eq("user_id", userId)
+  .eq("status", "active");
 
-#### File 2: `src/components/XcrolReactions.tsx`
-- Line ~201: Change `.insert(...)` to `.upsert(..., { onConflict: 'entry_id,user_id,emoji' })`
+// 2. For each group, check localStorage last-visit vs group_posts created_at
+// 3. Sum up new posts across all groups
+```
 
-#### File 3: `src/components/group/GroupPostReactions.tsx`
-- Line ~143 (post reactions): Change `.insert(...)` to `.upsert(..., { onConflict: 'post_id,user_id,emoji' })`
-- Line ~147 (comment reactions): Change `.insert(...)` to `.upsert(..., { onConflict: 'comment_id,user_id,emoji' })`
+### Files
+- **New**: `src/hooks/use-village-activity.ts`
+- **Modified**: `src/components/AppHeader.tsx` (add badge to Village button)
 
 ### What does NOT change
-- No styling or UI changes
-- No database migrations or RLS policy changes
-- No changes to the delete path (removing reactions)
-- No changes to the optimistic update logic
-- `BrookReactions` is not affected (it receives `currentUserId` as a prop, avoiding the race)
-- All other reaction behavior remains identical
+- No database migrations or RLS changes
+- No changes to the bell icon / NotificationBell component
+- No changes to the existing `use-group-activity.ts` hook (TheVillage page continues using it for per-group badges)
+- No changes to localStorage conventions
 
