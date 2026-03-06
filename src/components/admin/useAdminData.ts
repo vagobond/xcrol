@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import type {
   UserProfile,
@@ -14,6 +15,7 @@ import type {
 
 export function useAdminData() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -34,12 +36,14 @@ export function useAdminData() {
   const [deletingUser, setDeletingUser] = useState(false);
 
   useEffect(() => {
-    checkAdminAccess();
-  }, []);
+    if (user?.id) checkAdminAccess();
+    else if (user === null) {
+      toast.error("Please sign in to access admin dashboard");
+      navigate("/auth");
+    }
+  }, [user?.id]);
 
   const checkAdminAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-
     if (!user) {
       toast.error("Please sign in to access admin dashboard");
       navigate("/auth");
@@ -115,7 +119,6 @@ export function useAdminData() {
           });
         }
 
-        // Fetch points for all users in a single batch query
         const { data: pointsData } = await supabase.rpc("calculate_all_user_points");
         const pointsMap = new Map<string, number>();
         (pointsData as any[] || []).forEach((row: any) => pointsMap.set(row.user_id, Number(row.points)));

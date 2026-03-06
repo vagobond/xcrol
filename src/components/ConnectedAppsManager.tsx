@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -40,6 +41,7 @@ interface ScopeInfo {
 }
 
 const ConnectedAppsManager = () => {
+  const { user } = useAuth();
   const [apps, setApps] = useState<ConnectedApp[]>([]);
   const [scopes, setScopes] = useState<Record<string, ScopeInfo>>({});
   const [loading, setLoading] = useState(true);
@@ -47,9 +49,10 @@ const ConnectedAppsManager = () => {
   const [confirmRevoke, setConfirmRevoke] = useState<ConnectedApp | null>(null);
 
   useEffect(() => {
-    loadConnectedApps();
+    if (user?.id) loadConnectedApps();
+    else setLoading(false);
     loadScopes();
-  }, []);
+  }, [user?.id]);
 
   const loadScopes = async () => {
     const { data } = await supabase
@@ -66,11 +69,8 @@ const ConnectedAppsManager = () => {
   };
 
   const loadConnectedApps = async () => {
+    if (!user) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // First get the authorizations
       const { data: authorizations, error } = await supabase
         .from("oauth_user_authorizations")
         .select("id, scopes, created_at, updated_at, client_id")
@@ -79,7 +79,6 @@ const ConnectedAppsManager = () => {
 
       if (error) throw error;
 
-      // Then get client info for each authorized app using the secure function
       const formattedApps: ConnectedApp[] = [];
       for (const auth of authorizations || []) {
         const { data: clientInfo } = await supabase
@@ -108,13 +107,11 @@ const ConnectedAppsManager = () => {
   const handleRevokeAccess = async (app: ConnectedApp) => {
     setRevoking(app.id);
     try {
-      // Revoke all tokens for this app
       await supabase
         .from("oauth_tokens")
         .update({ revoked: true })
         .eq("client_id", app.client.id);
 
-      // Delete the authorization
       const { error } = await supabase
         .from("oauth_user_authorizations")
         .delete()

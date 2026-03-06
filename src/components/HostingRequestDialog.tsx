@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ interface HostingRequestDialogProps {
 }
 
 export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequestDialogProps) => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [arrivalDate, setArrivalDate] = useState("");
@@ -36,13 +38,11 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
 
     setSending(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in");
         return;
       }
 
-      // Insert the hosting request
       const { error: requestError } = await supabase
         .from("hosting_requests")
         .insert({
@@ -56,7 +56,6 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
 
       if (requestError) throw requestError;
 
-      // Also send a message to their inbox
       let dateInfo = "";
       if (arrivalDate && departureDate) {
         dateInfo = `\n\nDates: ${new Date(arrivalDate).toLocaleDateString()} - ${new Date(departureDate).toLocaleDateString()}`;

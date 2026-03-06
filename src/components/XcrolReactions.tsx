@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -31,8 +32,9 @@ interface XcrolReactionsProps {
 }
 
 export const XcrolReactions = ({ entryId, compact = false, authorId, authorName, initialReactions, onReactionsChange }: XcrolReactionsProps) => {
+  const { user } = useAuth();
   const [reactions, setReactions] = useState<Reaction[]>(initialReactions || []);
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = user?.id || null;
   const [currentUserName, setCurrentUserName] = useState<string>("You");
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
@@ -41,22 +43,19 @@ export const XcrolReactions = ({ entryId, compact = false, authorId, authorName,
   const hasInitialReactions = useRef(!!initialReactions);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id || null);
-      if (user?.id) {
-        supabase
-          .from("profiles")
-          .select("display_name, username")
-          .eq("id", user.id)
-          .single()
-          .then(({ data }) => {
-            if (data) {
-              setCurrentUserName(data.display_name || data.username || "You");
-            }
-          });
-      }
-    });
-  }, []);
+    if (userId) {
+      supabase
+        .from("profiles")
+        .select("display_name, username")
+        .eq("id", userId)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            setCurrentUserName(data.display_name || data.username || "You");
+          }
+        });
+    }
+  }, [userId]);
 
   // Only load reactions from DB if not provided initially
   useEffect(() => {
@@ -103,10 +102,8 @@ export const XcrolReactions = ({ entryId, compact = false, authorId, authorName,
 
       if (error) throw error;
 
-      // Get unique user IDs
       const userIds = [...new Set((data || []).map(r => r.user_id))];
       
-      // Fetch user profiles
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, display_name, username")
@@ -178,7 +175,6 @@ export const XcrolReactions = ({ entryId, compact = false, authorId, authorName,
           updated.push({ emoji, count: 1, hasReacted: true, users: [{ id: userId, name: currentUserName }] });
         }
       }
-      // Notify parent of changes
       onReactionsChange?.(updated);
       return updated;
     });

@@ -12,6 +12,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { CalendarIcon, MapPin } from "lucide-react";
 
@@ -28,6 +29,7 @@ export const CreateMeetupDialog = ({
   onMeetupCreated,
   mapboxToken,
 }: CreateMeetupDialogProps) => {
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [locationName, setLocationName] = useState("");
@@ -75,13 +77,11 @@ export const CreateMeetupDialog = ({
     setIsSubmitting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Please sign in to create a meetup");
         return;
       }
 
-      // Geocode the location
       const coords = await geocodeLocation();
 
       const startDateTime = startDate && startTime 

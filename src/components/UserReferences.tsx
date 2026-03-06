@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -40,23 +41,18 @@ interface UserReferencesProps {
 
 export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const currentUserId = user?.id || null;
   const [references, setReferences] = useState<Reference[]>([]);
   const [loading, setLoading] = useState(true);
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
   const [selectedRefId, setSelectedRefId] = useState<string | null>(null);
   const [flagReason, setFlagReason] = useState("");
   const [submittingFlag, setSubmittingFlag] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadReferences();
-    loadCurrentUser();
-  }, [userId]);
-
-  const loadCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setCurrentUserId(user?.id || null);
-  };
+  }, [userId, currentUserId]);
 
   const loadReferences = async () => {
     try {
@@ -75,18 +71,17 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
       }
 
       // Check for existing flags on own profile
-      const { data: { user } } = await supabase.auth.getUser();
       let flaggedIds: string[] = [];
       
-      if (user && user.id === userId) {
+      if (currentUserId && currentUserId === userId) {
         const { data: flags } = await supabase
           .from("flagged_references")
           .select("reference_id")
-          .eq("flagged_by", user.id);
+          .eq("flagged_by", currentUserId);
         flaggedIds = (flags || []).map(f => f.reference_id);
       }
 
-      // Batch fetch profiles using .in() instead of N+1 queries
+      // Batch fetch profiles
       const fromUserIds = [...new Set(data.map(ref => ref.from_user_id))];
       const { data: profiles } = await supabase
         .from("profiles")
@@ -332,7 +327,6 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
         </Tabs>
       </CardContent>
 
-      {/* Flag Dialog */}
       <Dialog open={flagDialogOpen} onOpenChange={setFlagDialogOpen}>
         <DialogContent>
           <DialogHeader>

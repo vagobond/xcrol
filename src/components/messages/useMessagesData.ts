@@ -1,23 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import type { Message, ConversationThread, SenderProfile } from "./types";
 import { getFirstSentence } from "./types";
 
 export const useMessagesData = () => {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [threads, setThreads] = useState<ConversationThread[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const currentUserId = user?.id || null;
   const [entryPreviews, setEntryPreviews] = useState<Map<string, string>>(new Map());
   const { toast } = useToast();
 
   const loadMessages = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      setCurrentUserId(user.id);
 
       const [{ data: messagesData, error: messagesError }, { data: friendRequestsData, error: friendRequestsError }] = await Promise.all([
         supabase
@@ -84,7 +83,7 @@ export const useMessagesData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   // Group messages into threads
   useEffect(() => {
