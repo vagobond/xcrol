@@ -47,11 +47,26 @@ export function useGroupActivity(memberGroupIds: string[]) {
         if (lv) lastVisits.set(gid, lv);
       }
 
-      const { data, error } = await supabase
+      // Compute oldest last-visit for server-side filtering
+      let oldestLastVisit: string | null = null;
+      for (const [, lv] of lastVisits) {
+        if (!oldestLastVisit || lv < oldestLastVisit) {
+          oldestLastVisit = lv;
+        }
+      }
+
+      let query = supabase
         .from("group_posts")
         .select("group_id, created_at")
         .in("group_id", memberGroupIds)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (oldestLastVisit) {
+        query = query.gt("created_at", oldestLastVisit);
+      }
+
+      const { data, error } = await query;
 
       if (error || cancelled) return;
 
