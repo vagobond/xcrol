@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -26,28 +27,25 @@ interface GroupPostReactionsProps {
 }
 
 export const GroupPostReactions = ({ targetId, targetType }: GroupPostReactionsProps) => {
+  const { user } = useAuth();
   const [reactions, setReactions] = useState<Reaction[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = user?.id || null;
   const [currentUserName, setCurrentUserName] = useState("You");
   const [popoverOpen, setPopoverOpen] = useState(false);
   const pendingOps = useRef<Set<string>>(new Set());
 
-
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id || null);
-      if (user?.id) {
-        supabase
-          .from("profiles")
-          .select("display_name, username")
-          .eq("id", user.id)
-          .single()
-          .then(({ data }) => {
-            if (data) setCurrentUserName(data.display_name || data.username || "You");
-          });
-      }
-    });
-  }, []);
+    if (userId) {
+      supabase
+        .from("profiles")
+        .select("display_name, username")
+        .eq("id", userId)
+        .single()
+        .then(({ data }) => {
+          if (data) setCurrentUserName(data.display_name || data.username || "You");
+        });
+    }
+  }, [userId]);
 
   const loadReactions = useCallback(async () => {
     try {

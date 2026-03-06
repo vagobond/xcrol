@@ -26,11 +26,32 @@ export function useVillageActivityCount(): number {
 
       const groupIds = memberships.map((m) => m.group_id);
 
-      const { data: posts } = await supabase
+      // Compute the oldest last-visit across all groups to use as a server-side filter
+      let oldestLastVisit: string | null = null;
+      for (const gid of groupIds) {
+        const lv = getGroupLastVisit(gid);
+        if (!lv) {
+          // No last visit means ALL posts are "new" – skip server filter for this case
+          oldestLastVisit = null;
+          break;
+        }
+        if (!oldestLastVisit || lv < oldestLastVisit) {
+          oldestLastVisit = lv;
+        }
+      }
+
+      let query = supabase
         .from("group_posts")
         .select("group_id, created_at")
         .in("group_id", groupIds)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (oldestLastVisit) {
+        query = query.gt("created_at", oldestLastVisit);
+      }
+
+      const { data: posts } = await query;
 
       if (cancelled) return;
 

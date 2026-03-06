@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,18 +17,18 @@ interface BlockedUser {
 }
 
 const BlockedUsersManager = () => {
+  const { user } = useAuth();
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadBlockedUsers();
-  }, []);
+    if (user?.id) loadBlockedUsers();
+    else setLoading(false);
+  }, [user?.id]);
 
   const loadBlockedUsers = async () => {
+    if (!user) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { data, error } = await supabase
         .from("user_blocks")
         .select("id, blocked_id")
@@ -41,7 +42,6 @@ const BlockedUsersManager = () => {
         return;
       }
 
-      // Batch fetch profiles using .in() instead of N+1 queries
       const blockedIds = [...new Set(data.map(b => b.blocked_id))];
       const { data: profiles } = await supabase
         .from("profiles")

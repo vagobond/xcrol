@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,7 @@ function generateSecret(bytes = 32): string {
 }
 
 const DeveloperAppsManager = () => {
+  const { user } = useAuth();
   const [apps, setApps] = useState<OAuthApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -77,14 +79,13 @@ const DeveloperAppsManager = () => {
   });
 
   useEffect(() => {
-    loadApps();
-  }, []);
+    if (user?.id) loadApps();
+    else setLoading(false);
+  }, [user?.id]);
 
   const loadApps = async () => {
+    if (!user) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { data, error } = await supabase
         .from("oauth_clients")
         .select("*")
@@ -129,7 +130,6 @@ const DeveloperAppsManager = () => {
 
     setCreating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       // Generate secret client-side so we can show it once

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ interface MeetupRequestDialogProps {
 }
 
 export const MeetupRequestDialog = ({ recipientId, recipientName }: MeetupRequestDialogProps) => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [purpose, setPurpose] = useState<MeetupPurpose>("friendship");
   const [message, setMessage] = useState("");
@@ -38,13 +40,11 @@ export const MeetupRequestDialog = ({ recipientId, recipientName }: MeetupReques
 
     setSending(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in");
         return;
       }
 
-      // Insert the meetup request
       const { error: requestError } = await supabase
         .from("meetup_requests")
         .insert({
@@ -57,7 +57,6 @@ export const MeetupRequestDialog = ({ recipientId, recipientName }: MeetupReques
 
       if (requestError) throw requestError;
 
-      // Also send a message to their inbox
       const purposeLabels = {
         tourism: "🗺️ Tourism",
         food: "🍽️ Food",

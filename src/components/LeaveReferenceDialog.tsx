@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,7 @@ interface LeaveReferenceDialogProps {
 }
 
 export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveReferenceDialogProps) => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [referenceType, setReferenceType] = useState<ReferenceType>("friendly");
   const [rating, setRating] = useState(5);
@@ -45,19 +47,16 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
 
   useEffect(() => {
     checkEligibility();
-  }, [recipientId]);
+  }, [recipientId, user?.id]);
 
   const checkEligibility = async () => {
     setCheckingEligibility(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setCanLeaveReference(false);
         return;
       }
 
-      // Check friendship level from BOTH directions
-      // (the relationship could be stored either way)
       const [recipientToUser, userToRecipient] = await Promise.all([
         supabase
           .from("friendships")
@@ -75,7 +74,6 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
 
       const friendship = recipientToUser.data || userToRecipient.data;
 
-      // Check if any friend level (including acquaintance) - any friendship allows references
       const isFriend = friendship?.level && 
         ['family', 'close_friend', 'buddy', 'friendly_acquaintance', 'secret_friend'].includes(friendship.level);
 
@@ -85,7 +83,6 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
         return;
       }
 
-      // Check if using custom type with can_leave_reference enabled
       if (friendship?.uses_custom_type) {
         const { data: customType } = await supabase
           .from("custom_friendship_types")
@@ -100,7 +97,6 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
         }
       }
 
-      // Check for confirmed hosting requests
       const { data: hostingRequests } = await supabase
         .from("hosting_requests")
         .select("id")
@@ -114,7 +110,6 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
         return;
       }
 
-      // Check for confirmed meetup requests
       const { data: meetupRequests } = await supabase
         .from("meetup_requests")
         .select("id")
@@ -167,7 +162,6 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
 
     setSending(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in");
         return;
@@ -204,14 +198,8 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
     }
   };
 
-  // Don't show button if still checking or not eligible
-  if (checkingEligibility) {
-    return null;
-  }
-
-  if (!canLeaveReference) {
-    return null;
-  }
+  if (checkingEligibility) return null;
+  if (!canLeaveReference) return null;
 
   return (
     <>
