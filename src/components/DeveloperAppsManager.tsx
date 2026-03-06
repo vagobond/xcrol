@@ -79,14 +79,13 @@ const DeveloperAppsManager = () => {
   });
 
   useEffect(() => {
-    loadApps();
-  }, []);
+    if (user?.id) loadApps();
+    else setLoading(false);
+  }, [user?.id]);
 
   const loadApps = async () => {
+    if (!user) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { data, error } = await supabase
         .from("oauth_clients")
         .select("*")
