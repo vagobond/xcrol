@@ -50,6 +50,7 @@ function generateSecret(bytes = 32): string {
 }
 
 const DeveloperAppsManager = () => {
+  const { user } = useAuth();
   const [apps, setApps] = useState<OAuthApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
