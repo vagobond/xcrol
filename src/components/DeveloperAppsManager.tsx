@@ -130,7 +130,6 @@ const DeveloperAppsManager = () => {
 
     setCreating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       // Generate secret client-side so we can show it once
