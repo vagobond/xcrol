@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { getGroupLastVisit } from "@/hooks/use-group-activity";
@@ -6,6 +6,14 @@ import { getGroupLastVisit } from "@/hooks/use-group-activity";
 export function useVillageActivityCount(): number {
   const { user } = useAuth();
   const [count, setCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Listen for group-visit-updated events (fired when user leaves a group page)
+  useEffect(() => {
+    const handler = () => setRefreshKey((k) => k + 1);
+    window.addEventListener("group-visit-updated", handler);
+    return () => window.removeEventListener("group-visit-updated", handler);
+  }, []);
 
   useEffect(() => {
     if (!user?.id) {
@@ -15,14 +23,17 @@ export function useVillageActivityCount(): number {
 
     let cancelled = false;
 
-    const fetch = async () => {
+    const fetchCount = async () => {
       const { data: memberships } = await supabase
         .from("group_members")
         .select("group_id")
         .eq("user_id", user.id)
         .eq("status", "active");
 
-      if (cancelled || !memberships?.length) return;
+      if (cancelled || !memberships?.length) {
+        if (!cancelled) setCount(0);
+        return;
+      }
 
       const groupIds = memberships.map((m) => m.group_id);
 
@@ -31,7 +42,6 @@ export function useVillageActivityCount(): number {
       for (const gid of groupIds) {
         const lv = getGroupLastVisit(gid);
         if (!lv) {
-          // No last visit means ALL posts are "new" – skip server filter for this case
           oldestLastVisit = null;
           break;
         }
@@ -66,9 +76,9 @@ export function useVillageActivityCount(): number {
       if (!cancelled) setCount(total);
     };
 
-    fetch();
+    fetchCount();
     return () => { cancelled = true; };
-  }, [user?.id]);
+  }, [user?.id, refreshKey]);
 
   return count;
 }

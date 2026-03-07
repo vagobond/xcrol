@@ -14,6 +14,8 @@ export function getGroupLastVisit(groupId: string): string | null {
 export function setGroupLastVisit(groupId: string): void {
   try {
     localStorage.setItem(`${STORAGE_PREFIX}${groupId}`, new Date().toISOString());
+    // Dispatch event so useVillageActivityCount re-fetches
+    window.dispatchEvent(new CustomEvent("group-visit-updated"));
   } catch {
     // localStorage unavailable
   }
