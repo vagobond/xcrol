@@ -161,7 +161,7 @@ export const useGroupMembers = (groupId: string | undefined) => {
       if (!groupId) return [];
       const { data, error } = await supabase
         .from("group_members")
-        .select("*")
+        .select("id, group_id, user_id, role, status, created_at")
         .eq("group_id", groupId)
         .order("created_at", { ascending: true });
 
