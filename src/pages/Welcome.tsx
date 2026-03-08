@@ -52,7 +52,7 @@ const Welcome = () => {
     const attemptPlay = () => {
       if (audioRef.current) {
         audioRef.current.play().catch(() => {
-          console.log("Autoplay blocked, waiting for user interaction");
+          // Autoplay blocked — silent catch; user interaction will start playback
         });
       }
     };
