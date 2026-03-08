@@ -21,13 +21,13 @@ export const useMessagesData = () => {
       const [{ data: messagesData, error: messagesError }, { data: friendRequestsData, error: friendRequestsError }] = await Promise.all([
         supabase
           .from("messages")
-          .select("*")
+          .select("id, from_user_id, to_user_id, content, platform_suggestion, created_at, read_at, entry_id")
           .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
           .is("deleted_at", null)
           .order("created_at", { ascending: false }),
         supabase
           .from("friend_requests")
-          .select("*")
+          .select("id, from_user_id, to_user_id, message, created_at")
           .eq("to_user_id", user.id)
           .not("message", "is", null)
           .order("created_at", { ascending: false }),

@@ -88,7 +88,7 @@ const DeveloperAppsManager = () => {
     try {
       const { data, error } = await supabase
         .from("oauth_clients")
-        .select("*")
+        .select("id, name, description, client_id, client_secret, redirect_uris, logo_url, homepage_url, is_verified, created_at")
         .eq("owner_id", user.id)
         .order("created_at", { ascending: false });
 
