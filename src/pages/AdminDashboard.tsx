@@ -123,6 +123,9 @@ export default function AdminDashboard() {
             <TabsTrigger value="waitlist" className="flex items-center gap-1">
               <Clock className="w-3 h-3" /> Waitlist ({waitlist.length})
             </TabsTrigger>
+            <TabsTrigger value="audit" className="flex items-center gap-1">
+              <ScrollText className="w-3 h-3" /> Audit Log
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
