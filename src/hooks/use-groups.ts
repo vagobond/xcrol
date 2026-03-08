@@ -56,7 +56,7 @@ export const useGroups = () => {
     queryFn: async () => {
       const { data: groups, error } = await supabase
         .from("groups")
-        .select("*")
+        .select("id, name, slug, description, avatar_url, trust_level, require_approval, creator_id, created_at, updated_at")
         .order("created_at", { ascending: true });
 
       if (error) throw error;
