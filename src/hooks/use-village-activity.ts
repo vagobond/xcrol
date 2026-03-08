@@ -24,6 +24,9 @@ export function useVillageActivityCount(): number {
     let cancelled = false;
 
     const fetchCount = async () => {
+      // Skip polling when the tab is hidden to save bandwidth/battery
+      if (document.visibilityState === "hidden") return;
+
       const { data: memberships } = await supabase
         .from("group_members")
         .select("group_id")
@@ -76,9 +79,17 @@ export function useVillageActivityCount(): number {
       if (!cancelled) setCount(total);
     };
 
+    // Catch up immediately when tab becomes visible again
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && !cancelled) {
+        fetchCount();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     fetchCount();
     const interval = setInterval(fetchCount, 60_000);
-    return () => { cancelled = true; clearInterval(interval); };
+    return () => { cancelled = true; clearInterval(interval); document.removeEventListener("visibilitychange", handleVisibilityChange); };
   }, [user?.id, refreshKey]);
 
   return count;
