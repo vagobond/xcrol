@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Scroll, Lock, Users, UserCheck, Heart, ExternalLink, Trash2 } from "lucide-react";
+import { ArrowLeft, Scroll, Lock, Users, UserCheck, Heart, ExternalLink, Trash2, Share2, Globe } from "lucide-react";
 import { XcrolEntryForm } from "@/components/XcrolEntryForm";
 import { LinkPreview } from "@/components/LinkPreview";
 import { format } from "date-fns";
