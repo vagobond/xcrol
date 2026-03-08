@@ -39,6 +39,7 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Developers = lazy(() => import("./pages/Developers"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
+const SharedPost = lazy(() => import("./pages/SharedPost"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
