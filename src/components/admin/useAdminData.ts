@@ -86,7 +86,7 @@ export function useAdminData() {
         supabase.from("user_roles").select("id, user_id, role, created_at").order("created_at", { ascending: false }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("friendships").select("id", { count: "exact", head: true }),
-        supabase.from("waitlist").select("id, email, created_at, invited_at").is("invited_at", null).order("created_at", { ascending: false }),
+        supabase.from("waitlist").select("id, email, created_at, invited_at, notes").is("invited_at", null).order("created_at", { ascending: false }),
         supabase.from("flagged_references").select("id, reference_id, flagged_by, reason, status, created_at, admin_notes, resolved_at, resolved_by").eq("status", "pending").order("created_at", { ascending: false }),
         supabase.from("user_references").select("id, from_user_id, to_user_id, content, rating, reference_type, created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("account_deletion_requests").select("id, user_id, reason, status, created_at, admin_notes, processed_at, processed_by").eq("status", "pending").order("created_at", { ascending: false }),
