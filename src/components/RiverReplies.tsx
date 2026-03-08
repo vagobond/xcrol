@@ -106,7 +106,7 @@ export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange 
           <Textarea
             placeholder="Write a reply..."
             value={replyContent}
-            onChange={(e) => setReplyContent(e.target.value)}
+            onChange={(e) => updateReplyContent(e.target.value)}
             className="min-h-[60px] text-sm resize-none"
             maxLength={500}
           />
