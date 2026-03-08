@@ -86,7 +86,7 @@ export const useFriendsData = ({ userId, viewerId }: UseFriendsDataProps) => {
           .in("id", friendshipIds);
         const customTypeMap = new Map((customTypeData || []).map((f) => [f.id, f.uses_custom_type]));
 
-        friendsWithCustomType = (data || []).map((row: any) => ({
+        friendsWithCustomType = (data || []).map((row) => ({
           id: row.id,
           friend_id: row.friend_id,
           level: row.level,
@@ -94,7 +94,7 @@ export const useFriendsData = ({ userId, viewerId }: UseFriendsDataProps) => {
           profile: { display_name: row.display_name, avatar_url: row.avatar_url },
         }));
       } else {
-        friendsWithCustomType = (data || []).map((row: any) => ({
+        friendsWithCustomType = (data || []).map((row) => ({
           id: row.id,
           friend_id: row.friend_id,
           level: row.level,

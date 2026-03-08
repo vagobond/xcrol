@@ -175,7 +175,7 @@ export function useAdminData() {
       }
 
       if (deletionResult.data && deletionResult.data.length > 0) {
-        setDeletionRequests(deletionResult.data.map((req: any) => ({ ...req, profile: profilesMap.get(req.user_id) })));
+        setDeletionRequests(deletionResult.data.map((req) => ({ ...req, profile: profilesMap.get(req.user_id) })));
       }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
