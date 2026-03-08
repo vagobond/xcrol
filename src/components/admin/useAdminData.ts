@@ -82,7 +82,7 @@ export function useAdminData() {
         refsResult,
         deletionResult,
       ] = await Promise.all([
-        supabase.rpc("get_admin_profiles") as any,
+        supabase.rpc("get_admin_profiles"),
         supabase.from("user_roles").select("id, user_id, role, created_at").order("created_at", { ascending: false }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("friendships").select("id", { count: "exact", head: true }),
