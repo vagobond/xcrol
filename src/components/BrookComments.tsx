@@ -199,7 +199,7 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
               <Input
                 placeholder="Add a comment..."
                 value={newComment}
-                onChange={(e) updatesetNewComment(e.target.value)}
+                onChange={(e) => updateNewComment(e.target.value)}
                 className="flex-1 h-8 text-sm"
                 maxLength={500}
               />
