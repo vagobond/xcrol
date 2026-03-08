@@ -142,7 +142,7 @@ export function useAdminData() {
       const flaggedReferenceIds = [...new Set((flaggedResult.data || []).map((f) => f.reference_id))];
       let referencesForFlagged: any[] = [];
       if (flaggedReferenceIds.length > 0) {
-        const { data: refs } = await supabase.from("user_references").select("*").in("id", flaggedReferenceIds);
+        const { data: refs } = await supabase.from("user_references").select("id, from_user_id, to_user_id, content, rating, reference_type, created_at").in("id", flaggedReferenceIds);
         referencesForFlagged = refs || [];
         referencesForFlagged.forEach((r) => { allUserIds.add(r.from_user_id); allUserIds.add(r.to_user_id); });
       }
