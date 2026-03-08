@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.og-profile]
 verify_jwt = false
 
+[functions.og-post]
+verify_jwt = false
+
 [functions.dream-trip]
 verify_jwt = true
 
