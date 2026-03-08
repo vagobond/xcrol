@@ -64,7 +64,7 @@ export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange 
           content: replyContent.trim(),
         });
       if (error) throw error;
-      setReplyContent("");
+      updateReplyContent("");
       setShowReplyInput(false);
       toast.success("Reply posted");
       onRepliesChange?.();
