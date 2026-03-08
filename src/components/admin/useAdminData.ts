@@ -113,7 +113,7 @@ export function useAdminData() {
         const inviterProfiles = new Map<string, { display_name: string | null; email: string | null }>();
         if (inviterIds.length > 0) {
           const { data: invProfiles } = await supabase
-            .rpc("get_admin_profiles_by_ids", { p_ids: inviterIds }) as any;
+            .rpc("get_admin_profiles_by_ids", { p_ids: inviterIds });
           (invProfiles || []).forEach((p) => {
             inviterProfiles.set(p.id, { display_name: p.display_name, email: p.email });
           });
