@@ -1,32 +1,56 @@
 
 
-## Remove Audio System — Scope & Impact
+## Add Notification Badge to Village Icon in AppHeader
 
-### What gets removed
+### Goal
+Show a red badge on the Village icon in the header nav bar when there is new activity (posts) in groups the user has joined. This is independent of the bell icon notifications, which handle reactions/comments/mentions on the user's own content.
 
-The audio system is self-contained and only used in two places:
+### Approach
 
-1. **`src/components/AudioMuteButton.tsx`** — The speaker icon in the header. Only imported by `AppHeader.tsx`.
-2. **`src/pages/Welcome.tsx`** — ~50 lines of audio setup code: preloading `Skyforge_Citadel.mp3`, autoplay attempts, interaction listeners, mute-state listeners, and the `audioRef`.
-3. **Static audio file**: `public/audio/Skyforge_Citadel.mp3` — can be deleted to save bundle/load time.
+**New hook: `src/hooks/use-village-activity.ts`**
+A lightweight hook that:
+1. Fetches the current user's active group memberships (just group IDs)
+2. For each group, reads the `group_last_visit_{groupId}` timestamp from localStorage (reusing the existing convention from `use-group-activity.ts`)
+3. Queries `group_posts` to count posts newer than each group's last-visit timestamp
+4. Returns a single total number (sum across all groups)
 
-No other components reference `audio-mute-changed`, `AudioMuteButton`, or `Skyforge_Citadel`.
+This reuses the same localStorage-based tracking already in place — no database changes needed.
 
-### What stays unchanged
+**Modified file: `src/components/AppHeader.tsx`**
+- Import and call `useVillageActivityCount`
+- Wrap the Village `<Button>` in a `relative` container
+- When count > 0, render a small red badge (same styling as NotificationBell) on the Village icon
 
-- `public/audio/The_Hollow_Road.m4a` — not referenced by any code currently, but won't be touched unless you say so.
-- The scroll-opening GIF animation on the Welcome page stays intact.
+### Technical Detail
 
-### Performance benefit
+```text
+AppHeader Village button:
+  <Button className="relative ...">
+    <img ... />
+    {count > 0 && <span className="absolute -top-1 -right-1 ...">count</span>}
+  </Button>
+```
 
-The MP3 file is preloaded on every Welcome page visit via `audio.preload = "auto"`, consuming bandwidth and delaying interactivity. Removing it eliminates that network request entirely.
+The hook query:
+```typescript
+// 1. Get user's active group memberships
+const { data } = await supabase
+  .from("group_members")
+  .select("group_id")
+  .eq("user_id", userId)
+  .eq("status", "active");
 
-### Changes
+// 2. For each group, check localStorage last-visit vs group_posts created_at
+// 3. Sum up new posts across all groups
+```
 
-| File | Change |
-|---|---|
-| `src/components/AppHeader.tsx` | Remove `AudioMuteButton` import and `<AudioMuteButton />` |
-| `src/components/AudioMuteButton.tsx` | Delete file |
-| `src/pages/Welcome.tsx` | Remove all audio-related state, refs, effects (~50 lines) |
-| `public/audio/Skyforge_Citadel.mp3` | Delete file |
+### Files
+- **New**: `src/hooks/use-village-activity.ts`
+- **Modified**: `src/components/AppHeader.tsx` (add badge to Village button)
+
+### What does NOT change
+- No database migrations or RLS changes
+- No changes to the bell icon / NotificationBell component
+- No changes to the existing `use-group-activity.ts` hook (TheVillage page continues using it for per-group badges)
+- No changes to localStorage conventions
 

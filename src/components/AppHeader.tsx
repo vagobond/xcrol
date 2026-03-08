@@ -3,7 +3,6 @@ import { Home, Globe, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import UserMenu from "./UserMenu";
 import NotificationBell from "./NotificationBell";
-import AudioMuteButton from "./AudioMuteButton";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useVillageActivityCount } from "@/hooks/use-village-activity";
@@ -61,7 +60,6 @@ const AppHeader = () => {
           </Button>
         </>
       )}
-      <AudioMuteButton />
       <ThemeToggle />
       {user && <NotificationBell />}
       <UserMenu />
