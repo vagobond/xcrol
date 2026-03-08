@@ -384,6 +384,24 @@ export const useAuthPage = () => {
     }
   };
 
+  // Called when user accepts content policy from the dialog
+  const handleContentPolicyAccepted = () => {
+    setAgreedToContentPolicy(true);
+    setShowContentPolicy(false);
+    // Re-trigger signup by submitting programmatically after state update
+  };
+
+  // After agreeing to content policy, auto-submit
+  useEffect(() => {
+    if (agreedToContentPolicy && !showContentPolicy) {
+      // Create a synthetic form submit
+      const form = document.querySelector('form') as HTMLFormElement;
+      if (form) {
+        form.requestSubmit();
+      }
+    }
+  }, [agreedToContentPolicy, showContentPolicy]);
+
   return {
     email, setEmail,
     password, setPassword,
@@ -397,6 +415,9 @@ export const useAuthPage = () => {
     authView, setAuthView,
     showWelcomeModal, setShowWelcomeModal,
     googleLoading,
+    showContentPolicy, setShowContentPolicy,
+    agreedToContentPolicy,
+    handleContentPolicyAccepted,
     navigate,
     handleGoogleSignIn,
     handleSignUp,
