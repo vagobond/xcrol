@@ -230,6 +230,7 @@ export function useAdminData() {
     try {
       const { error } = await supabase.from("flagged_references").update({ status: action, resolved_at: new Date().toISOString(), resolved_by: currentUserId }).eq("id", flagId);
       if (error) throw error;
+      await supabase.from("audit_log").insert({ event_type: "flag_resolved", actor_id: currentUserId, target_id: flagId, target_type: "flag", metadata: { action } });
       toast.success(`Flag ${action}`);
       setFlaggedReferences((prev) => prev.filter((f) => f.id !== flagId));
     } catch (error) {
