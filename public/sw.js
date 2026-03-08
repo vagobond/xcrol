@@ -8,11 +8,13 @@ const STATIC_ASSETS = [
 ];
 
 // Install: pre-cache static assets
+// Do NOT call skipWaiting() — let the new SW wait until all tabs are closed.
+// This prevents mid-session cache swaps that cause unexpected page reloads
+// (especially on mobile PWA tab-switch).
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
-  self.skipWaiting();
 });
 
 // Activate: clean up old caches
@@ -22,7 +24,6 @@ self.addEventListener('activate', (event) => {
       Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     )
   );
-  self.clients.claim();
 });
 
 // Check if a URL points to a Vite hashed asset (contains content hash in filename)

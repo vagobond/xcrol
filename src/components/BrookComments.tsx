@@ -32,7 +32,19 @@ interface BrookCommentsProps {
 export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentCount, setCommentCount] = useState(0);
-  const [newComment, setNewComment] = useState("");
+  const draftKey = `brook-comment-draft-${postId}`;
+  const [newComment, setNewComment] = useState(() => {
+    return sessionStorage.getItem(draftKey) || "";
+  });
+
+  const updateNewComment = (value: string) => {
+    setNewComment(value);
+    if (value) {
+      sessionStorage.setItem(draftKey, value);
+    } else {
+      sessionStorage.removeItem(draftKey);
+    }
+  };
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -105,7 +117,7 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
 
       if (error) throw error;
 
-      setNewComment("");
+      updateNewComment("");
       setCommentCount(prev => prev + 1);
       loadComments();
     } catch (error) {
@@ -187,7 +199,7 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
               <Input
                 placeholder="Add a comment..."
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
+                onChange={(e) => updateNewComment(e.target.value)}
                 className="flex-1 h-8 text-sm"
                 maxLength={500}
               />
