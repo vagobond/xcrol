@@ -120,6 +120,21 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
                 initialReactions={initialReactions}
                 onReactionsChange={onReactionsChange}
               />
+              {currentUserId === entry.user_id && entry.privacy_level === "public" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-muted-foreground hover:text-primary"
+                  onClick={() => {
+                    const url = `${window.location.origin}/post/${entry.id}`;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Shareable link copied to clipboard!");
+                  }}
+                >
+                  <Share2 className="h-3.5 w-3.5 mr-1" />
+                  <span className="text-xs">Share</span>
+                </Button>
+              )}
             </div>
 
             {/* Threaded Replies */}
