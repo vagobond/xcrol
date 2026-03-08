@@ -77,7 +77,8 @@ export function useVillageActivityCount(): number {
     };
 
     fetchCount();
-    return () => { cancelled = true; };
+    const interval = setInterval(fetchCount, 60_000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, [user?.id, refreshKey]);
 
   return count;
