@@ -74,7 +74,7 @@ export interface DeletionRequest {
   profile?: {
     display_name: string | null;
     email: string | null;
-    username: string | null;
+    username?: string | null;
   };
 }
 
