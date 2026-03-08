@@ -210,7 +210,7 @@ export const useNotifications = () => {
 
     const { data, error } = await supabase
       .from("friend_requests")
-      .select("*")
+      .select("id, from_user_id, to_user_id, message, created_at")
       .eq("to_user_id", user.id)
       .order("created_at", { ascending: false });
 
