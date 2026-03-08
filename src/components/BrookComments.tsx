@@ -117,7 +117,7 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
 
       if (error) throw error;
 
-      setNewComment("");
+      updateNewComment("");
       setCommentCount(prev => prev + 1);
       loadComments();
     } catch (error) {
