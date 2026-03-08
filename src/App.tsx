@@ -39,6 +39,7 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Developers = lazy(() => import("./pages/Developers"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
+const SharedPost = lazy(() => import("./pages/SharedPost"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -104,6 +105,7 @@ const App = () => (
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/developers" element={<Developers />} />
+                <Route path="/post/:postId" element={<SharedPost />} />
                 <Route path="/install-app" element={<ProtectedRoute><InstallApp /></ProtectedRoute>} />
                 <Route path="/:username" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

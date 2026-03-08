@@ -1,66 +1,56 @@
 
 
-# Plan: Shareable Public Xcrol Posts
+## Add Notification Badge to Village Icon in AppHeader
 
-## What the user wants
-- Authors can share a direct link to their own public Xcrol posts outside the platform
-- Only the post author can share, and only if `privacy_level = 'public'`
-- The shared link shows the single post to unauthenticated visitors
-- Replies are hidden from the public view
-- Below the post, show a signup CTA with a link to the GoFundMe video
-- URL format: `https://xcrol.com/post/<post-id>`
+### Goal
+Show a red badge on the Village icon in the header nav bar when there is new activity (posts) in groups the user has joined. This is independent of the bell icon notifications, which handle reactions/comments/mentions on the user's own content.
 
-## Current state
-- `/the-river` is behind `ProtectedRoute` — no public access
-- `/xcrol/:username` is also protected
-- There is no public single-post page
-- The `xcrol_entries` table has RLS; public entries are queryable by authenticated users but there's no anon-friendly policy for `privacy_level = 'public'`
-- An `og-profile` edge function already exists for OG meta tags on profiles
+### Approach
 
-## Implementation
+**New hook: `src/hooks/use-village-activity.ts`**
+A lightweight hook that:
+1. Fetches the current user's active group memberships (just group IDs)
+2. For each group, reads the `group_last_visit_{groupId}` timestamp from localStorage (reusing the existing convention from `use-group-activity.ts`)
+3. Queries `group_posts` to count posts newer than each group's last-visit timestamp
+4. Returns a single total number (sum across all groups)
 
-### 1. Database: Add RLS policy for anonymous access to public posts
-A single new SELECT policy on `xcrol_entries` allowing anon reads of `privacy_level = 'public'` rows:
-```sql
-CREATE POLICY "Anyone can view public xcrol entries"
-ON public.xcrol_entries FOR SELECT
-TO anon, authenticated
-USING (privacy_level = 'public');
+This reuses the same localStorage-based tracking already in place — no database changes needed.
+
+**Modified file: `src/components/AppHeader.tsx`**
+- Import and call `useVillageActivityCount`
+- Wrap the Village `<Button>` in a `relative` container
+- When count > 0, render a small red badge (same styling as NotificationBell) on the Village icon
+
+### Technical Detail
+
+```text
+AppHeader Village button:
+  <Button className="relative ...">
+    <img ... />
+    {count > 0 && <span className="absolute -top-1 -right-1 ...">count</span>}
+  </Button>
 ```
-This is safe — it only exposes rows the author explicitly marked public.
 
-### 2. New page: `src/pages/SharedPost.tsx`
-- Route: `/post/:postId` (public, NOT behind `ProtectedRoute`)
-- Fetches the single `xcrol_entries` row by ID + joins `profiles` for author display name/avatar/username
-- If post not found or not public → shows "Post not found" message
-- Renders the post content, date, author info, and link preview
-- Does NOT render replies or reactions
-- Below the post, renders a CTA card:
-  - "Join Xcrol" heading with brief copy
-  - Sign up button → `/auth`
-  - "What makes Xcrol different?" link → `https://www.gofundme.com` (the specific campaign URL, to be confirmed with user)
+The hook query:
+```typescript
+// 1. Get user's active group memberships
+const { data } = await supabase
+  .from("group_members")
+  .select("group_id")
+  .eq("user_id", userId)
+  .eq("status", "active");
 
-### 3. Share button: Only for authors on public posts
-- In `RiverEntryCard.tsx`: Add a share/copy-link icon button that appears only when `entry.user_id === currentUserId && entry.privacy_level === 'public'`
-- Copies `https://xcrol.com/post/<entry.id>` to clipboard with a toast
-- Same button in `MyXcrol.tsx` entries list for public entries only
-
-### 4. OG meta tags (optional enhancement)
-- Create an `og-post` edge function (similar to existing `og-profile`) that returns HTML with OG tags for the post content, so links shared on X/social media get a rich preview
-- Or handle it with `react-helmet-async` in `SharedPost.tsx` for basic client-side meta tags (simpler, but less reliable for social crawlers)
-
-### 5. Route registration in `App.tsx`
-```tsx
-<Route path="/post/:postId" element={<SharedPost />} />
+// 2. For each group, check localStorage last-visit vs group_posts created_at
+// 3. Sum up new posts across all groups
 ```
-Placed with other public routes (like `/terms`, `/privacy`), NOT wrapped in `ProtectedRoute`.
 
-## What stays untouched
-- All existing River, Xcrol, and profile pages
-- All existing RLS policies (only adding one new one)
-- No changes to existing components' behavior — only additive share button
+### Files
+- **New**: `src/hooks/use-village-activity.ts`
+- **Modified**: `src/components/AppHeader.tsx` (add badge to Village button)
 
-## Open questions for user
-- Exact GoFundMe campaign URL to link to
-- Whether to invest in an OG edge function for rich social previews, or start with basic client-side meta tags
+### What does NOT change
+- No database migrations or RLS changes
+- No changes to the bell icon / NotificationBell component
+- No changes to the existing `use-group-activity.ts` hook (TheVillage page continues using it for per-group badges)
+- No changes to localStorage conventions
 

@@ -1,11 +1,13 @@
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { Globe, Users, UserCheck, Heart, Lock, ExternalLink } from "lucide-react";
+import { Globe, Users, UserCheck, Heart, Lock, ExternalLink, Share2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { XcrolReactions } from "@/components/XcrolReactions";
 import { MentionText } from "@/components/MentionText";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { LinkPreview } from "@/components/LinkPreview";
 import { RiverReplies } from "@/components/RiverReplies";
 import type { RiverReply } from "@/components/RiverReplies";
@@ -118,6 +120,21 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
                 initialReactions={initialReactions}
                 onReactionsChange={onReactionsChange}
               />
+              {currentUserId === entry.user_id && entry.privacy_level === "public" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-muted-foreground hover:text-primary"
+                  onClick={() => {
+                    const url = `${window.location.origin}/post/${entry.id}`;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Shareable link copied to clipboard!");
+                  }}
+                >
+                  <Share2 className="h-3.5 w-3.5 mr-1" />
+                  <span className="text-xs">Share</span>
+                </Button>
+              )}
             </div>
 
             {/* Threaded Replies */}
