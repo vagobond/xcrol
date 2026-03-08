@@ -79,12 +79,12 @@ export const useFriendsData = ({ userId, viewerId }: UseFriendsDataProps) => {
       let friendsWithCustomType: Friend[] = [];
 
       if (viewerId === userId) {
-        const friendshipIds = (data || []).map((row: any) => row.id);
+        const friendshipIds = (data || []).map((row) => row.id);
         const { data: customTypeData } = await supabase
           .from("friendships")
           .select("id, uses_custom_type")
           .in("id", friendshipIds);
-        const customTypeMap = new Map((customTypeData || []).map((f: any) => [f.id, f.uses_custom_type]));
+        const customTypeMap = new Map((customTypeData || []).map((f) => [f.id, f.uses_custom_type]));
 
         friendsWithCustomType = (data || []).map((row: any) => ({
           id: row.id,
