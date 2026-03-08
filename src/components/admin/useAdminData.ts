@@ -121,7 +121,7 @@ export function useAdminData() {
 
         const { data: pointsData } = await supabase.rpc("calculate_all_user_points");
         const pointsMap = new Map<string, number>();
-        (pointsData as any[] || []).forEach((row: any) => pointsMap.set(row.user_id, Number(row.points)));
+        (pointsData || []).forEach((row) => pointsMap.set(row.user_id, Number(row.points)));
 
         const enrichedUsers = usersResult.data.map((user) => {
           const inviterId = inviterMap.get(user.id);
