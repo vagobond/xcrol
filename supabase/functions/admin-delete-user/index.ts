@@ -93,6 +93,27 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Admin ${callerUser.id} deleting user ${userId}`);
 
+    // Capture user info before deletion for audit log
+    const { data: userProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("display_name, username, email")
+      .eq("id", userId)
+      .maybeSingle();
+
+    // Write audit log entry BEFORE deletion
+    await supabaseAdmin.from("audit_log").insert({
+      event_type: "user_deleted",
+      actor_id: callerUser.id,
+      target_id: userId,
+      target_type: "user",
+      metadata: {
+        display_name: userProfile?.display_name || null,
+        username: userProfile?.username || null,
+        email: userProfile?.email || null,
+        deleted_by: callerUser.id,
+      },
+    });
+
     // Delete the user from auth (this will cascade to profile via trigger if set up)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 

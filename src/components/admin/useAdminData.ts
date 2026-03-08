@@ -198,6 +198,8 @@ export function useAdminData() {
       const messages = allUsers.map((user) => ({ from_user_id: currentUserId, to_user_id: user.id, content: broadcastMessage.trim(), platform_suggestion: "system_broadcast" }));
       const { error: insertError } = await supabase.from("messages").insert(messages);
       if (insertError) throw insertError;
+      // Audit log
+      await supabase.from("audit_log").insert({ event_type: "broadcast_sent", actor_id: currentUserId, target_type: "broadcast", metadata: { recipient_count: allUsers.length, message_preview: broadcastMessage.trim().slice(0, 100) } });
       toast.success(`Broadcast sent to ${allUsers.length} users`);
       setBroadcastMessage("");
     } catch (error) {
@@ -212,6 +214,7 @@ export function useAdminData() {
     try {
       const { error } = await supabase.from("user_references").delete().eq("id", refId);
       if (error) throw error;
+      await supabase.from("audit_log").insert({ event_type: "reference_deleted", actor_id: currentUserId, target_id: refId, target_type: "reference" });
       toast.success("Reference deleted");
       setAllReferences((prev) => prev.filter((r) => r.id !== refId));
       setFlaggedReferences((prev) => prev.filter((f) => f.reference_id !== refId));
@@ -227,6 +230,7 @@ export function useAdminData() {
     try {
       const { error } = await supabase.from("flagged_references").update({ status: action, resolved_at: new Date().toISOString(), resolved_by: currentUserId }).eq("id", flagId);
       if (error) throw error;
+      await supabase.from("audit_log").insert({ event_type: "flag_resolved", actor_id: currentUserId, target_id: flagId, target_type: "flag", metadata: { action } });
       toast.success(`Flag ${action}`);
       setFlaggedReferences((prev) => prev.filter((f) => f.id !== flagId));
     } catch (error) {
