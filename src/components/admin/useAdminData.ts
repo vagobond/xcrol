@@ -148,7 +148,7 @@ export function useAdminData() {
       }
 
       refsResult.data?.forEach((r) => { allUserIds.add(r.from_user_id); allUserIds.add(r.to_user_id); });
-      deletionResult.data?.forEach((r: any) => allUserIds.add(r.user_id));
+      deletionResult.data?.forEach((r) => allUserIds.add(r.user_id));
 
       const profilesMap = new Map<string, { display_name: string | null; email: string | null; username?: string | null }>();
       if (allUserIds.size > 0) {
