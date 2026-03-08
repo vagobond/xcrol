@@ -168,10 +168,7 @@ export const useFriendsData = ({ userId, viewerId }: UseFriendsDataProps) => {
     setProcessing(true);
     try {
       const levelToUse = level === "custom" ? "buddy" : level;
-      const { error } = await supabase.rpc("accept_friend_request", { request_id: request.id, friendship_level: levelToUse as Enums<"friendship_level"> });
-      if (error) throw error;
-
-      if (level === "custom" && customFriendshipType) {
+      const { error } = await supabase.rpc("accept_friend_request", { request_id: request.id, friendship_level: levelToUse as Enums<"friendship_level">& customFriendshipType) {
         await supabase.from("friendships").update({ uses_custom_type: true }).eq("user_id", viewerId).eq("friend_id", request.from_user_id);
       }
 
@@ -203,8 +200,7 @@ export const useFriendsData = ({ userId, viewerId }: UseFriendsDataProps) => {
     setProcessing(true);
     try {
       const levelToStore = usesCustomType ? "buddy" : level;
-      const { error } = await supabase.from("frDatabase["public"]["Enums"]["friendship_level"]dships").update({ level: levelToStore as any, uses_custom_type: usesCustomType }).eq("id", friendId);
-      if (error) throw error;
+      const { error } = await supabase.from("frDatabase["public"]["Enums"]["friendship_level"]dships").update({ liendships").update({ level: levelToStore as Enums<"friendship_level"> (error) throw error;
       setFriends(prev => prev.map(f => f.id === friendId ? { ...f, level: levelToStore, uses_custom_type: usesCustomType } : f));
       toast.success("Friendship level updated!");
     } catch (error) {
