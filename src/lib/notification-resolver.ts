@@ -66,7 +66,7 @@ export async function resolveNotifications(
 
         const entryIds = [...new Set(data.map((r) => r.entry_id))];
         const { data: entries } = await supabase
-          .from("xcrol_entries" as any)
+          .from("xcrol_entries")
           .select("id, content")
           .in("id", entryIds);
 
