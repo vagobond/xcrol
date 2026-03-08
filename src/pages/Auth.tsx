@@ -146,6 +146,12 @@ const Auth = () => {
           auth.setShowWelcomeModal(open);
         }}
       />
+
+      <ContentPolicyDialog
+        open={auth.showContentPolicy}
+        onAccept={auth.handleContentPolicyAccepted}
+        onCancel={() => auth.setShowContentPolicy(false)}
+      />
     </div>
   );
 };

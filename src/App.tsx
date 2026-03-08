@@ -105,6 +105,7 @@ const App = () => (
                 <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/content-policy" element={<ContentPolicy />} />
                 <Route path="/developers" element={<Developers />} />
                 <Route path="/post/:postId" element={<SharedPost />} />
                 <Route path="/install-app" element={<ProtectedRoute><InstallApp /></ProtectedRoute>} />
