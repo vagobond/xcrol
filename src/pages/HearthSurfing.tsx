@@ -148,7 +148,7 @@ const HearthSurfing = () => {
       if (data) {
         // Parse compensation_type_preferred - handle both string and array formats
         let compensationTypes: string[] = [];
-        const rawCompensation = (data as any).compensation_type_preferred;
+        const rawCompensation = data.compensation_type_preferred;
         if (Array.isArray(rawCompensation)) {
           compensationTypes = rawCompensation;
         } else if (typeof rawCompensation === "string" && rawCompensation) {

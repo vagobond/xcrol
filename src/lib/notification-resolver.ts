@@ -70,7 +70,7 @@ export async function resolveNotifications(
           .select("id, content")
           .in("id", entryIds);
 
-        const entryMap = new Map((entries || []).map((e: any) => [e.id, e.content]));
+        const entryMap = new Map((entries || []).map((e) => [e.id, e.content]));
         const replyToEntry = new Map(data.map((r) => [r.id, r.entry_id]));
 
         for (const n of notifications) {
