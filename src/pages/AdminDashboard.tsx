@@ -21,6 +21,7 @@ import { FlaggedTab } from "@/components/admin/FlaggedTab";
 import { ReferencesTab } from "@/components/admin/ReferencesTab";
 import { BroadcastTab } from "@/components/admin/BroadcastTab";
 import { WaitlistTab } from "@/components/admin/WaitlistTab";
+import { AuditLogTab } from "@/components/admin/AuditLogTab";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
