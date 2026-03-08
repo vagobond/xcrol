@@ -37,6 +37,7 @@ const EveryCountry = lazy(() => import("./pages/EveryCountry"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const ContentPolicy = lazy(() => import("./pages/ContentPolicy"));
 const Developers = lazy(() => import("./pages/Developers"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
 const SharedPost = lazy(() => import("./pages/SharedPost"));
