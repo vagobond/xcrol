@@ -1,56 +1,22 @@
 
 
-## Add Notification Badge to Village Icon in AppHeader
+## Bug: All Group Posts Showing as "New"
 
-### Goal
-Show a red badge on the Village icon in the header nav bar when there is new activity (posts) in groups the user has joined. This is independent of the bell icon notifications, which handle reactions/comments/mentions on the user's own content.
+### Root Cause
 
-### Approach
+The migration added `last_visited_at` to `group_members` defaulting to NULL. The code falls back to `created_at` (membership join date) when `last_visited_at` is NULL. For users who haven't visited every single group page since the migration deployed, the fallback date is their original join date — often weeks ago — so every post since then appears "new."
 
-**New hook: `src/hooks/use-village-activity.ts`**
-A lightweight hook that:
-1. Fetches the current user's active group memberships (just group IDs)
-2. For each group, reads the `group_last_visit_{groupId}` timestamp from localStorage (reusing the existing convention from `use-group-activity.ts`)
-3. Queries `group_posts` to count posts newer than each group's last-visit timestamp
-4. Returns a single total number (sum across all groups)
+Only one user (the one who tested the feature) has any `last_visited_at` values set. All other members across all groups still have NULL.
 
-This reuses the same localStorage-based tracking already in place — no database changes needed.
+### Fix
 
-**Modified file: `src/components/AppHeader.tsx`**
-- Import and call `useVillageActivityCount`
-- Wrap the Village `<Button>` in a `relative` container
-- When count > 0, render a small red badge (same styling as NotificationBell) on the Village icon
+A single data migration to backfill `last_visited_at = now()` for all existing active members where it's currently NULL. This gives everyone a clean slate — no false "new" badges — and going forward the visit-recording logic will keep it updated correctly.
 
-### Technical Detail
-
-```text
-AppHeader Village button:
-  <Button className="relative ...">
-    <img ... />
-    {count > 0 && <span className="absolute -top-1 -right-1 ...">count</span>}
-  </Button>
+```sql
+UPDATE public.group_members
+SET last_visited_at = now()
+WHERE status = 'active' AND last_visited_at IS NULL;
 ```
 
-The hook query:
-```typescript
-// 1. Get user's active group memberships
-const { data } = await supabase
-  .from("group_members")
-  .select("group_id")
-  .eq("user_id", userId)
-  .eq("status", "active");
-
-// 2. For each group, check localStorage last-visit vs group_posts created_at
-// 3. Sum up new posts across all groups
-```
-
-### Files
-- **New**: `src/hooks/use-village-activity.ts`
-- **Modified**: `src/components/AppHeader.tsx` (add badge to Village button)
-
-### What does NOT change
-- No database migrations or RLS changes
-- No changes to the bell icon / NotificationBell component
-- No changes to the existing `use-group-activity.ts` hook (TheVillage page continues using it for per-group badges)
-- No changes to localStorage conventions
+One migration, no code changes needed.
 
