@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { getGroupLastVisit, setGroupLastVisit } from "@/hooks/use-group-activity";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useGroupBySlug,
   useGroupMembers,
@@ -36,39 +36,46 @@ const GroupProfile = () => {
   const deletePost = useDeleteGroupPost();
   const updateGroup = useUpdateGroup();
 
-  // Track last visit for notification badges
+  // Server-side last_visited_at: captured on mount, then updated server-side
   const [lastVisitedAt, setLastVisitedAt] = useState<string | null>(null);
-  const groupIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!group?.id) return;
-    groupIdRef.current = group.id;
-    const stored = getGroupLastVisit(group.id);
-    setLastVisitedAt(stored);
+    if (!group?.id || !user?.id || !group.is_member) return;
 
-    // On mobile PWA, cleanup functions may not fire reliably on navigation.
-    // Use visibilitychange + pagehide to ensure the last-visit timestamp is saved.
-    const markVisit = () => {
-      if (groupIdRef.current) {
-        setGroupLastVisit(groupIdRef.current);
+    let cancelled = false;
+
+    const recordVisit = async () => {
+      // First, read the current last_visited_at so we can show "New" badges for posts since then
+      const { data: membership } = await supabase
+        .from("group_members")
+        .select("last_visited_at, created_at")
+        .eq("group_id", group.id)
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (membership) {
+        // Use last_visited_at if set, otherwise fall back to membership created_at
+        setLastVisitedAt(membership.last_visited_at ?? membership.created_at);
       }
+
+      // Now update last_visited_at to now() on the server
+      await supabase
+        .from("group_members")
+        .update({ last_visited_at: new Date().toISOString() })
+        .eq("group_id", group.id)
+        .eq("user_id", user.id)
+        .eq("status", "active");
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        markVisit();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("pagehide", markVisit);
+    recordVisit();
 
     return () => {
-      markVisit();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("pagehide", markVisit);
+      cancelled = true;
     };
-  }, [group?.id]);
+  }, [group?.id, user?.id, group?.is_member]);
 
   if (isLoading) {
     return (

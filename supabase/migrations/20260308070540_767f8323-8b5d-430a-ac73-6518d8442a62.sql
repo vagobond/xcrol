@@ -1,0 +1,1 @@
+ALTER TABLE public.group_members ADD COLUMN last_visited_at timestamptz DEFAULT NULL;
