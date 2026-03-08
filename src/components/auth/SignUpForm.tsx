@@ -128,10 +128,12 @@ export const SignUpForm = ({
             I have read and agree to the{" "}
             <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80" onClick={(e) => e.stopPropagation()}>
               Terms and Conditions
-            </a>{" "}
-            and{" "}
+            </a>,{" "}
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80" onClick={(e) => e.stopPropagation()}>
               Privacy Policy
+            </a>, and{" "}
+            <a href="/content-policy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80" onClick={(e) => e.stopPropagation()}>
+              Content Policy
             </a>
           </label>
         </div>
