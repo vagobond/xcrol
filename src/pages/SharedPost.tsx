@@ -158,7 +158,7 @@ const SharedPost = () => {
               </Button>
               <Button variant="outline" size="lg" asChild>
                 <a
-                  href="https://www.gofundme.com"
+                  href="https://www.gofundme.com/f/join-us-in-creating-xcrol-a-human-centered-social-space"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
