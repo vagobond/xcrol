@@ -64,7 +64,7 @@ export const BrookList = ({ userId, currentUsername }: BrookListProps) => {
       // Get all brooks where user is a participant
       const { data: brookData, error } = await supabase
         .from("brooks")
-        .select("*")
+        .select("id, user1_id, user2_id, custom_name, status, inactivity_days, last_post_at, created_at, invite_email, nudge_sent_at, updated_at")
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
         .order("updated_at", { ascending: false });
 

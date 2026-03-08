@@ -42,7 +42,7 @@ export const HostingPreferencesManager = ({ userId }: HostingPreferencesManagerP
     try {
       const { data, error } = await supabase
         .from("hosting_preferences")
-        .select("*")
+        .select("id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred")
         .eq("user_id", userId)
         .maybeSingle();
 

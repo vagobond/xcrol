@@ -102,7 +102,7 @@ const Brook = () => {
       // Load brook data
       const { data: brookData, error: brookError } = await supabase
         .from("brooks")
-        .select("*")
+        .select("id, user1_id, user2_id, custom_name, status, inactivity_days, last_post_at, created_at")
         .eq("id", brookId)
         .single();
 
@@ -145,7 +145,7 @@ const Brook = () => {
     try {
       const { data: postsData, error } = await supabase
         .from("brook_posts")
-        .select("*")
+        .select("id, content, link, user_id, created_at")
         .eq("brook_id", brookId)
         .order("created_at", { ascending: false });
 

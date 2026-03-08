@@ -25,7 +25,7 @@ const TownListingDetail = ({ listingId, onBack }: TownListingDetailProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("town_listings")
-        .select("*")
+        .select("id, title, body, category, subcategory, price, location, contact_info, contact_method, user_id, status, created_at, image_urls, has_images")
         .eq("id", listingId)
         .single();
       if (error) throw error;

@@ -37,7 +37,7 @@ export const MeetupPreferencesManager = ({ userId }: MeetupPreferencesManagerPro
     try {
       const { data, error } = await supabase
         .from("meetup_preferences")
-        .select("*")
+        .select("id, is_open_to_meetups, meetup_description, min_friendship_level")
         .eq("user_id", userId)
         .maybeSingle();
 

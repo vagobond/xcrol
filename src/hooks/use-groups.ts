@@ -56,7 +56,7 @@ export const useGroups = () => {
     queryFn: async () => {
       const { data: groups, error } = await supabase
         .from("groups")
-        .select("*")
+        .select("id, name, slug, description, avatar_url, trust_level, require_approval, creator_id, created_at, updated_at")
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -113,7 +113,7 @@ export const useGroupBySlug = (slug: string | undefined) => {
 
       const { data: group, error } = await supabase
         .from("groups")
-        .select("*")
+        .select("id, name, slug, description, avatar_url, trust_level, require_approval, creator_id, created_at, updated_at")
         .eq("slug", slug)
         .single();
 
@@ -121,7 +121,7 @@ export const useGroupBySlug = (slug: string | undefined) => {
 
       const { count } = await supabase
         .from("group_members")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("group_id", group.id)
         .eq("status", "active");
 
@@ -161,7 +161,7 @@ export const useGroupMembers = (groupId: string | undefined) => {
       if (!groupId) return [];
       const { data, error } = await supabase
         .from("group_members")
-        .select("*")
+        .select("id, group_id, user_id, role, status, created_at")
         .eq("group_id", groupId)
         .order("created_at", { ascending: true });
 
@@ -192,7 +192,7 @@ export const useGroupPosts = (groupId: string | undefined) => {
       if (!groupId) return [];
       const { data, error } = await supabase
         .from("group_posts")
-        .select("*")
+        .select("id, group_id, user_id, content, link, created_at")
         .eq("group_id", groupId)
         .order("created_at", { ascending: false });
 

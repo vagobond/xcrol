@@ -48,7 +48,7 @@ export const MeetupsListModal = ({ open, onClose, onSelectMeetup, onCreateMeetup
     try {
       const { data, error } = await supabase
         .from("meetups")
-        .select("*")
+        .select("id, title, description, location_name, location_address, start_datetime, end_datetime, is_open_ended, creator_id, created_at, latitude, longitude")
         .order("created_at", { ascending: false });
 
       if (error) throw error;

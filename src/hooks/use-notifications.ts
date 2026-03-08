@@ -210,7 +210,7 @@ export const useNotifications = () => {
 
     const { data, error } = await supabase
       .from("friend_requests")
-      .select("*")
+      .select("id, from_user_id, to_user_id, message, created_at")
       .eq("to_user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -299,7 +299,7 @@ export const useNotifications = () => {
     const [notifsResult, settingsResult] = await Promise.all([
       supabase
         .from("notifications")
-        .select("*")
+        .select("id, user_id, actor_id, type, entity_id, created_at, read_at")
         .eq("user_id", user.id)
         .is("read_at", null)
         .order("created_at", { ascending: false })

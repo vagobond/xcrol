@@ -71,7 +71,7 @@ export const EveryCountryGame = () => {
   const loadInvites = async (userId: string) => {
     const { data } = await supabase
       .from("country_invites")
-      .select("*")
+      .select("id, inviter_id, invitee_email, invite_code, target_country, is_new_country, status, completed_at, created_at")
       .eq("inviter_id", userId)
       .order("created_at", { ascending: false });
     

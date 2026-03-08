@@ -139,7 +139,7 @@ const HearthSurfing = () => {
     try {
       const { data, error } = await supabase
         .from("hosting_preferences")
-        .select("*")
+        .select("id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -182,7 +182,7 @@ const HearthSurfing = () => {
       // Load incoming requests
       const { data: incoming, error: inError } = await supabase
         .from("hosting_requests")
-        .select("*")
+        .select("id, from_user_id, to_user_id, message, status, arrival_date, departure_date, num_guests, response_message, created_at")
         .eq("to_user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -191,7 +191,7 @@ const HearthSurfing = () => {
       // Load outgoing requests
       const { data: outgoing, error: outError } = await supabase
         .from("hosting_requests")
-        .select("*")
+        .select("id, from_user_id, to_user_id, message, status, arrival_date, departure_date, num_guests, response_message, created_at")
         .eq("from_user_id", user.id)
         .order("created_at", { ascending: false });
 

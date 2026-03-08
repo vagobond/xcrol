@@ -52,7 +52,7 @@ const IntroductionRequestsManager = ({ userId }: IntroductionRequestsManagerProp
       setLoading(true);
       const { data, error } = await supabase
         .from("introduction_requests")
-        .select("*")
+        .select("id, requester_id, introducer_id, target_id, message, status, response_message, created_at")
         .or(`requester_id.eq.${userId},introducer_id.eq.${userId},target_id.eq.${userId}`)
         .order("created_at", { ascending: false });
 

@@ -169,7 +169,7 @@ export const SocialLinksManager = ({ userId, profileData, onProfileChange }: Soc
     try {
       const { data, error } = await supabase
         .from("social_links")
-        .select("*")
+        .select("id, platform, url, label, friendship_level_required, user_id, created_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: true });
 
