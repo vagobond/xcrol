@@ -110,7 +110,7 @@ const TheForest = () => {
   const loadPendingFriendships = async (userId: string) => {
     const { data, error } = await supabase
       .from("friend_requests")
-      .select("*")
+      .select("id, from_user_id, to_user_id, message, created_at")
       .eq("from_user_id", userId);
 
     if (error) {

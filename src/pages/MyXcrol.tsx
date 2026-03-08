@@ -82,7 +82,7 @@ const MyXcrol = () => {
     try {
       const { data, error } = await supabase
         .from("xcrol_entries")
-        .select("*")
+        .select("id, content, link, entry_date, privacy_level, user_id, created_at")
         .eq("user_id", user.id)
         .order("entry_date", { ascending: false });
 
