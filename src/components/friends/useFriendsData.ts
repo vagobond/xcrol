@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Friend, FriendRequest, CustomFriendshipType, FriendshipLevel } from "./types";
+import type { Enums } from "@/integrations/supabase/types";
 
 interface UseFriendsDataProps {
   userId: string;
@@ -78,14 +79,14 @@ export const useFriendsData = ({ userId, viewerId }: UseFriendsDataProps) => {
       let friendsWithCustomType: Friend[] = [];
 
       if (viewerId === userId) {
-        const friendshipIds = (data || []).map((row: any) => row.id);
+        const friendshipIds = (data || []).map((row) => row.id);
         const { data: customTypeData } = await supabase
           .from("friendships")
           .select("id, uses_custom_type")
           .in("id", friendshipIds);
-        const customTypeMap = new Map((customTypeData || []).map((f: any) => [f.id, f.uses_custom_type]));
+        const customTypeMap = new Map((customTypeData || []).map((f) => [f.id, f.uses_custom_type]));
 
-        friendsWithCustomType = (data || []).map((row: any) => ({
+        friendsWithCustomType = (data || []).map((row) => ({
           id: row.id,
           friend_id: row.friend_id,
           level: row.level,
@@ -93,7 +94,7 @@ export const useFriendsData = ({ userId, viewerId }: UseFriendsDataProps) => {
           profile: { display_name: row.display_name, avatar_url: row.avatar_url },
         }));
       } else {
-        friendsWithCustomType = (data || []).map((row: any) => ({
+        friendsWithCustomType = (data || []).map((row) => ({
           id: row.id,
           friend_id: row.friend_id,
           level: row.level,
@@ -167,7 +168,7 @@ export const useFriendsData = ({ userId, viewerId }: UseFriendsDataProps) => {
     setProcessing(true);
     try {
       const levelToUse = level === "custom" ? "buddy" : level;
-      const { error } = await supabase.rpc("accept_friend_request", { request_id: request.id, friendship_level: levelToUse as any });
+      const { error } = await supabase.rpc("accept_friend_request", { request_id: request.id, friendship_level: levelToUse as Enums<"friendship_level"> });
       if (error) throw error;
 
       if (level === "custom" && customFriendshipType) {
@@ -202,7 +203,7 @@ export const useFriendsData = ({ userId, viewerId }: UseFriendsDataProps) => {
     setProcessing(true);
     try {
       const levelToStore = usesCustomType ? "buddy" : level;
-      const { error } = await supabase.from("friendships").update({ level: levelToStore as any, uses_custom_type: usesCustomType }).eq("id", friendId);
+      const { error } = await supabase.from("friendships").update({ level: levelToStore as Enums<"friendship_level">, uses_custom_type: usesCustomType }).eq("id", friendId);
       if (error) throw error;
       setFriends(prev => prev.map(f => f.id === friendId ? { ...f, level: levelToStore, uses_custom_type: usesCustomType } : f));
       toast.success("Friendship level updated!");

@@ -82,7 +82,7 @@ export function useAdminData() {
         refsResult,
         deletionResult,
       ] = await Promise.all([
-        supabase.rpc("get_admin_profiles") as any,
+        supabase.rpc("get_admin_profiles"),
         supabase.from("user_roles").select("id, user_id, role, created_at").order("created_at", { ascending: false }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("friendships").select("id", { count: "exact", head: true }),
@@ -113,7 +113,7 @@ export function useAdminData() {
         const inviterProfiles = new Map<string, { display_name: string | null; email: string | null }>();
         if (inviterIds.length > 0) {
           const { data: invProfiles } = await supabase
-            .rpc("get_admin_profiles_by_ids", { p_ids: inviterIds }) as any;
+            .rpc("get_admin_profiles_by_ids", { p_ids: inviterIds });
           (invProfiles || []).forEach((p) => {
             inviterProfiles.set(p.id, { display_name: p.display_name, email: p.email });
           });
@@ -121,7 +121,7 @@ export function useAdminData() {
 
         const { data: pointsData } = await supabase.rpc("calculate_all_user_points");
         const pointsMap = new Map<string, number>();
-        (pointsData as any[] || []).forEach((row: any) => pointsMap.set(row.user_id, Number(row.points)));
+        (pointsData || []).forEach((row) => pointsMap.set(row.user_id, Number(row.points)));
 
         const enrichedUsers = usersResult.data.map((user) => {
           const inviterId = inviterMap.get(user.id);
@@ -148,12 +148,12 @@ export function useAdminData() {
       }
 
       refsResult.data?.forEach((r) => { allUserIds.add(r.from_user_id); allUserIds.add(r.to_user_id); });
-      deletionResult.data?.forEach((r: any) => allUserIds.add(r.user_id));
+      deletionResult.data?.forEach((r) => allUserIds.add(r.user_id));
 
       const profilesMap = new Map<string, { display_name: string | null; email: string | null; username?: string | null }>();
       if (allUserIds.size > 0) {
-        const { data: profiles } = await supabase.rpc("get_admin_profiles_by_ids", { p_ids: [...allUserIds] }) as any;
-        (profiles || []).forEach((p: any) => { profilesMap.set(p.id, { display_name: p.display_name, email: p.email, username: p.username }); });
+        const { data: profiles } = await supabase.rpc("get_admin_profiles_by_ids", { p_ids: [...allUserIds] });
+        (profiles || []).forEach((p) => { profilesMap.set(p.id, { display_name: p.display_name, email: p.email, username: p.username }); });
       }
 
       if (rolesResult.data && rolesResult.data.length > 0) {
@@ -175,7 +175,7 @@ export function useAdminData() {
       }
 
       if (deletionResult.data && deletionResult.data.length > 0) {
-        setDeletionRequests(deletionResult.data.map((req: any) => ({ ...req, profile: profilesMap.get(req.user_id) })));
+        setDeletionRequests(deletionResult.data.map((req) => ({ ...req, profile: profilesMap.get(req.user_id) })));
       }
     } catch (error) {
       console.error("Error loading dashboard data:", error);

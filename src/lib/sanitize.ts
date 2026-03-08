@@ -16,12 +16,12 @@ export function escapeHtml(unsafe: string | null | undefined): string {
  * Sanitizes an object's string properties for safe use in HTML.
  * Returns a new object with all string values escaped.
  */
-export function sanitizeForHtml<T extends Record<string, any>>(obj: T): T {
-  const result = { ...obj };
+export function sanitizeForHtml<T extends Record<string, unknown>>(obj: T): T {
+  const result = { ...obj } as Record<string, unknown>;
   for (const key of Object.keys(result)) {
     if (typeof result[key] === 'string') {
-      (result as any)[key] = escapeHtml(result[key]);
+      result[key] = escapeHtml(result[key] as string);
     }
   }
-  return result;
+  return result as T;
 }
