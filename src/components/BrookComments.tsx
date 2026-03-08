@@ -32,7 +32,19 @@ interface BrookCommentsProps {
 export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentCount, setCommentCount] = useState(0);
-  const [newComment, setNewComment] = useState("");
+  const draftKey = `brook-comment-draft-${postId}`;
+  const [newComment, setNewComment] = useState(() => {
+    return sessionStorage.getItem(draftKey) || "";
+  });
+
+  const updateNewComment = (value: string) => {
+    setNewComment(value);
+    if (value) {
+      sessionStorage.setItem(draftKey, value);
+    } else {
+      sessionStorage.removeItem(draftKey);
+    }
+  };
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);

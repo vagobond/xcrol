@@ -27,10 +27,24 @@ interface RiverRepliesProps {
 }
 
 export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange }: RiverRepliesProps) => {
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyContent, setReplyContent] = useState("");
+  const draftKey = `river-reply-draft-${entryId}`;
+  const [showReplyInput, setShowReplyInput] = useState(() => {
+    return !!sessionStorage.getItem(draftKey);
+  });
+  const [replyContent, setReplyContent] = useState(() => {
+    return sessionStorage.getItem(draftKey) || "";
+  });
   const [submitting, setSubmitting] = useState(false);
   const [expanded, setExpanded] = useState(false);
+
+  const updateReplyContent = (value: string) => {
+    setReplyContent(value);
+    if (value) {
+      sessionStorage.setItem(draftKey, value);
+    } else {
+      sessionStorage.removeItem(draftKey);
+    }
+  };
 
   // Top-level replies only (no parent)
   const topLevelReplies = replies.filter(r => !r.parent_reply_id);
