@@ -152,8 +152,8 @@ export function useAdminData() {
 
       const profilesMap = new Map<string, { display_name: string | null; email: string | null; username?: string | null }>();
       if (allUserIds.size > 0) {
-        const { data: profiles } = await supabase.rpc("get_admin_profiles_by_ids", { p_ids: [...allUserIds] }) as any;
-        (profiles || []).forEach((p: any) => { profilesMap.set(p.id, { display_name: p.display_name, email: p.email, username: p.username }); });
+        const { data: profiles } = await supabase.rpc("get_admin_profiles_by_ids", { p_ids: [...allUserIds] });
+        (profiles || []).forEach((p) => { profilesMap.set(p.id, { display_name: p.display_name, email: p.email, username: p.username }); });
       }
 
       if (rolesResult.data && rolesResult.data.length > 0) {
