@@ -149,6 +149,9 @@ export default function AdminDashboard() {
           <TabsContent value="waitlist">
             <WaitlistTab waitlist={waitlist} />
           </TabsContent>
+          <TabsContent value="audit">
+            <AuditLogTab />
+          </TabsContent>
         </Tabs>
 
         {/* Delete Reference Confirmation Dialog */}
