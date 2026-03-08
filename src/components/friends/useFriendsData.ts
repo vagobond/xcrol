@@ -168,7 +168,10 @@ export const useFriendsData = ({ userId, viewerId }: UseFriendsDataProps) => {
     setProcessing(true);
     try {
       const levelToUse = level === "custom" ? "buddy" : level;
-      const { error } = await supabase.rpc("accept_friend_request", { request_id: request.id, friendship_level: levelToUse as Enums<"friendship_level">& customFriendshipType) {
+      const { error } = await supabase.rpc("accept_friend_request", { request_id: request.id, friendship_level: levelToUse as Enums<"friendship_level"> });
+      if (error) throw error;
+
+      if (level === "custom" && customFriendshipType) {
         await supabase.from("friendships").update({ uses_custom_type: true }).eq("user_id", viewerId).eq("friend_id", request.from_user_id);
       }
 
