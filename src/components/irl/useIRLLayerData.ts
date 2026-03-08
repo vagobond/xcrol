@@ -60,7 +60,7 @@ export function useIRLLayerData() {
   const loadMeetups = useCallback(async () => {
     const { data, error } = await supabase
       .from("meetups")
-      .select("*")
+      .select("id, creator_id, title, description, location_name, location_address, latitude, longitude, start_datetime, end_datetime, is_open_ended, created_at")
       .order("created_at", { ascending: false });
     if (error) {
       console.error("Error loading meetups:", error);

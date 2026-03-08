@@ -58,7 +58,7 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
     try {
       const { data, error } = await supabase
         .from("user_references")
-        .select("*")
+        .select("id, from_user_id, to_user_id, content, rating, reference_type, created_at")
         .eq("to_user_id", userId)
         .order("created_at", { ascending: false });
 

@@ -59,7 +59,7 @@ export function useSettingsData(userId: string | undefined) {
     try {
       const { data, error } = await supabase
         .from("user_settings")
-        .select("*")
+        .select("email_notifications, friend_request_notifications, show_online_status, allow_friend_requests, default_share_email, default_share_hometown, default_share_connections, default_share_xcrol, notify_river_replies, notify_brook_activity, notify_hosting_requests, notify_meetup_requests, notify_group_activity")
         .eq("user_id", uid)
         .maybeSingle();
 
