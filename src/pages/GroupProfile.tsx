@@ -46,10 +46,27 @@ const GroupProfile = () => {
     const stored = getGroupLastVisit(group.id);
     setLastVisitedAt(stored);
 
-    return () => {
+    // On mobile PWA, cleanup functions may not fire reliably on navigation.
+    // Use visibilitychange + pagehide to ensure the last-visit timestamp is saved.
+    const markVisit = () => {
       if (groupIdRef.current) {
         setGroupLastVisit(groupIdRef.current);
       }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        markVisit();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", markVisit);
+
+    return () => {
+      markVisit();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", markVisit);
     };
   }, [group?.id]);
 
