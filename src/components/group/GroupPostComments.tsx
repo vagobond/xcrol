@@ -39,7 +39,7 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt }: Grou
     try {
       const { data, error } = await supabase
         .from("group_post_comments")
-        .select("*")
+        .select("id, post_id, user_id, content, created_at")
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
 

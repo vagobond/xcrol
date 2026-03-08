@@ -90,7 +90,7 @@ export function CustomFriendshipTypeManager({ userId }: Props) {
     try {
       const { data, error } = await supabase
         .from("custom_friendship_types")
-        .select("*")
+        .select("id, user_id, name, show_linkedin, show_contact_email, show_instagram, show_whatsapp, show_phone, show_private_email, show_hometown_coords, show_birthday_day_month, show_birthday_year, show_home_address, show_mailing_address, show_nicknames, can_leave_reference")
         .eq("user_id", userId)
         .maybeSingle();
 

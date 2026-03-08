@@ -71,7 +71,7 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
     try {
       const { data, error } = await supabase
         .from("brook_comments")
-        .select("*")
+        .select("id, content, user_id, created_at, post_id")
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
 

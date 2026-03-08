@@ -53,7 +53,7 @@ const InviteFriends = () => {
   const loadInvites = async (userId: string) => {
     const { data } = await supabase
       .from("user_invites")
-      .select("*")
+      .select("id, invite_code, inviter_id, invitee_email, invitee_id, status, sent_at, accepted_at, created_at")
       .eq("inviter_id", userId)
       .order("created_at", { ascending: false });
     
