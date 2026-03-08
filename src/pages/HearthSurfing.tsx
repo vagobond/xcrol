@@ -182,7 +182,7 @@ const HearthSurfing = () => {
       // Load incoming requests
       const { data: incoming, error: inError } = await supabase
         .from("hosting_requests")
-        .select("*")
+        .select("id, from_user_id, to_user_id, message, status, arrival_date, departure_date, num_guests, response_message, created_at")
         .eq("to_user_id", user.id)
         .order("created_at", { ascending: false });
 
