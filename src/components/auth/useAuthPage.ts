@@ -159,6 +159,12 @@ export const useAuthPage = () => {
       return;
     }
 
+    // Show content policy dialog if not yet acknowledged
+    if (!agreedToContentPolicy) {
+      setShowContentPolicy(true);
+      return;
+    }
+
     setLoading(true);
     try {
       // If an invite code was provided, validate it (optional referral tracking)
