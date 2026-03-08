@@ -46,6 +46,7 @@ export function useVillageActivityCount(): number {
         .from("group_posts")
         .select("group_id, created_at")
         .in("group_id", groupIds)
+        .neq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(500);
 
