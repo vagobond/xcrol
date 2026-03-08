@@ -198,6 +198,8 @@ export function useAdminData() {
       const messages = allUsers.map((user) => ({ from_user_id: currentUserId, to_user_id: user.id, content: broadcastMessage.trim(), platform_suggestion: "system_broadcast" }));
       const { error: insertError } = await supabase.from("messages").insert(messages);
       if (insertError) throw insertError;
+      // Audit log
+      await supabase.from("audit_log").insert({ event_type: "broadcast_sent", actor_id: currentUserId, target_type: "broadcast", metadata: { recipient_count: allUsers.length, message_preview: broadcastMessage.trim().slice(0, 100) } });
       toast.success(`Broadcast sent to ${allUsers.length} users`);
       setBroadcastMessage("");
     } catch (error) {
