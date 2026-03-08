@@ -121,7 +121,7 @@ export const useGroupBySlug = (slug: string | undefined) => {
 
       const { count } = await supabase
         .from("group_members")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("group_id", group.id)
         .eq("status", "active");
 
