@@ -1,38 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const STORAGE_PREFIX = "group_last_visit_";
-
-export function getGroupLastVisit(groupId: string): string | null {
-  try {
-    return localStorage.getItem(`${STORAGE_PREFIX}${groupId}`);
-  } catch {
-    return null;
-  }
-}
-
-export function setGroupLastVisit(groupId: string): void {
-  try {
-    localStorage.setItem(`${STORAGE_PREFIX}${groupId}`, new Date().toISOString());
-    // Dispatch event so useVillageActivityCount re-fetches
-    window.dispatchEvent(new CustomEvent("group-visit-updated"));
-  } catch {
-    // localStorage unavailable
-  }
-}
-
 /**
  * For a list of group IDs the user is a member of, returns a Map of groupId -> new post count
- * (posts created after the user's last visit stored in localStorage).
+ * (posts created after the user's last_visited_at stored on group_members, falling back to created_at).
  */
 export function useGroupActivity(memberGroupIds: string[]) {
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
-  const [mountKey, setMountKey] = useState(0);
-
-  // Bump mountKey every time the hook mounts (e.g. navigating back to Village)
-  useEffect(() => {
-    setMountKey((k) => k + 1);
-  }, []);
 
   useEffect(() => {
     if (memberGroupIds.length === 0) {
@@ -43,15 +17,25 @@ export function useGroupActivity(memberGroupIds: string[]) {
     let cancelled = false;
 
     const fetchCounts = async () => {
-      const lastVisits = new Map<string, string>();
-      for (const gid of memberGroupIds) {
-        const lv = getGroupLastVisit(gid);
-        if (lv) lastVisits.set(gid, lv);
-      }
+      // Get the user's last_visited_at for each group from the server
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
 
-      // Compute oldest last-visit for server-side filtering
+      const { data: memberships } = await supabase
+        .from("group_members")
+        .select("group_id, last_visited_at, created_at")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .in("group_id", memberGroupIds);
+
+      if (cancelled || !memberships?.length) return;
+
+      // Build a map of group_id -> last visit timestamp (fallback to membership created_at)
+      const lastVisits = new Map<string, string>();
       let oldestLastVisit: string | null = null;
-      for (const [, lv] of lastVisits) {
+      for (const m of memberships) {
+        const lv = m.last_visited_at ?? m.created_at;
+        lastVisits.set(m.group_id, lv);
         if (!oldestLastVisit || lv < oldestLastVisit) {
           oldestLastVisit = lv;
         }
@@ -69,7 +53,6 @@ export function useGroupActivity(memberGroupIds: string[]) {
       }
 
       const { data, error } = await query;
-
       if (error || cancelled) return;
 
       const result = new Map<string, number>();
@@ -89,7 +72,7 @@ export function useGroupActivity(memberGroupIds: string[]) {
     return () => {
       cancelled = true;
     };
-  }, [memberGroupIds.join(","), mountKey]);
+  }, [memberGroupIds.join(",")]);
 
   return counts;
 }

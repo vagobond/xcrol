@@ -1,19 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { getGroupLastVisit } from "@/hooks/use-group-activity";
 
 export function useVillageActivityCount(): number {
   const { user } = useAuth();
   const [count, setCount] = useState(0);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // Listen for group-visit-updated events (fired when user leaves a group page)
-  useEffect(() => {
-    const handler = () => setRefreshKey((k) => k + 1);
-    window.addEventListener("group-visit-updated", handler);
-    return () => window.removeEventListener("group-visit-updated", handler);
-  }, []);
 
   useEffect(() => {
     if (!user?.id) {
@@ -29,7 +20,7 @@ export function useVillageActivityCount(): number {
 
       const { data: memberships } = await supabase
         .from("group_members")
-        .select("group_id")
+        .select("group_id, last_visited_at, created_at")
         .eq("user_id", user.id)
         .eq("status", "active");
 
@@ -38,20 +29,18 @@ export function useVillageActivityCount(): number {
         return;
       }
 
-      const groupIds = memberships.map((m) => m.group_id);
-
-      // Compute the oldest last-visit across all groups to use as a server-side filter
+      // Build map of group_id -> effective last visit (fallback to membership created_at)
+      const lastVisits = new Map<string, string>();
       let oldestLastVisit: string | null = null;
-      for (const gid of groupIds) {
-        const lv = getGroupLastVisit(gid);
-        if (!lv) {
-          oldestLastVisit = null;
-          break;
-        }
+      for (const m of memberships) {
+        const lv = m.last_visited_at ?? m.created_at;
+        lastVisits.set(m.group_id, lv);
         if (!oldestLastVisit || lv < oldestLastVisit) {
           oldestLastVisit = lv;
         }
       }
+
+      const groupIds = memberships.map((m) => m.group_id);
 
       let query = supabase
         .from("group_posts")
@@ -70,8 +59,8 @@ export function useVillageActivityCount(): number {
 
       let total = 0;
       for (const post of posts || []) {
-        const lastVisit = getGroupLastVisit(post.group_id);
-        if (!lastVisit || new Date(post.created_at) > new Date(lastVisit)) {
+        const lastVisit = lastVisits.get(post.group_id);
+        if (lastVisit && new Date(post.created_at) > new Date(lastVisit)) {
           total++;
         }
       }
@@ -90,7 +79,7 @@ export function useVillageActivityCount(): number {
     fetchCount();
     const interval = setInterval(fetchCount, 60_000);
     return () => { cancelled = true; clearInterval(interval); document.removeEventListener("visibilitychange", handleVisibilityChange); };
-  }, [user?.id, refreshKey]);
+  }, [user?.id]);
 
   return count;
 }
