@@ -22,6 +22,8 @@ export const useAuthPage = () => {
   const [authView, setAuthView] = useState<AuthView>("default");
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showContentPolicy, setShowContentPolicy] = useState(false);
+  const [agreedToContentPolicy, setAgreedToContentPolicy] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -154,6 +156,12 @@ export const useAuthPage = () => {
         fieldErrors[field] = err.message;
       });
       setErrors(fieldErrors);
+      return;
+    }
+
+    // Show content policy dialog if not yet acknowledged
+    if (!agreedToContentPolicy) {
+      setShowContentPolicy(true);
       return;
     }
 
@@ -376,6 +384,24 @@ export const useAuthPage = () => {
     }
   };
 
+  // Called when user accepts content policy from the dialog
+  const handleContentPolicyAccepted = () => {
+    setAgreedToContentPolicy(true);
+    setShowContentPolicy(false);
+    // Re-trigger signup by submitting programmatically after state update
+  };
+
+  // After agreeing to content policy, auto-submit
+  useEffect(() => {
+    if (agreedToContentPolicy && !showContentPolicy) {
+      // Create a synthetic form submit
+      const form = document.querySelector('form') as HTMLFormElement;
+      if (form) {
+        form.requestSubmit();
+      }
+    }
+  }, [agreedToContentPolicy, showContentPolicy]);
+
   return {
     email, setEmail,
     password, setPassword,
@@ -389,6 +415,9 @@ export const useAuthPage = () => {
     authView, setAuthView,
     showWelcomeModal, setShowWelcomeModal,
     googleLoading,
+    showContentPolicy, setShowContentPolicy,
+    agreedToContentPolicy,
+    handleContentPolicyAccepted,
     navigate,
     handleGoogleSignIn,
     handleSignUp,
