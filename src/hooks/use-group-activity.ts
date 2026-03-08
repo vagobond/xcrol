@@ -45,6 +45,7 @@ export function useGroupActivity(memberGroupIds: string[]) {
         .from("group_posts")
         .select("group_id, created_at")
         .in("group_id", memberGroupIds)
+        .neq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(500);
 
