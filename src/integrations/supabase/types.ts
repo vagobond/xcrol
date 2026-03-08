@@ -560,6 +560,7 @@ export type Database = {
           created_at: string
           group_id: string
           id: string
+          last_visited_at: string | null
           role: string
           status: string
           updated_at: string
@@ -569,6 +570,7 @@ export type Database = {
           created_at?: string
           group_id: string
           id?: string
+          last_visited_at?: string | null
           role?: string
           status?: string
           updated_at?: string
@@ -578,6 +580,7 @@ export type Database = {
           created_at?: string
           group_id?: string
           id?: string
+          last_visited_at?: string | null
           role?: string
           status?: string
           updated_at?: string
