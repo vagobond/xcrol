@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WelcomeModal } from "@/components/WelcomeModal";
+import { ContentPolicyDialog } from "@/components/auth/ContentPolicyDialog";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { useAuthPage } from "@/components/auth/useAuthPage";
 import { SignInForm } from "@/components/auth/SignInForm";
