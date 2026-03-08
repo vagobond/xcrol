@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, Shield, RefreshCw, Flag, UserX, Clock } from "lucide-react";
+import { ArrowLeft, Users, Shield, RefreshCw, Flag, UserX, Clock, ScrollText } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
