@@ -85,8 +85,8 @@ export function usePublicProfileData() {
     setPrefsLoading(true);
     try {
       const [meetupRes, hostingRes] = await Promise.all([
-        supabase.from("meetup_preferences").select("*").eq("user_id", profileId).maybeSingle(),
-        supabase.from("hosting_preferences").select("*").eq("user_id", profileId).maybeSingle(),
+        supabase.from("meetup_preferences").select("id, user_id, is_open_to_meetups, meetup_description, min_friendship_level").eq("user_id", profileId).maybeSingle(),
+        supabase.from("hosting_preferences").select("id, user_id, is_open_to_hosting, hosting_description, min_friendship_level, max_guests, accommodation_type, compensation_type_preferred").eq("user_id", profileId).maybeSingle(),
       ]);
 
       if (meetupRes.error) console.error("Error loading meetup preferences:", meetupRes.error);
