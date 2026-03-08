@@ -214,6 +214,7 @@ export function useAdminData() {
     try {
       const { error } = await supabase.from("user_references").delete().eq("id", refId);
       if (error) throw error;
+      await supabase.from("audit_log").insert({ event_type: "reference_deleted", actor_id: currentUserId, target_id: refId, target_type: "reference" });
       toast.success("Reference deleted");
       setAllReferences((prev) => prev.filter((r) => r.id !== refId));
       setFlaggedReferences((prev) => prev.filter((f) => f.reference_id !== refId));
