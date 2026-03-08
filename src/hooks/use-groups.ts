@@ -113,7 +113,7 @@ export const useGroupBySlug = (slug: string | undefined) => {
 
       const { data: group, error } = await supabase
         .from("groups")
-        .select("*")
+        .select("id, name, slug, description, avatar_url, trust_level, require_approval, creator_id, created_at, updated_at")
         .eq("slug", slug)
         .single();
 
