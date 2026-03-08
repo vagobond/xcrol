@@ -22,6 +22,8 @@ export const useAuthPage = () => {
   const [authView, setAuthView] = useState<AuthView>("default");
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showContentPolicy, setShowContentPolicy] = useState(false);
+  const [agreedToContentPolicy, setAgreedToContentPolicy] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
