@@ -54,7 +54,7 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
     (async () => {
       const { count } = await supabase
         .from("brook_comments")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("post_id", postId);
       setCommentCount(count ?? 0);
     })();
