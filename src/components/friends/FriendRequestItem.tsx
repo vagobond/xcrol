@@ -94,7 +94,7 @@ export function FriendRequestItem({
             {request.profile?.display_name || "Unknown"}
           </p>
           {request.message && (
-            <p className="text-xs text-muted-foreground truncate">{request.message}</p>
+            <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words">{request.message}</p>
           )}
         </div>
       </div>
