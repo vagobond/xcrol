@@ -38,7 +38,7 @@ const FriendRequestItem = ({ request, onRespond, onBlock }: FriendRequestItemPro
               {request.from_profile?.display_name || "Unknown User"}
             </p>
             {request.message && (
-              <p className="text-sm text-muted-foreground truncate">
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
                 {request.message}
               </p>
             )}
