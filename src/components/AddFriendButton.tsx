@@ -111,15 +111,25 @@ const AddFriendButton = ({ profileUserId }: AddFriendButtonProps) => {
 
     setSending(true);
     try {
+      const trimmedMessage = message.trim() || null;
       const { error } = await supabase
         .from("friend_requests")
         .insert({
           from_user_id: user.id,
           to_user_id: profileUserId,
-          message: message.trim() || null,
+          message: trimmedMessage,
         });
 
       if (error) throw error;
+
+      // Persist the friend request message so it's not lost when the request is accepted/deleted
+      if (trimmedMessage) {
+        await supabase.from("messages").insert({
+          from_user_id: user.id,
+          to_user_id: profileUserId,
+          content: trimmedMessage,
+        });
+      }
 
       toast.success("Friend request sent!");
       setStatus("pending_sent");
