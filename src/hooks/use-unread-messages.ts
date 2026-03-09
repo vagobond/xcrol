@@ -31,7 +31,7 @@ export const useUnreadMessages = (userId: string | null) => {
 
     const { count } = await supabase
       .from("messages")
-      .select("*", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("to_user_id", userId)
       .is("read_at", null);
 

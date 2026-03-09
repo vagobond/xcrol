@@ -127,7 +127,7 @@ export function AuditLogTab() {
     try {
       let query = supabase
         .from("audit_log")
-        .select("*")
+        .select("id, event_type, actor_id, target_id, target_type, metadata, created_at")
         .order("created_at", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 

@@ -1,37 +1,56 @@
 
 
-## Performance Issues Found
+## Add Notification Badge to Village Icon in AppHeader
 
-After reviewing the codebase, here are the issues identified and proposed fixes:
+### Goal
+Show a red badge on the Village icon in the header nav bar when there is new activity (posts) in groups the user has joined. This is independent of the bell icon notifications, which handle reactions/comments/mentions on the user's own content.
 
-### 1. `select("*")` in AuditLogTab (medium priority)
-`src/components/admin/AuditLogTab.tsx` line 130 uses `select("*")` on the `audit_log` table. Should use explicit columns: `select("id, event_type, actor_id, target_id, target_type, metadata, created_at")`.
+### Approach
 
-### 2. `select("*")` in use-unread-messages (low priority)
-`src/hooks/use-unread-messages.ts` line 34 uses `select("*", { count: "exact", head: true })`. Since `head: true` means no rows are returned, this is functionally fine but should use `select("id", { count: "exact", head: true })` for consistency and to avoid issues if `head` behavior changes.
+**New hook: `src/hooks/use-village-activity.ts`**
+A lightweight hook that:
+1. Fetches the current user's active group memberships (just group IDs)
+2. For each group, reads the `group_last_visit_{groupId}` timestamp from localStorage (reusing the existing convention from `use-group-activity.ts`)
+3. Queries `group_posts` to count posts newer than each group's last-visit timestamp
+4. Returns a single total number (sum across all groups)
 
-### 3. `select("*")` in BrookComments (low priority)
-`src/components/BrookComments.tsx` line 57 uses `select("*", { count: "exact", head: true })`. Same as above -- should use `select("id", { count: "exact", head: true })`.
+This reuses the same localStorage-based tracking already in place — no database changes needed.
 
-### 4. Village activity polling runs even when user navigates away from Village
-The `useVillageActivityCount` hook in `AppHeader` polls every 60 seconds for all authenticated users on every page. This is acceptable for a badge counter but could be optimized to poll less frequently (e.g., 5 minutes instead of 1 minute) since the badge is a soft indicator, not real-time critical.
+**Modified file: `src/components/AppHeader.tsx`**
+- Import and call `useVillageActivityCount`
+- Wrap the Village `<Button>` in a `relative` container
+- When count > 0, render a small red badge (same styling as NotificationBell) on the Village icon
 
-### 5. No memoization on `memberGroupIds.join(",")` dependency in use-group-activity
-`src/hooks/use-group-activity.ts` uses `memberGroupIds.join(",")` as a useEffect dependency. This is a valid pattern but the string is recreated on every render. This is minor.
+### Technical Detail
 
----
+```text
+AppHeader Village button:
+  <Button className="relative ...">
+    <img ... />
+    {count > 0 && <span className="absolute -top-1 -right-1 ...">count</span>}
+  </Button>
+```
 
-### Proposed Changes
+The hook query:
+```typescript
+// 1. Get user's active group memberships
+const { data } = await supabase
+  .from("group_members")
+  .select("group_id")
+  .eq("user_id", userId)
+  .eq("status", "active");
 
-**Files to modify:**
+// 2. For each group, check localStorage last-visit vs group_posts created_at
+// 3. Sum up new posts across all groups
+```
 
-1. **`src/components/admin/AuditLogTab.tsx`** -- Replace `select("*")` with explicit column list.
+### Files
+- **New**: `src/hooks/use-village-activity.ts`
+- **Modified**: `src/components/AppHeader.tsx` (add badge to Village button)
 
-2. **`src/hooks/use-unread-messages.ts`** -- Replace `select("*", ...)` with `select("id", ...)`.
-
-3. **`src/components/BrookComments.tsx`** -- Replace `select("*", ...)` with `select("id", ...)`.
-
-4. **`src/hooks/use-village-activity.ts`** -- Increase polling interval from 60 seconds to 300 seconds (5 minutes) to reduce unnecessary network traffic.
-
-All changes are single-line edits with no schema or architectural impact.
+### What does NOT change
+- No database migrations or RLS changes
+- No changes to the bell icon / NotificationBell component
+- No changes to the existing `use-group-activity.ts` hook (TheVillage page continues using it for per-group badges)
+- No changes to localStorage conventions
 
