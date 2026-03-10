@@ -106,7 +106,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Default: network-first for navigation and other requests
+  // Stale-while-revalidate for navigation requests (HTML pages)
+  // Serves cached page instantly on tab-return, preventing reload from bundle mismatch,
+  // while updating the cache in the background for the next visit.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const fetchPromise = fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        }).catch(() => cached);
+
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // Default: network-first for other requests
   event.respondWith(
     fetch(request)
       .then((response) => {
