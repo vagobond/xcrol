@@ -68,10 +68,16 @@ export default function TheRiver() {
   const [hasMore, setHasMore] = useState(true);
   const [hasScrolledToPost, setHasScrolledToPost] = useState(false);
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const hasLoadedRef = useRef(false);
+  const prevFilterRef = useRef(filter);
   const PAGE_SIZE = 20;
 
   useEffect(() => {
     if (authLoading) return;
+    const filterChanged = prevFilterRef.current !== filter;
+    if (hasLoadedRef.current && !filterChanged) return;
+    prevFilterRef.current = filter;
+    hasLoadedRef.current = false;
     loadEntries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, filter]);
