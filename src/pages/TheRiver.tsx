@@ -230,6 +230,7 @@ export default function TheRiver() {
 
     setHasMore(data.length === PAGE_SIZE);
     setLoading(false);
+    hasLoadedRef.current = true;
   };
 
   const refreshReplies = useCallback(async () => {
