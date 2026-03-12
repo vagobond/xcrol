@@ -48,8 +48,10 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
   const navigate = useNavigate();
   const config = PRIVACY_CONFIG[entry.privacy_level] || PRIVACY_CONFIG.private;
   const PrivacyIcon = config.icon;
+  const isRss = entry.privacy_level === "rss";
 
   const handleAuthorClick = () => {
+    if (isRss) return; // RSS items don't have author profiles
     if (entry.author.username) {
       navigate(`/${entry.author.username}`);
     } else {
