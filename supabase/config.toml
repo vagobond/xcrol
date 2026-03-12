@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.export-user-data]
 verify_jwt = true
+
+[functions.fetch-rss-feeds]
+verify_jwt = false

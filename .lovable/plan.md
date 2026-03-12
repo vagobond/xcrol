@@ -1,84 +1,56 @@
 
 
-## RSS Feeds in The River
+## Add Notification Badge to Village Icon in AppHeader
 
-### Overview
+### Goal
+Show a red badge on the Village icon in the header nav bar when there is new activity (posts) in groups the user has joined. This is independent of the bell icon notifications, which handle reactions/comments/mentions on the user's own content.
 
-Allow each user to subscribe to RSS feeds that appear in their personal River view. RSS items will be mixed chronologically with friend posts in the main feed, and also available via a dedicated "News" filter. Users can manage feeds from both Settings and directly on The River page.
+### Approach
 
-### Architecture
+**New hook: `src/hooks/use-village-activity.ts`**
+A lightweight hook that:
+1. Fetches the current user's active group memberships (just group IDs)
+2. For each group, reads the `group_last_visit_{groupId}` timestamp from localStorage (reusing the existing convention from `use-group-activity.ts`)
+3. Queries `group_posts` to count posts newer than each group's last-visit timestamp
+4. Returns a single total number (sum across all groups)
+
+This reuses the same localStorage-based tracking already in place — no database changes needed.
+
+**Modified file: `src/components/AppHeader.tsx`**
+- Import and call `useVillageActivityCount`
+- Wrap the Village `<Button>` in a `relative` container
+- When count > 0, render a small red badge (same styling as NotificationBell) on the Village icon
+
+### Technical Detail
 
 ```text
-┌──────────────┐     ┌──────────────────┐     ┌──────────────┐
-│  user_rss_   │────▶│  fetch-rss-feeds  │────▶│  rss_feed_   │
-│  feeds table │     │  (edge function)  │     │  items table │
-└──────────────┘     └──────────────────┘     └──────────────┘
-       │                                            │
-       │  user manages                              │  mixed into
-       │  subscriptions                             │  River query
-       ▼                                            ▼
-  Settings / River                          get_river_entries
-  management UI                             RPC (modified)
+AppHeader Village button:
+  <Button className="relative ...">
+    <img ... />
+    {count > 0 && <span className="absolute -top-1 -right-1 ...">count</span>}
+  </Button>
 ```
 
-### Database Changes (2 new tables, 1 RPC update)
+The hook query:
+```typescript
+// 1. Get user's active group memberships
+const { data } = await supabase
+  .from("group_members")
+  .select("group_id")
+  .eq("user_id", userId)
+  .eq("status", "active");
 
-**Table `user_rss_feeds`** — stores each user's subscribed RSS sources:
-- `id` uuid PK
-- `user_id` uuid NOT NULL (references auth.users)
-- `feed_url` text NOT NULL
-- `feed_name` text (display name, auto-populated from feed title)
-- `feed_icon` text (favicon URL, nullable)
-- `created_at` timestamptz
-- RLS: users can only CRUD their own rows
-- Unique constraint on `(user_id, feed_url)`
+// 2. For each group, check localStorage last-visit vs group_posts created_at
+// 3. Sum up new posts across all groups
+```
 
-**Table `rss_feed_items`** — cached RSS items fetched by the edge function:
-- `id` uuid PK
-- `feed_id` uuid NOT NULL (references user_rss_feeds, cascade delete)
-- `user_id` uuid NOT NULL
-- `title` text NOT NULL
-- `content` text (description/summary)
-- `link` text NOT NULL
-- `published_at` timestamptz NOT NULL
-- `guid` text NOT NULL (RSS item unique ID)
-- `created_at` timestamptz
-- RLS: users can only SELECT their own items; edge function inserts via service role
-- Unique constraint on `(feed_id, guid)` to prevent duplicates
+### Files
+- **New**: `src/hooks/use-village-activity.ts`
+- **Modified**: `src/components/AppHeader.tsx` (add badge to Village button)
 
-**Modify `get_river_entries` RPC** — add a UNION with `rss_feed_items` when `p_filter = 'all'` or `p_filter = 'rss'`. RSS items will use a synthetic author (feed name + icon) and a special `privacy_level = 'rss'` marker so the UI can render them differently.
-
-### Edge Function: `fetch-rss-feeds`
-
-- Accepts a user_id (or runs for all users with active feeds)
-- Fetches each RSS feed URL, parses XML (using a lightweight XML parser)
-- Upserts items into `rss_feed_items` (deduplicating by guid)
-- Can be called on-demand when a user adds a feed, or scheduled via pg_cron for periodic refresh (e.g., every 30 minutes)
-- Uses service role key to bypass RLS for inserts
-
-### Frontend Changes
-
-**1. RSS Management Component (`RssFeedManager`)**
-- Form to add a new RSS feed URL (validates URL format)
-- List of subscribed feeds with delete button
-- Used in both Settings page and as a dialog/sheet on The River page
-
-**2. The River page (`TheRiver.tsx`)**
-- Add "News" option to the existing filter dropdown
-- Add a small RSS icon/button to open the feed manager
-- Modify the `RiverEntry` interface to support an optional `is_rss` flag and `rss_source` metadata
-- RSS items render in `RiverEntryCard` with a distinct visual treatment (news icon, source attribution, external link) — no reactions or replies on RSS items
-
-**3. Settings page**
-- Add an "RSS Feeds" section (similar to the existing Integrations section) with the `RssFeedManager` component
-
-**4. Filter update**
-- Add `{ value: "rss", label: "News Feeds" }` to `FILTER_OPTIONS`
-- When filter is "rss", only show RSS items; when "all", mix everything chronologically
-
-### What stays the same
-
-- Existing friend posts, reactions, replies — completely untouched
-- The `get_river_entries` RPC for non-RSS filters works identically
-- No changes to existing tables or RLS policies
+### What does NOT change
+- No database migrations or RLS changes
+- No changes to the bell icon / NotificationBell component
+- No changes to the existing `use-group-activity.ts` hook (TheVillage page continues using it for per-group badges)
+- No changes to localStorage conventions
 

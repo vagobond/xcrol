@@ -1641,6 +1641,50 @@ export type Database = {
           },
         ]
       }
+      rss_feed_items: {
+        Row: {
+          content: string | null
+          created_at: string
+          feed_id: string
+          guid: string
+          id: string
+          link: string
+          published_at: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          feed_id: string
+          guid: string
+          id?: string
+          link: string
+          published_at?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          feed_id?: string
+          guid?: string
+          id?: string
+          link?: string
+          published_at?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rss_feed_items_feed_id_fkey"
+            columns: ["feed_id"]
+            isOneToOne: false
+            referencedRelation: "user_rss_feeds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sly_doubt_game_state: {
         Row: {
           bloot_collected: number
@@ -1904,6 +1948,33 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_rss_feeds: {
+        Row: {
+          created_at: string
+          feed_icon: string | null
+          feed_name: string | null
+          feed_url: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feed_icon?: string | null
+          feed_name?: string | null
+          feed_url: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feed_icon?: string | null
+          feed_name?: string | null
+          feed_url?: string
+          id?: string
           user_id?: string
         }
         Relationships: []

@@ -2,12 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Eye, Link2, Code, Scroll } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, Link2, Code, Scroll, Rss } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import BlockedUsersManager from "@/components/BlockedUsersManager";
 import ConnectedAppsManager from "@/components/ConnectedAppsManager";
 import DeveloperAppsManager from "@/components/DeveloperAppsManager";
 import { useTutorial } from "@/components/onboarding";
+import { RssFeedManager } from "@/components/RssFeedManager";
 import { useSettingsData } from "@/components/settings/useSettingsData";
 import { IntegrationsSection } from "@/components/settings/IntegrationsSection";
 import { DataPrivacySection } from "@/components/settings/DataPrivacySection";
@@ -56,6 +57,21 @@ const Settings = () => {
             </div>
 
             <IntegrationsSection />
+
+            {/* RSS Feeds */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Rss className="w-5 h-5" />
+                  RSS Feeds
+                </CardTitle>
+                <CardDescription>Subscribe to RSS feeds to see news in your River</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RssFeedManager />
+              </CardContent>
+            </Card>
+
             <DataPrivacySection settings={settings} onSettingChange={handleSettingChange} />
             <NotificationsPrivacySection settings={settings} onSettingChange={handleSettingChange} />
             <PasswordSection />

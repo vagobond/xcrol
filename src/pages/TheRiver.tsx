@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, Filter, Waves, PenLine } from "lucide-react";
+import { Loader2, Filter, Waves, PenLine, Rss } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RiverEntryCard } from "@/components/RiverEntryCard";
+import { RssFeedManager } from "@/components/RssFeedManager";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import type { Reaction } from "@/components/XcrolReactions";
 import type { RiverReply } from "@/components/RiverReplies";
@@ -47,6 +55,7 @@ export interface RepliesMap {
 
 const FILTER_OPTIONS = [
   { value: "all", label: "All Posts" },
+  { value: "rss", label: "News Feeds" },
   { value: "close_friend", label: "Oath Bound (Close Friends)" },
   { value: "family", label: "Blood Bound (Family)" },
   { value: "buddy", label: "Companions & Above" },
@@ -298,6 +307,23 @@ export default function TheRiver() {
               ))}
             </SelectContent>
           </Select>
+
+          {user && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="ml-auto">
+                  <Rss className="h-4 w-4 mr-1" />
+                  Feeds
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Manage RSS Feeds</DialogTitle>
+                </DialogHeader>
+                <RssFeedManager />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* Loading state */}
