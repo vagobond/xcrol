@@ -41,6 +41,7 @@ const PRIVACY_CONFIG: Record<string, { icon: React.ElementType; label: string; c
   close_friend: { icon: Heart, label: "Oath Bound", color: "text-pink-500" },
   family: { icon: Heart, label: "Blood Bound", color: "text-orange-500" },
   private: { icon: Lock, label: "Private", color: "text-muted-foreground" },
+  rss: { icon: Rss, label: "News", color: "text-orange-500" },
 };
 
 export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, replies = [], currentUserId, onRepliesChange }: RiverEntryCardProps) => {
