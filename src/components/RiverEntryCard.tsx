@@ -85,7 +85,7 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span 
-                className="font-medium cursor-pointer hover:underline"
+                className={`font-medium ${isRss ? "" : "cursor-pointer hover:underline"}`}
                 onClick={handleAuthorClick}
               >
                 {entry.author.display_name || "Anonymous"}
