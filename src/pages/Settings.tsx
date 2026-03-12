@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Eye, Link2, Code, Scroll } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, Link2, Code, Scroll, Rss } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import BlockedUsersManager from "@/components/BlockedUsersManager";
 import ConnectedAppsManager from "@/components/ConnectedAppsManager";
