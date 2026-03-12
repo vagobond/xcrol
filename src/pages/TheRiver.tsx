@@ -55,6 +55,7 @@ export interface RepliesMap {
 
 const FILTER_OPTIONS = [
   { value: "all", label: "All Posts" },
+  { value: "rss", label: "News Feeds" },
   { value: "close_friend", label: "Oath Bound (Close Friends)" },
   { value: "family", label: "Blood Bound (Family)" },
   { value: "buddy", label: "Companions & Above" },
