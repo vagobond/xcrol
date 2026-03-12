@@ -8,6 +8,7 @@ import BlockedUsersManager from "@/components/BlockedUsersManager";
 import ConnectedAppsManager from "@/components/ConnectedAppsManager";
 import DeveloperAppsManager from "@/components/DeveloperAppsManager";
 import { useTutorial } from "@/components/onboarding";
+import { RssFeedManager } from "@/components/RssFeedManager";
 import { useSettingsData } from "@/components/settings/useSettingsData";
 import { IntegrationsSection } from "@/components/settings/IntegrationsSection";
 import { DataPrivacySection } from "@/components/settings/DataPrivacySection";
