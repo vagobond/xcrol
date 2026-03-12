@@ -13,6 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RiverEntryCard } from "@/components/RiverEntryCard";
+import { RssFeedManager } from "@/components/RssFeedManager";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import type { Reaction } from "@/components/XcrolReactions";
 import type { RiverReply } from "@/components/RiverReplies";
