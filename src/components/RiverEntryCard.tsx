@@ -64,13 +64,22 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
       <CardContent className="p-4">
         <div className="flex gap-3">
           <Avatar 
-            className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+            className={`h-10 w-10 ${isRss ? "" : "cursor-pointer hover:ring-2 hover:ring-primary"} transition-all`}
             onClick={handleAuthorClick}
           >
-            <AvatarImage src={entry.author.avatar_url || undefined} />
-            <AvatarFallback>
-              {entry.author.display_name?.[0]?.toUpperCase() || "?"}
-            </AvatarFallback>
+            {isRss ? (
+              <AvatarFallback className="bg-orange-100 dark:bg-orange-900">
+                <Rss className="h-5 w-5 text-orange-500" />
+              </AvatarFallback>
+            ) : (
+              <>
+                <AvatarImage src={entry.author.avatar_url || undefined} />
+                <AvatarFallback>
+                  {entry.author.display_name?.[0]?.toUpperCase() || "?"}
+                </AvatarFallback>
+              </>
+            )}
+          </Avatar>
           </Avatar>
 
           <div className="flex-1 min-w-0">
