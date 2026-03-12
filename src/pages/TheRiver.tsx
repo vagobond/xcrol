@@ -307,6 +307,23 @@ export default function TheRiver() {
               ))}
             </SelectContent>
           </Select>
+
+          {user && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="ml-auto">
+                  <Rss className="h-4 w-4 mr-1" />
+                  Feeds
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Manage RSS Feeds</DialogTitle>
+                </DialogHeader>
+                <RssFeedManager />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* Loading state */}
