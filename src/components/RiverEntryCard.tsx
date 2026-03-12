@@ -125,37 +125,43 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
                 <PrivacyIcon className={`h-3 w-3 ${config.color}`} />
                 {config.label}
               </Badge>
-              <XcrolReactions 
-                entryId={entry.id} 
-                authorId={entry.user_id}
-                authorName={entry.author.display_name || entry.author.username || "User"}
-                initialReactions={initialReactions}
-                onReactionsChange={onReactionsChange}
-              />
-              {currentUserId === entry.user_id && entry.privacy_level === "public" && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-muted-foreground hover:text-primary"
-                  onClick={() => {
-                    const url = `${window.location.origin}/post/${entry.id}`;
-                    navigator.clipboard.writeText(url);
-                    toast.success("Shareable link copied to clipboard!");
-                  }}
-                >
-                  <Share2 className="h-3.5 w-3.5 mr-1" />
-                  <span className="text-xs">Share</span>
-                </Button>
+              {!isRss && (
+                <>
+                  <XcrolReactions 
+                    entryId={entry.id} 
+                    authorId={entry.user_id}
+                    authorName={entry.author.display_name || entry.author.username || "User"}
+                    initialReactions={initialReactions}
+                    onReactionsChange={onReactionsChange}
+                  />
+                  {currentUserId === entry.user_id && entry.privacy_level === "public" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-muted-foreground hover:text-primary"
+                      onClick={() => {
+                        const url = `${window.location.origin}/post/${entry.id}`;
+                        navigator.clipboard.writeText(url);
+                        toast.success("Shareable link copied to clipboard!");
+                      }}
+                    >
+                      <Share2 className="h-3.5 w-3.5 mr-1" />
+                      <span className="text-xs">Share</span>
+                    </Button>
+                  )}
+                </>
               )}
             </div>
 
-            {/* Threaded Replies */}
-            <RiverReplies
-              entryId={entry.id}
-              currentUserId={currentUserId ?? null}
-              replies={replies}
-              onRepliesChange={onRepliesChange}
-            />
+            {/* Threaded Replies - not for RSS */}
+            {!isRss && (
+              <RiverReplies
+                entryId={entry.id}
+                currentUserId={currentUserId ?? null}
+                replies={replies}
+                onRepliesChange={onRepliesChange}
+              />
+            )}
           </div>
         </div>
       </CardContent>

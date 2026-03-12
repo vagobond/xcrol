@@ -57,6 +57,21 @@ const Settings = () => {
             </div>
 
             <IntegrationsSection />
+
+            {/* RSS Feeds */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Rss className="w-5 h-5" />
+                  RSS Feeds
+                </CardTitle>
+                <CardDescription>Subscribe to RSS feeds to see news in your River</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RssFeedManager />
+              </CardContent>
+            </Card>
+
             <DataPrivacySection settings={settings} onSettingChange={handleSettingChange} />
             <NotificationsPrivacySection settings={settings} onSettingChange={handleSettingChange} />
             <PasswordSection />
