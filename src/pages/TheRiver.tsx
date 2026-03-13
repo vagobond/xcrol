@@ -60,7 +60,7 @@ const FILTER_OPTIONS = [
   { value: "family", label: "Blood Bound (Family)" },
   { value: "buddy", label: "Companions & Above" },
   { value: "friendly_acquaintance", label: "Wayfarers & Above" },
-  { value: "public", label: "Public Only" },
+  { value: "public", label: "Public & Above" },
 ];
 
 export default function TheRiver() {
