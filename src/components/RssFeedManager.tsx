@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, Plus, Trash2, Rss, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,8 +18,15 @@ interface RssFeed {
   feed_url: string;
   feed_name: string | null;
   feed_icon: string | null;
+  max_items: number;
   created_at: string;
 }
+
+const ITEM_COUNT_OPTIONS = [
+  { value: "3", label: "3 headlines" },
+  { value: "5", label: "5 headlines" },
+  { value: "10", label: "10 headlines" },
+];
 
 export const RssFeedManager = () => {
   const { user } = useAuth();
@@ -33,7 +47,7 @@ export const RssFeedManager = () => {
       .eq("user_id", user!.id)
       .order("created_at", { ascending: false });
 
-    if (!error && data) setFeeds(data);
+    if (!error && data) setFeeds(data as RssFeed[]);
     setLoading(false);
   };
 
@@ -64,7 +78,7 @@ export const RssFeedManager = () => {
       return;
     }
 
-    setFeeds((prev) => [data, ...prev]);
+    setFeeds((prev) => [{ ...data, max_items: data.max_items ?? 5 } as RssFeed, ...prev]);
     setNewUrl("");
     toast.success("Feed added! Fetching articles...");
     setAdding(false);
@@ -100,8 +114,23 @@ export const RssFeedManager = () => {
       toast.error("Failed to fetch feed articles");
     }
     setRefreshing(false);
-    // Reload feeds to get updated names
     loadFeeds();
+  };
+
+  const updateMaxItems = async (feedId: string, maxItems: number) => {
+    const { error } = await supabase
+      .from("user_rss_feeds")
+      .update({ max_items: maxItems })
+      .eq("id", feedId);
+
+    if (error) {
+      toast.error("Failed to update");
+      return;
+    }
+
+    setFeeds((prev) =>
+      prev.map((f) => (f.id === feedId ? { ...f, max_items: maxItems } : f))
+    );
   };
 
   const removeFeed = async (id: string) => {
@@ -165,11 +194,11 @@ export const RssFeedManager = () => {
         {feeds.map((feed) => (
           <div
             key={feed.id}
-            className="flex items-center justify-between p-3 rounded-lg border border-border"
+            className="flex items-center justify-between gap-2 p-3 rounded-lg border border-border"
           >
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <Rss className="h-4 w-4 text-orange-500 shrink-0" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate">
                   {feed.feed_name || "Loading..."}
                 </p>
@@ -178,6 +207,21 @@ export const RssFeedManager = () => {
                 </p>
               </div>
             </div>
+            <Select
+              value={String(feed.max_items)}
+              onValueChange={(v) => updateMaxItems(feed.id, Number(v))}
+            >
+              <SelectTrigger className="w-[110px] shrink-0 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ITEM_COUNT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               variant="ghost"
               size="sm"

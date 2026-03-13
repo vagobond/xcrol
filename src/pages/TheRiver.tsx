@@ -60,7 +60,7 @@ const FILTER_OPTIONS = [
   { value: "family", label: "Blood Bound (Family)" },
   { value: "buddy", label: "Companions & Above" },
   { value: "friendly_acquaintance", label: "Wayfarers & Above" },
-  { value: "public", label: "Public Only" },
+  { value: "public", label: "Public & Above" },
 ];
 
 export default function TheRiver() {
@@ -316,11 +316,13 @@ export default function TheRiver() {
                   Feeds
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[85vh] flex flex-col">
                 <DialogHeader>
                   <DialogTitle>Manage RSS Feeds</DialogTitle>
                 </DialogHeader>
-                <RssFeedManager />
+                <div className="overflow-y-auto flex-1 -mx-6 px-6">
+                  <RssFeedManager />
+                </div>
               </DialogContent>
             </Dialog>
           )}

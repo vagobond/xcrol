@@ -1959,6 +1959,7 @@ export type Database = {
           feed_name: string | null
           feed_url: string
           id: string
+          max_items: number
           user_id: string
         }
         Insert: {
@@ -1967,6 +1968,7 @@ export type Database = {
           feed_name?: string | null
           feed_url: string
           id?: string
+          max_items?: number
           user_id: string
         }
         Update: {
@@ -1975,6 +1977,7 @@ export type Database = {
           feed_name?: string | null
           feed_url?: string
           id?: string
+          max_items?: number
           user_id?: string
         }
         Relationships: []
