@@ -100,22 +100,67 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
               </span>
             </div>
 
-            <p className="mt-2 text-foreground whitespace-pre-wrap break-words">
-              <MentionText content={entry.content} />
-            </p>
-
-            {entry.link && (
+            {isRss ? (
               <>
-                <LinkPreview url={entry.link} />
-                <a
-                  href={entry.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm max-w-full truncate"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  {new URL(entry.link).hostname}
-                </a>
+                {(() => {
+                  const [title, ...descParts] = entry.content.split("\n\n");
+                  const description = descParts.join("\n\n");
+                  return (
+                    <>
+                      <p className="mt-2">
+                        {entry.link ? (
+                          <a
+                            href={entry.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-semibold text-foreground hover:text-primary hover:underline"
+                          >
+                            {title}
+                          </a>
+                        ) : (
+                          <span className="font-semibold text-foreground">{title}</span>
+                        )}
+                      </p>
+                      {description && (
+                        <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap break-words line-clamp-3">
+                          {description}
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
+                {entry.link && (
+                  <a
+                    href={entry.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-primary hover:underline text-xs max-w-full truncate"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    {(() => { try { return new URL(entry.link).hostname; } catch { return entry.link; } })()}
+                  </a>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-foreground whitespace-pre-wrap break-words">
+                  <MentionText content={entry.content} />
+                </p>
+
+                {entry.link && (
+                  <>
+                    <LinkPreview url={entry.link} />
+                    <a
+                      href={entry.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm max-w-full truncate"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      {(() => { try { return new URL(entry.link).hostname; } catch { return entry.link; } })()}
+                    </a>
+                  </>
+                )}
               </>
             )}
 

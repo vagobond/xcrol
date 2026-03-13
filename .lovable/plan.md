@@ -1,40 +1,56 @@
 
 
-## Fix RSS Feed Item Display
+## Add Notification Badge to Village Icon in AppHeader
 
-### Problems identified
+### Goal
+Show a red badge on the Village icon in the header nav bar when there is new activity (posts) in groups the user has joined. This is independent of the bell icon notifications, which handle reactions/comments/mentions on the user's own content.
 
-1. **Missing description** — The RPC only passes `ri.title` as `content`. The RSS item's summary/description (`rss_feed_items.content` column) is discarded, so RSS cards show only a bare headline with no context.
+### Approach
 
-2. **Headline rendered as plain body text** — RSS titles are displayed through `MentionText` which scans for `@username` patterns. News headlines containing `@` get incorrectly turned into profile links.
+**New hook: `src/hooks/use-village-activity.ts`**
+A lightweight hook that:
+1. Fetches the current user's active group memberships (just group IDs)
+2. For each group, reads the `group_last_visit_{groupId}` timestamp from localStorage (reusing the existing convention from `use-group-activity.ts`)
+3. Queries `group_posts` to count posts newer than each group's last-visit timestamp
+4. Returns a single total number (sum across all groups)
 
-3. **Crash risk on malformed links** — Line 117 does `new URL(entry.link)` which throws if the link is empty or invalid. RSS feeds sometimes have empty or relative links.
+This reuses the same localStorage-based tracking already in place — no database changes needed.
 
-4. **LinkPreview called unnecessarily** — The `LinkPreview` component only supports PixelFed/PeerTube URLs. For RSS items (which are mostly news sites), it always returns null but still invokes the check.
+**Modified file: `src/components/AppHeader.tsx`**
+- Import and call `useVillageActivityCount`
+- Wrap the Village `<Button>` in a `relative` container
+- When count > 0, render a small red badge (same styling as NotificationBell) on the Village icon
 
-### Changes
+### Technical Detail
 
-**1. Database migration — include RSS description in the RPC output**
-
-Update `get_river_entries` to concatenate the RSS title and description into the `content` field, separated by a newline. Format: `"**Title**\n\nDescription text..."` so the title stands out visually. Alternatively, keep title as content and add description via a separate approach — but since the return signature is fixed, concatenation is simplest.
-
-Revised RSS select:
-```sql
-COALESCE(ri.title, 'Untitled') || CASE 
-  WHEN ri.content IS NOT NULL AND ri.content != '' 
-  THEN E'\n\n' || ri.content 
-  ELSE '' 
-END AS content
+```text
+AppHeader Village button:
+  <Button className="relative ...">
+    <img ... />
+    {count > 0 && <span className="absolute -top-1 -right-1 ...">count</span>}
+  </Button>
 ```
 
-**2. RiverEntryCard — RSS-specific rendering**
+The hook query:
+```typescript
+// 1. Get user's active group memberships
+const { data } = await supabase
+  .from("group_members")
+  .select("group_id")
+  .eq("user_id", userId)
+  .eq("status", "active");
 
-For RSS items (`isRss === true`):
-- Render the first line (title) as a bold clickable link to `entry.link` instead of plain text through `MentionText`
-- Render remaining lines (description) as muted secondary text below
-- Skip `LinkPreview` entirely for RSS items
-- Wrap the `new URL()` call in a try/catch to prevent crashes on malformed links
-- Show just the hostname safely with a fallback
+// 2. For each group, check localStorage last-visit vs group_posts created_at
+// 3. Sum up new posts across all groups
+```
 
-**3. No structural changes** — same card component, same RPC signature, just smarter conditional rendering for the `isRss` path.
+### Files
+- **New**: `src/hooks/use-village-activity.ts`
+- **Modified**: `src/components/AppHeader.tsx` (add badge to Village button)
+
+### What does NOT change
+- No database migrations or RLS changes
+- No changes to the bell icon / NotificationBell component
+- No changes to the existing `use-group-activity.ts` hook (TheVillage page continues using it for per-group badges)
+- No changes to localStorage conventions
 
