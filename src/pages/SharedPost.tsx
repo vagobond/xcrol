@@ -38,17 +38,31 @@ const SharedPost = () => {
     }
 
     const fetchPost = async () => {
-      const { data, error } = await supabase
+      // First fetch the public entry
+      const { data: entryData, error: entryError } = await supabase
         .from("xcrol_entries")
-        .select("id, content, link, entry_date, privacy_level, user_id, profiles!xcrol_entries_user_id_fkey(display_name, avatar_url, username)")
+        .select("id, content, link, entry_date, privacy_level, user_id")
         .eq("id", postId)
         .eq("privacy_level", "public")
         .maybeSingle();
 
-      if (error || !data) {
+      if (entryError || !entryData) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      // Then fetch the author profile separately
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url, username")
+        .eq("id", entryData.user_id)
+        .maybeSingle();
+
+      if (!profileData) {
         setNotFound(true);
       } else {
-        setEntry(data as unknown as SharedEntry);
+        setEntry({ ...entryData, profiles: profileData } as SharedEntry);
       }
       setLoading(false);
     };
