@@ -59,10 +59,10 @@ const SharedPost = () => {
         .eq("id", entryData.user_id)
         .maybeSingle();
 
-      if (error || !data) {
+      if (!profileData) {
         setNotFound(true);
       } else {
-        setEntry(data as unknown as SharedEntry);
+        setEntry({ ...entryData, profiles: profileData } as SharedEntry);
       }
       setLoading(false);
     };
