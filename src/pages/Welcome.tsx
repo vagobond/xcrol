@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
-import xcrolLogo from "@/assets/xcrol-logo.png";
+import xcrolLogo from "@/assets/xcrol-logo.webp";
 
 
 const Welcome = () => {
