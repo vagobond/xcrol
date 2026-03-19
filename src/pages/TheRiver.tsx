@@ -132,7 +132,12 @@ export default function TheRiver() {
     }
 
     const entryIds = data.map((e: any) => e.id);
-    const allUserIds = new Set(data.map((e: any) => e.user_id));
+
+    // Build author map from RPC data first
+    const authorMap: Record<string, { display_name: string | null; username: string | null }> = {};
+    data.forEach((e: any) => {
+      authorMap[e.user_id] = { display_name: e.author_display_name, username: e.author_username };
+    });
 
     // Fetch reactions and replies in parallel
     const [{ data: reactionsData }, { data: repliesData }] = await Promise.all([
@@ -146,29 +151,25 @@ export default function TheRiver() {
       }),
     ]);
 
-    // Collect reactor user IDs for profile lookup
-    const reactorIds = new Set<string>();
+    // Collect reactor user IDs that we don't already have profiles for
+    const knownUserIds = new Set(Object.keys(authorMap));
+    const missingReactorIds = new Set<string>();
     (reactionsData || []).forEach(r => {
-      if (!allUserIds.has(r.user_id)) reactorIds.add(r.user_id);
+      if (!knownUserIds.has(r.user_id)) missingReactorIds.add(r.user_id);
     });
 
-    // Fetch reactor profiles (authors already come from the RPC)
+    // Fetch missing reactor profiles (only if needed — no serial 3rd query if all are known)
     let reactorProfileMap: Record<string, { display_name: string | null; username: string | null }> = {};
-    if (reactorIds.size > 0) {
+    if (missingReactorIds.size > 0) {
       const { data: reactorProfiles } = await supabase
         .from("profiles")
         .select("id, display_name, username")
-        .in("id", [...reactorIds]);
+        .in("id", [...missingReactorIds]);
       reactorProfiles?.forEach(p => {
         reactorProfileMap[p.id] = p;
       });
     }
 
-    // Build author map from RPC data
-    const authorMap: Record<string, { display_name: string | null; username: string | null }> = {};
-    data.forEach((e: any) => {
-      authorMap[e.user_id] = { display_name: e.author_display_name, username: e.author_username };
-    });
     const profileMap = { ...authorMap, ...reactorProfileMap };
 
     // Group reactions by entry_id
