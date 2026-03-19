@@ -2422,6 +2422,7 @@ export type Database = {
         }[]
       }
       get_user_invite_stats: { Args: { p_user_id: string }; Returns: Json }
+      get_user_notifications: { Args: { p_user_id: string }; Returns: Json }
       get_visible_friends: {
         Args: { profile_id: string; viewer_id: string }
         Returns: {

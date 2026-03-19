@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
-import xcrolLogo from "@/assets/xcrol-logo.png";
+import xcrolLogo from "@/assets/xcrol-logo.webp";
 
 
 const Welcome = () => {
@@ -20,16 +20,21 @@ const Welcome = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Transition to content after GIF plays (approximately 3 seconds)
+  // Transition to content after GIF plays (~3s) OR max-wait timeout (2s) — whichever comes first
   useEffect(() => {
-    if (authLoading || isGifLoading) return;
+    if (authLoading) return;
     
-    const timer = setTimeout(() => {
+    const startDissolve = () => {
       setAnimationPhase("dissolve");
       setTimeout(() => {
         setAnimationPhase("complete");
       }, 800);
-    }, 3000);
+    };
+
+    // If GIF is already loaded, wait the full 3s animation time
+    // If not, cap the wait at 2s so slow connections aren't punished
+    const delay = isGifLoading ? 2000 : 3000;
+    const timer = setTimeout(startDissolve, delay);
 
     return () => clearTimeout(timer);
   }, [authLoading, isGifLoading]);

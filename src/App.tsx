@@ -63,12 +63,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
-        <Helmet>
-          <link rel="icon" type="image/png" href="/favicon.png" />
-          <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-          <link rel="shortcut icon" href="/favicon.png" type="image/png" />
-          <link rel="apple-touch-icon" href="/favicon.png" />
-        </Helmet>
+        {/* Favicon links are in index.html — no duplicates here */}
         <Toaster />
         <Sonner />
         <BrowserRouter>
