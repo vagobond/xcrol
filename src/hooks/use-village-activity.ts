@@ -78,7 +78,7 @@ export function useVillageActivityCount(): number {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     fetchCount();
-    const interval = setInterval(fetchCount, 300_000);
+    const interval = setInterval(fetchCount, 600_000); // 10 minutes
     return () => { cancelled = true; clearInterval(interval); document.removeEventListener("visibilitychange", handleVisibilityChange); };
   }, [user?.id]);
 
