@@ -105,6 +105,7 @@ const App = () => (
                 <Route path="/developers" element={<Developers />} />
                 <Route path="/post/:postId" element={<SharedPost />} />
                 <Route path="/install-app" element={<ProtectedRoute><InstallApp /></ProtectedRoute>} />
+                <Route path="/map" element={<ProtectedRoute><Map /></ProtectedRoute>} />
                 <Route path="/:username" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
