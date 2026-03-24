@@ -1,41 +1,52 @@
 
 
-## Create Isolated `/map` Page with Interactive World Map
+## Fix Sticky Village Notifications
 
-A new standalone page at `/map` with an interactive SVG landscape map. Completely isolated — no existing files are modified except `App.tsx` (one new route line).
+### Root Cause
 
-### What Gets Built
+The village badge count never clears because `last_visited_at` is only updated when a user opens a **specific group** (GroupProfile.tsx line 67). Visiting the Village listing page (`/the-village`) does NOT update any group's `last_visited_at`, so the badge stays permanently until the user clicks into every individual group.
 
-An illustrated fantasy-style SVG map where each location is a clickable region:
-- **YOU** (Tree of Life, bottom center) → `/profile`
-- **The River** (winding water, center) → `/the-river`
-- **The World** (globe/compass, right) → `/irl-layer`
-- **The Forest** (trees on hills, upper left) → `/the-forest`
-- **The Brooks** (small streams off river) → `/the-forest?tab=brooks`
-- **The Village** (cluster of houses) → `/the-village`
-- **The Town** (buildings) → `/the-town`
-- **The Strata** (layered terrain) → `/settings`
-- **The Castle** (mountain peak, greyed out) → disabled, "Coming Soon"
+### What Broke It
 
-Each region has: hover glow effects, click navigation, tooltip descriptions matching the Powers page, keyboard accessibility.
+This was always the behavior — it wasn't "broken" by a recent change. The village badge was designed to count unread posts per-group, but the only place that resets the counter is inside GroupProfile. The badge works correctly for showing "there's new stuff," but has no mechanism for bulk-clearing when a user visits the Village overview.
 
-### Files
+### Fix
 
-1. **Create `src/components/WorldMap.tsx`** — Self-contained SVG map component with:
-   - Inline SVG landscape (sky gradient, hills, river path, trees, buildings)
-   - Each location as a `<g>` with hover CSS transitions (glow, slight scale)
-   - `useNavigate()` click handlers
-   - `<text>` labels for each location
-   - Responsive via `viewBox`, capped at ~900px wide
-   - Dark/light theme support using CSS variables
+**1. Update `TheVillage.tsx`** — When the Village page mounts, update `last_visited_at` to `now()` for ALL of the user's active group memberships. This clears the badge when the user visits the Village listing.
 
-2. **Create `src/pages/Map.tsx`** — Simple page wrapper rendering `<WorldMap />` with a "Back to Powers" link
+Add a `useEffect` that runs on mount:
+```ts
+useEffect(() => {
+  if (!user?.id) return;
+  supabase
+    .from("group_members")
+    .update({ last_visited_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .then(() => {
+      // Dispatch event so VillageBadge re-checks
+      window.dispatchEvent(new Event("village-visited"));
+    });
+}, [user?.id]);
+```
 
-3. **Edit `src/App.tsx`** — Add one lazy import and one `<Route>` for `/map` (protected). No other changes.
+**2. Update `use-village-activity.ts`** — Listen for a `village-visited` custom event to immediately re-fetch (which will now return 0 since all `last_visited_at` values were just updated).
 
-### Isolation Guarantee
-- Powers page is untouched
-- No shared components are modified
-- Only change to existing code is adding the route in App.tsx
-- If it doesn't work, delete `WorldMap.tsx`, `Map.tsx`, and remove the one route line
+Add inside the `useEffect`:
+```ts
+const handleVillageVisited = () => { if (!cancelled) fetchCount(); };
+window.addEventListener("village-visited", handleVillageVisited);
+// cleanup: window.removeEventListener("village-visited", handleVillageVisited);
+```
+
+### What Won't Break
+
+- GroupProfile still updates `last_visited_at` per-group on its own (unchanged)
+- Per-group "New" badges inside TheVillage and GroupProfile still work — `useGroupActivity` reads the same `last_visited_at` field, but those badges are fetched fresh on each page load
+- NotificationBell is completely separate — it reads from the `notifications` table, not `group_members.last_visited_at`
+- The individual group activity counts (`useGroupActivity`) will show 0 after visiting TheVillage, which is correct behavior (you've "seen" the village)
+
+### Files Changed
+- **Edit** `src/pages/TheVillage.tsx` — add useEffect to bulk-update `last_visited_at`
+- **Edit** `src/hooks/use-village-activity.ts` — listen for `village-visited` event
 
