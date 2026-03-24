@@ -76,10 +76,12 @@ export function useVillageActivityCount(): number {
       }
     };
 
+    const handleVillageVisited = () => { if (!cancelled) fetchCount(); };
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("village-visited", handleVillageVisited);
     fetchCount();
     const interval = setInterval(fetchCount, 600_000); // 10 minutes
-    return () => { cancelled = true; clearInterval(interval); document.removeEventListener("visibilitychange", handleVisibilityChange); };
+    return () => { cancelled = true; clearInterval(interval); document.removeEventListener("visibilitychange", handleVisibilityChange); window.removeEventListener("village-visited", handleVillageVisited); };
   }, [user?.id]);
 
   return count;

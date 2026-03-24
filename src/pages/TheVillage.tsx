@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getFriendshipLabel } from "@/lib/friendship-labels";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const TheVillage = () => {
   const navigate = useNavigate();
@@ -22,6 +23,19 @@ const TheVillage = () => {
 
   const memberGroupIds = useMemo(() => myGroups.map((g) => g.id), [myGroups]);
   const activityCounts = useGroupActivity(memberGroupIds);
+
+  // Bulk-clear village badge by updating last_visited_at for all memberships
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("group_members")
+      .update({ last_visited_at: new Date().toISOString() })
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .then(() => {
+        window.dispatchEvent(new Event("village-visited"));
+      });
+  }, [user?.id]);
 
   return (
     <div className="min-h-screen px-3 sm:px-4 pt-20 pb-8 max-w-4xl mx-auto">
