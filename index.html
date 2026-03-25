@@ -29,6 +29,15 @@
     </div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      (function(){
+        var b=document.getElementById('top-banner');
+        function toggle(){if(b) b.style.display=window.location.pathname==='/'?'':'none';}
+        toggle();
+        var _push=history.pushState, _replace=history.replaceState;
+        history.pushState=function(){_push.apply(this,arguments);toggle();};
+        history.replaceState=function(){_replace.apply(this,arguments);toggle();};
+        window.addEventListener('popstate',toggle);
+      })();
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js');
