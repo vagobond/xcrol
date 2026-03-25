@@ -29,6 +29,10 @@
     </div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      (function(){
+        var b=document.getElementById('top-banner');
+        if(b && window.location.pathname!=='/') b.style.display='none';
+      })();
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js');
