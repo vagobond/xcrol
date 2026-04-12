@@ -81,8 +81,24 @@ export const useAuthPage = () => {
           window.history.replaceState(null, '', window.location.pathname);
 
           // Consume the pending invite code now that email is confirmed
-          const pendingInviteCode = sessionStorage.getItem('pendingInviteCode');
-          const pendingInviteEmail = sessionStorage.getItem('pendingInviteEmail');
+          // Try sessionStorage first (same browser), then fall back to DB (cross-browser)
+          let pendingInviteCode = sessionStorage.getItem('pendingInviteCode');
+          let pendingInviteEmail = sessionStorage.getItem('pendingInviteEmail');
+          
+          if (!pendingInviteCode && data.session.user) {
+            // Cross-browser: check DB for pending invite code
+            const { data: dbPending } = await supabase
+              .from('pending_invite_codes')
+              .select('invite_code, email')
+              .eq('user_id', data.session.user.id)
+              .limit(1)
+              .maybeSingle();
+            if (dbPending) {
+              pendingInviteCode = dbPending.invite_code;
+              pendingInviteEmail = dbPending.email;
+            }
+          }
+          
           if (pendingInviteCode && data.session.user) {
             try {
               await supabase.rpc('use_invite_code', {
@@ -90,6 +106,11 @@ export const useAuthPage = () => {
                 p_user_id: data.session.user.id,
                 p_email: pendingInviteEmail || data.session.user.email || '',
               });
+              // Clean up DB record
+              await supabase
+                .from('pending_invite_codes')
+                .delete()
+                .eq('user_id', data.session.user.id);
             } catch (err) {
               console.error('Failed to consume invite code:', err);
             } finally {
@@ -205,6 +226,7 @@ export const useAuthPage = () => {
       }
 
       // Store invite code to be consumed AFTER email confirmation
+      // Save in sessionStorage for same-browser flow AND in DB for cross-browser flow
       if (result.data.inviteCode) {
         sessionStorage.setItem('pendingInviteCode', result.data.inviteCode);
         sessionStorage.setItem('pendingInviteEmail', result.data.email);

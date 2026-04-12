@@ -38,10 +38,13 @@ export interface NewReference {
   hasLeftReturn?: boolean;
 }
 
-const getDismissedReferenceIds = (): string[] => {
+const getDismissedReferenceIds = async (userId: string): Promise<string[]> => {
   try {
-    const stored = localStorage.getItem("dismissed_reference_notifications");
-    return stored ? JSON.parse(stored) : [];
+    const { data } = await supabase
+      .from("dismissed_reference_notifications")
+      .select("reference_id")
+      .eq("user_id", userId);
+    return (data || []).map((d: any) => d.reference_id);
   } catch {
     return [];
   }
@@ -184,7 +187,7 @@ export const useNotifications = () => {
 
     // --- New references (filter dismissed & unreturned) ---
     const nrData = result.new_references || [];
-    const dismissedIds = getDismissedReferenceIds();
+    const dismissedIds = await getDismissedReferenceIds(user.id);
     const references: NewReference[] = nrData
       .filter((nr: any) => !dismissedIds.includes(nr.id) && !nr.has_return_ref)
       .map((nr: any) => ({
@@ -296,11 +299,15 @@ export const useNotifications = () => {
   const loadRequests = async () => { loadAllNotifications(); };
   const loadPendingFriendships = async () => { loadAllNotifications(); };
 
-  const dismissReferenceNotification = (refId: string) => {
-    const dismissed = getDismissedReferenceIds();
-    if (!dismissed.includes(refId)) {
-      dismissed.push(refId);
-      localStorage.setItem("dismissed_reference_notifications", JSON.stringify(dismissed));
+  const dismissReferenceNotification = async (refId: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("dismissed_reference_notifications").insert({
+        user_id: user.id,
+        reference_id: refId,
+      });
+    } catch {
+      // Ignore duplicate inserts
     }
     setNewReferences((prev) => prev.filter((ref) => ref.id !== refId));
   };
