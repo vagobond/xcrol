@@ -1,52 +1,45 @@
 
 
-## Fix Sticky Village Notifications
+## Security & Stability Hardening — 8 Changes
 
-### Root Cause
+### Important Note on Backups
+Database structure is version-controlled via migrations. Site files are in git with full history. A data export can be run via the existing `export-user-data` edge function, and a database snapshot can be taken via `pg_dump`. I'll run a `pg_dump` to `/mnt/documents/` before making any changes.
 
-The village badge count never clears because `last_visited_at` is only updated when a user opens a **specific group** (GroupProfile.tsx line 67). Visiting the Village listing page (`/the-village`) does NOT update any group's `last_visited_at`, so the badge stays permanently until the user clicks into every individual group.
+### Changes
 
-### What Broke It
+**1. Add JWT check to Mapbox token endpoint**
+`supabase/functions/get-mapbox-token/index.ts` — Add `createClient` + `getClaims()` auth check so only authenticated users can retrieve the token. Return 401 if missing/invalid.
 
-This was always the behavior — it wasn't "broken" by a recent change. The village badge was designed to count unread posts per-group, but the only place that resets the counter is inside GroupProfile. The badge works correctly for showing "there's new stuff," but has no mechanism for bulk-clearing when a user visits the Village overview.
+**2. Strip `javascript:` from markdown link hrefs**
+`src/components/MarkdownContent.tsx` — After the `[text](url)` regex replacement, add a sanitization pass that removes any `<a>` tags whose `href` starts with `javascript:` (case-insensitive).
 
-### Fix
+**3. Fix Messages sign-in to pass returnUrl**
+`src/pages/Messages.tsx` — Change the "Sign In" button's `onClick` from `navigate("/auth")` to `navigate("/auth?returnUrl=%2Fmessages")` so users return to messages after login.
 
-**1. Update `TheVillage.tsx`** — When the Village page mounts, update `last_visited_at` to `now()` for ALL of the user's active group memberships. This clears the badge when the user visits the Village listing.
+**4. Add `.limit(50)` to MyXcrol query**
+`src/pages/MyXcrol.tsx` line 87 — Append `.limit(50)` to the xcrol_entries query to prevent unbounded fetches.
 
-Add a `useEffect` that runs on mount:
-```ts
-useEffect(() => {
-  if (!user?.id) return;
-  supabase
-    .from("group_members")
-    .update({ last_visited_at: new Date().toISOString() })
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .then(() => {
-      // Dispatch event so VillageBadge re-checks
-      window.dispatchEvent(new Event("village-visited"));
-    });
-}, [user?.id]);
-```
+**5. Change invite code label**
+`src/components/InviteCodeGate.tsx` — Change `<Label>` from "Invite Code" to "Invite Code (required for access)".
 
-**2. Update `use-village-activity.ts`** — Listen for a `village-visited` custom event to immediately re-fetch (which will now return 0 since all `last_visited_at` values were just updated).
+**6. Add ErrorBoundary around lazy routes**
+`src/App.tsx` — Create a simple `ErrorBoundary` class component inline (or in a new file) and wrap the `<Suspense>` block so crashed lazy routes show a friendly fallback instead of a white screen.
 
-Add inside the `useEffect`:
-```ts
-const handleVillageVisited = () => { if (!cancelled) fetchCount(); };
-window.addEventListener("village-visited", handleVillageVisited);
-// cleanup: window.removeEventListener("village-visited", handleVillageVisited);
-```
+**7. Add tooltip to Castle button**
+`src/components/WorldMap.tsx` — Add an SVG `<title>` element inside the Castle `<g>` with text like "Unlock by inviting 3 friends who complete their profiles" so it shows on hover.
 
-### What Won't Break
+**8. Wrap `/admin` in ProtectedRoute**
+Already done — `/admin` is already inside `<ProtectedRoute>` in App.tsx (line ~89). No change needed. I'll verify and skip.
 
-- GroupProfile still updates `last_visited_at` per-group on its own (unchanged)
-- Per-group "New" badges inside TheVillage and GroupProfile still work — `useGroupActivity` reads the same `last_visited_at` field, but those badges are fetched fresh on each page load
-- NotificationBell is completely separate — it reads from the `notifications` table, not `group_members.last_visited_at`
-- The individual group activity counts (`useGroupActivity`) will show 0 after visiting TheVillage, which is correct behavior (you've "seen" the village)
+### Files Created/Modified
+- `supabase/functions/get-mapbox-token/index.ts` (edit)
+- `src/components/MarkdownContent.tsx` (edit)
+- `src/pages/Messages.tsx` (edit)
+- `src/pages/MyXcrol.tsx` (edit)
+- `src/components/InviteCodeGate.tsx` (edit)
+- `src/App.tsx` (edit — ErrorBoundary)
+- `src/components/WorldMap.tsx` (edit — tooltip)
 
-### Files Changed
-- **Edit** `src/pages/TheVillage.tsx` — add useEffect to bulk-update `last_visited_at`
-- **Edit** `src/hooks/use-village-activity.ts` — listen for `village-visited` event
+### Safety
+All changes are additive or minor edits to existing logic. No database schema changes. No shared component APIs are altered. The Mapbox JWT change requires `supabase/config.toml` to keep `verify_jwt = false` (already set) since we validate in-code.
 
