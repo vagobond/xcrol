@@ -10,6 +10,40 @@ import { TutorialProvider } from "@/components/onboarding";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Loader2 } from "lucide-react";
 import AppHeader from "./components/AppHeader";
+import React from "react";
+
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("Route error:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4 text-center">
+          <h1 className="text-xl font-semibold">Something went wrong</h1>
+          <p className="text-muted-foreground">Please try refreshing the page.</p>
+          <button
+            onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
+            className="px-4 py-2 rounded bg-primary text-primary-foreground"
+          >
+            Refresh
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Lazy load all route components for code splitting
 const Welcome = lazy(() => import("./pages/Welcome"));
@@ -70,6 +104,7 @@ const App = () => (
         <BrowserRouter>
           <TutorialProvider>
             <AppHeader />
+            <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Welcome />} />
@@ -111,6 +146,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
+            </ErrorBoundary>
           </TutorialProvider>
         </BrowserRouter>
       </TooltipProvider>

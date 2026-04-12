@@ -28,7 +28,7 @@ const Messages = () => {
             <p className="text-center text-muted-foreground">
               Please sign in to view your messages.
             </p>
-            <Button onClick={() => navigate("/auth")} className="w-full">
+            <Button onClick={() => navigate("/auth?returnUrl=%2Fmessages")} className="w-full">
               Sign In
             </Button>
           </CardContent>
