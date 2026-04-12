@@ -81,21 +81,16 @@ export const useAuthPage = () => {
           window.history.replaceState(null, '', window.location.pathname);
 
           // Consume the pending invite code now that email is confirmed
-          // Try sessionStorage first (same browser), then fall back to DB (cross-browser)
+          // Try sessionStorage first (same browser), then fall back to user metadata (cross-browser)
           let pendingInviteCode = sessionStorage.getItem('pendingInviteCode');
           let pendingInviteEmail = sessionStorage.getItem('pendingInviteEmail');
           
           if (!pendingInviteCode && data.session.user) {
-            // Cross-browser: check DB for pending invite code
-            const { data: dbPending } = await supabase
-              .from('pending_invite_codes')
-              .select('invite_code, email')
-              .eq('user_id', data.session.user.id)
-              .limit(1)
-              .maybeSingle();
-            if (dbPending) {
-              pendingInviteCode = dbPending.invite_code;
-              pendingInviteEmail = dbPending.email;
+            // Cross-browser: check user metadata for invite code stored during signup
+            const metaInviteCode = data.session.user.user_metadata?.invite_code;
+            if (metaInviteCode) {
+              pendingInviteCode = metaInviteCode;
+              pendingInviteEmail = data.session.user.email || '';
             }
           }
           
@@ -106,11 +101,10 @@ export const useAuthPage = () => {
                 p_user_id: data.session.user.id,
                 p_email: pendingInviteEmail || data.session.user.email || '',
               });
-              // Clean up DB record
-              await supabase
-                .from('pending_invite_codes')
-                .delete()
-                .eq('user_id', data.session.user.id);
+              // Clear invite_code from user metadata to prevent re-use
+              await supabase.auth.updateUser({
+                data: { invite_code: null }
+              });
             } catch (err) {
               console.error('Failed to consume invite code:', err);
             } finally {
