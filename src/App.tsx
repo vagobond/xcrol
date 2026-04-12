@@ -104,6 +104,7 @@ const App = () => (
         <BrowserRouter>
           <TutorialProvider>
             <AppHeader />
+            <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Welcome />} />
