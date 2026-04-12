@@ -104,7 +104,7 @@ export const SignUpForm = ({
       </div>
       <div className="space-y-2">
         <Label htmlFor="signup-invite-code">
-          Invite Code <span className="text-muted-foreground text-xs">(optional)</span>
+          Invite Code <span className="text-muted-foreground text-xs">(enter if you have one)</span>
         </Label>
         <Input
           id="signup-invite-code"

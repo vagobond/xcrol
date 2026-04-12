@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Helmet } from "react-helmet-async";
@@ -16,26 +16,39 @@ type TownView =
   | { type: "detail"; id: string }
   | { type: "create"; category?: string; subcategory?: string };
 
+const parseTownView = (params: URLSearchParams): TownView => {
+  const v = params.get("view");
+  if (v === "listings") return { type: "listings", category: params.get("cat") || undefined, subcategory: params.get("sub") || undefined, search: params.get("q") || undefined };
+  if (v === "my-listings") return { type: "my-listings" };
+  if (v === "detail" && params.get("id")) return { type: "detail", id: params.get("id")! };
+  if (v === "create") return { type: "create", category: params.get("cat") || undefined, subcategory: params.get("sub") || undefined };
+  return { type: "home" };
+};
+
+const viewToParams = (view: TownView): Record<string, string> => {
+  if (view.type === "home") return {};
+  const p: Record<string, string> = { view: view.type };
+  if ("category" in view && view.category) p.cat = view.category;
+  if ("subcategory" in view && view.subcategory) p.sub = view.subcategory;
+  if ("search" in view && view.search) p.q = view.search;
+  if ("id" in view && view.id) p.id = view.id;
+  return p;
+};
+
 const TheTown = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [view, setView] = useState<TownView>({ type: "home" });
-  const [previousView, setPreviousView] = useState<TownView | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = useMemo(() => parseTownView(searchParams), [searchParams]);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
 
   const navigateTo = useCallback((newView: TownView) => {
-    setPreviousView(view);
-    setView(newView);
-  }, [view]);
+    setSearchParams(viewToParams(newView));
+  }, [setSearchParams]);
 
   const goBack = useCallback(() => {
-    if (previousView) {
-      setView(previousView);
-      setPreviousView(null);
-    } else {
-      setView({ type: "home" });
-    }
-  }, [previousView]);
+    navigate(-1);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen pt-20 px-4 pb-12 max-w-5xl mx-auto">
@@ -58,8 +71,7 @@ const TheTown = () => {
         <h1
           className="text-3xl font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => {
-            setView({ type: "home" });
-            setPreviousView(null);
+            setSearchParams({});
             setSearchQuery("");
           }}
         >
@@ -98,8 +110,7 @@ const TheTown = () => {
           subcategory={view.subcategory}
           searchQuery={view.search}
           onBack={() => {
-            setView({ type: "home" });
-            setPreviousView(null);
+            setSearchParams({});
             setSearchQuery("");
           }}
           onSelectListing={(id) => navigateTo({ type: "detail", id })}
@@ -111,8 +122,7 @@ const TheTown = () => {
           showMyListings
           userId={user?.id}
           onBack={() => {
-            setView({ type: "home" });
-            setPreviousView(null);
+            setSearchParams({});
           }}
           onSelectListing={(id) => navigateTo({ type: "detail", id })}
         />

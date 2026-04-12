@@ -81,14 +81,29 @@ export const useAuthPage = () => {
           window.history.replaceState(null, '', window.location.pathname);
 
           // Consume the pending invite code now that email is confirmed
-          const pendingInviteCode = sessionStorage.getItem('pendingInviteCode');
-          const pendingInviteEmail = sessionStorage.getItem('pendingInviteEmail');
+          // Try sessionStorage first (same browser), then fall back to user metadata (cross-browser)
+          let pendingInviteCode = sessionStorage.getItem('pendingInviteCode');
+          let pendingInviteEmail = sessionStorage.getItem('pendingInviteEmail');
+          
+          if (!pendingInviteCode && data.session.user) {
+            // Cross-browser: check user metadata for invite code stored during signup
+            const metaInviteCode = data.session.user.user_metadata?.invite_code;
+            if (metaInviteCode) {
+              pendingInviteCode = metaInviteCode;
+              pendingInviteEmail = data.session.user.email || '';
+            }
+          }
+          
           if (pendingInviteCode && data.session.user) {
             try {
               await supabase.rpc('use_invite_code', {
                 p_invite_code: pendingInviteCode,
                 p_user_id: data.session.user.id,
                 p_email: pendingInviteEmail || data.session.user.email || '',
+              });
+              // Clear invite_code from user metadata to prevent re-use
+              await supabase.auth.updateUser({
+                data: { invite_code: null }
               });
             } catch (err) {
               console.error('Failed to consume invite code:', err);
@@ -205,6 +220,7 @@ export const useAuthPage = () => {
       }
 
       // Store invite code to be consumed AFTER email confirmation
+      // Save in sessionStorage for same-browser flow AND in DB for cross-browser flow
       if (result.data.inviteCode) {
         sessionStorage.setItem('pendingInviteCode', result.data.inviteCode);
         sessionStorage.setItem('pendingInviteEmail', result.data.email);

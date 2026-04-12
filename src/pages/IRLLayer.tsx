@@ -121,8 +121,9 @@ const IRLLayer = () => {
         />
 
         {!data.userHometown?.hometown_city && (
-          <div className="absolute top-4 left-4 z-10 bg-card/95 p-4 rounded-lg border border-primary/20 max-w-xs">
-            <p className="text-sm">Click anywhere on the map to claim your hometown!</p>
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-card/95 p-5 rounded-xl border-2 border-primary/40 max-w-sm text-center shadow-lg animate-pulse">
+            <p className="text-lg font-semibold text-primary mb-1">📍 Claim Your Hometown</p>
+            <p className="text-sm text-muted-foreground">Tap anywhere on the map to pin your hometown and connect with locals!</p>
           </div>
         )}
       </div>
