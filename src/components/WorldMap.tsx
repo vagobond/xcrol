@@ -112,7 +112,7 @@ const WorldMap = () => {
         {/* === THE CASTLE (top, disabled) === */}
         <g
           role="link"
-          aria-label="The Castle — Coming Soon"
+          aria-label="The Castle — Unlock by inviting 3 friends who complete their profiles"
           tabIndex={0}
           onMouseEnter={() => setHovered("castle")}
           onMouseLeave={() => setHovered(null)}
@@ -121,6 +121,7 @@ const WorldMap = () => {
           className="cursor-not-allowed"
           opacity={0.4}
         >
+          <title>Unlock by inviting 3 friends who complete their profiles</title>
           {/* Mountain */}
           <polygon points="450,90 380,220 520,220" fill="hsl(220, 15%, 30%)" />
           <polygon points="450,90 420,160 480,160" fill="hsl(220, 15%, 35%)" />

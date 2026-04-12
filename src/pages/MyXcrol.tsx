@@ -84,7 +84,8 @@ const MyXcrol = () => {
         .from("xcrol_entries")
         .select("id, content, link, entry_date, privacy_level, user_id, created_at")
         .eq("user_id", user.id)
-        .order("entry_date", { ascending: false });
+        .order("entry_date", { ascending: false })
+        .limit(50);
 
       if (error) throw error;
 

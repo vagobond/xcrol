@@ -112,7 +112,7 @@ export const InviteCodeGate = ({ onVerified }: InviteCodeGateProps) => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="invite-code">Invite Code</Label>
+              <Label htmlFor="invite-code">Invite Code (required for access)</Label>
               <Input
                 id="invite-code"
                 placeholder="Enter your invite code"

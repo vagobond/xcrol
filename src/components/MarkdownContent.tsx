@@ -48,6 +48,9 @@ const MarkdownContent = ({ content, className = "" }: MarkdownContentProps) => {
       '<a href="/$1" class="text-primary font-medium hover:underline">@$1</a>'
     );
 
+    // Strip javascript: links (XSS prevention)
+    html = html.replace(/<a\s+href\s*=\s*"javascript:[^"]*"[^>]*>[^<]*<\/a>/gi, '');
+
     // Line breaks
     html = html.replace(/\n/g, "<br />");
 
