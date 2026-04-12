@@ -347,6 +347,35 @@ export type Database = {
         }
         Relationships: []
       }
+      dismissed_reference_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          reference_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reference_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reference_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dismissed_reference_notifications_reference_id_fkey"
+            columns: ["reference_id"]
+            isOneToOne: false
+            referencedRelation: "user_references"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dream_trips: {
         Row: {
           created_at: string
@@ -1395,6 +1424,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pending_invite_codes: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          invite_code: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          invite_code: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          invite_code?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profile_widgets: {
         Row: {
