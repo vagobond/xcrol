@@ -1,73 +1,228 @@
-# Welcome to your Lovable project
+# XCROL
 
-## Project info
+**Take Control of Your Networks**
 
-**URL**: https://lovable.dev/projects/fa5167be-abaf-40fa-ab93-6bb97c8ef840
+XCROL is a private social network. No spying. No ads. No algorithms. Just real people building real connections with full control over their digital identity.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## What is XCROL?
 
-**Use Lovable**
+XCROL reimagines social networking by putting privacy and user control first. Every piece of information you share is governed by friendship levels you define. Your data belongs to you—not a platform.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/fa5167be-abaf-40fa-ab93-6bb97c8ef840) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Core Features
 
-**Use your preferred IDE**
+### 🧑 Profile & Friendship Levels
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Your profile is your digital identity within XCROL. Not all friends are equal, and XCROL respects that with a tiered friendship system:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+| Level | What They See |
+|-------|--------------|
+| **Close Friend** | Full access: home address, birth year, private contacts |
+| **Family** | Independent category: phone, private email, full birthday |
+| **Buddy** | Birthday (no year), mailing address, most contacts |
+| **Friendly Acquaintance** | Basic contact info and public details |
+| **Secret Friend** | Same as Close Friend, but hidden from public view |
+| **Secret Enemy** | Appears as a friend publicly, but has minimal real access |
 
-Follow these steps:
+You can also create **custom friendship types** (e.g., "Work Colleagues", "Travel Buddies") with granular visibility controls.
+
+**Connection Degrees**: See how you're connected to non-friends via friend-of-a-friend chains up to 6 degrees.
+
+---
+
+### 📜 My Xcrol — Your Daily Diary
+
+A personal micro-journal limited to **one entry per day** and **240 characters**. Each entry can include an optional link.
+
+**Privacy levels per entry:**
+- Private (only you)
+- Close Friends only
+- Buddies & above
+- Acquaintances & above
+
+---
+
+### 🌊 The River — Friends' Feed
+
+A chronological stream of Xcrol entries from your friends. No algorithm—just time-ordered updates filtered by friendship level. React with emoji and reply to entries.
+
+---
+
+### 💧 The Brook — Private Two-Person Streams
+
+A dedicated space where exactly two people share daily updates with each other.
+
+- Up to **5 active Brooks** per user
+- **One post per day** per Brook (doesn't count as your daily Xcrol)
+- 240-character posts with optional links
+- Reactions and comments visible only to participants
+- Configurable inactivity handling (rest, archive, or gentle nudge)
+- **Fully private**: no public indicators, no streaks, no read receipts
+
+---
+
+### 🏘️ The Village — Community Groups
+
+Community hubs where people with shared interests gather, post updates, and organize.
+
+- Create groups with custom name, description, and slug (`/group/your-name`)
+- Invite + Request membership model
+- Admin controls for membership, settings, and content
+- Trust-level-based content visibility
+
+---
+
+### 🏪 The Town — Community Marketplace
+
+A classifieds board inspired by early-2000s Craigslist, built for trust-based communities.
+
+**Categories**: Community · Housing · For Sale · Services & Jobs
+
+- Browse listings without an account
+- Post with custom contact info or direct XCROL messaging
+- Search across titles and descriptions
+- Manage your own listings
+
+---
+
+### 🌍 The World — IRL Map & Meetups
+
+An interactive map showing where XCROL users call home.
+
+- **Claim your hometown** by clicking on the map
+- Discover connections in your area
+- **Create meetups** with location, time, and description
+- **Hosting requests**: Offer a spare room or request a stay when visiting friends
+- Both meetups and hosting respect minimum friendship levels
+
+Purple dots = users · Yellow dots = locations with active meetups
+
+---
+
+### 🔑 Login with XCROL — Portable Identity
+
+XCROL is an **OAuth 2.0 identity provider** with PKCE support. Other websites can offer "Login with XCROL" just like Google or GitHub login.
+
+**Available scopes:**
+- `profile:read` — Basic profile info
+- `profile:email` — Email address
+- `hometown:read` — Hometown location
+- `connections:read` — Friends list
+- `xcrol:read` — Diary entries
+
+You control which apps get access and can revoke permissions anytime from Settings → Connected Apps.
+
+**For developers**: Go to Settings → Developer to create an OAuth app with your redirect URIs, then integrate using standard OAuth 2.0.
+
+---
+
+### 🌐 Decentralized Media
+
+XCROL integrates with **Pixelfed** (photo hosting) and **PeerTube** (video hosting) for federated, censorship-resistant media that you own.
+
+---
+
+### ✅ References & Trust
+
+Build trust through testimonials from friends:
+- **Host** / **Guest** / **Friendly** / **Business** references
+- Only friends at the appropriate level can leave references
+- References can be flagged if inappropriate
+
+---
+
+### 💬 Messaging & Introductions
+
+- **Direct Messages** with optional platform suggestions (WhatsApp, email, etc.)
+- **Introduction Requests**: Ask a mutual friend to introduce you to someone
+- XCROL bridges you to the right platform rather than replacing existing tools
+
+---
+
+### 🎮 The Adventure Hub
+
+- **Every Country in the World**: Invite friends from different countries toward global representation
+- **The Cure to Loneliness and Boredom**: AI-powered adventure game with creative suggestions
+
+---
+
+## Earning Points
+
+| Action | Points |
+|--------|--------|
+| Write a daily Xcrol entry | +1 |
+| Include a link in your Xcrol | +1 |
+| React or comment on a Xcrol | +1 |
+| Each friend you have | +1 |
+| Post in a group | +1 |
+| Create a listing in The Town | +1 |
+| Set up your hometown | +2 |
+| Invite a friend | +2 |
+| Start a Brook | +2 |
+| Leave a review | +3 |
+| Invited friend accepts | +5 |
+| Keep a Brook alive for 5 days | +5 |
+| Complete your full profile | +10 |
+| Create a group in The Village | +10 |
+
+> **The Castle**: Points are being counted. When the gates of The Castle finally open, those who have built something here will find the threshold more welcoming. More will be revealed in time.
+
+---
+
+## Quick Navigation
+
+| Section | What's There |
+|---------|-------------|
+| **THE WORLD** | IRL map, meetups, hometown claims, Hearth Surf |
+| **THE RIVER** | Friends' Xcrol feed, reactions, replies |
+| **THE VILLAGE** | Community groups, posts, member management |
+| **THE TOWN** | Marketplace, classifieds, listings |
+| **YOU** | Profile, friends, settings, Xcrol diary, Brooks |
+
+---
+
+## Settings & Account
+
+- **Notifications**: Email and in-app preferences
+- **Privacy**: Online status, friend request settings
+- **Blocked Users**: Manage blocks
+- **Connected Apps**: OAuth apps with access to your data
+- **Developer**: Create OAuth apps for "Login with XCROL"
+- **Delete Account**: Request permanent deletion
+
+---
+
+## Development
+
+### Quick Start
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Navigate to the project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
+# Install dependencies
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Tech Stack
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- [Vite](https://vitejs.dev/) — Build tool
+- [React 18](https://react.dev/) — UI framework
+- [TypeScript](https://www.typescriptlang.org/) — Type safety
+- [Tailwind CSS](https://tailwindcss.com/) — Styling
+- [shadcn/ui](https://ui.shadcn.com/) — Component library
 
-**Use GitHub Codespaces**
+### Deployment
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Open [Lovable](https://lovable.dev/projects/fa5167be-abaf-40fa-ab93-6bb97c8ef840) and click Share → Publish.
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/fa5167be-abaf-40fa-ab93-6bb97c8ef840) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Custom domains: Project → Settings → Domains → Connect Domain. [Docs](https://docs.lovable.dev/features/custom-domain#custom-domain)
