@@ -76,6 +76,7 @@ export default function TheRiver() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [hasScrolledToPost, setHasScrolledToPost] = useState(false);
+  const [newPostsCount, setNewPostsCount] = useState(0);
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const hasLoadedRef = useRef(false);
   const prevFilterRef = useRef(filter);
