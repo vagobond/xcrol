@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, Filter, Waves, PenLine, Rss } from "lucide-react";
+import { Loader2, Filter, Waves, PenLine, Rss, ArrowUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,7 @@ export default function TheRiver() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [hasScrolledToPost, setHasScrolledToPost] = useState(false);
+  const [newPostsCount, setNewPostsCount] = useState(0);
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const hasLoadedRef = useRef(false);
   const prevFilterRef = useRef(filter);
@@ -101,6 +102,75 @@ export default function TheRiver() {
       setHasScrolledToPost(true);
     }
   }, [highlightedPostId, hasScrolledToPost, loading, entries]);
+
+  // Realtime: listen for new River entries and prepend them
+  useEffect(() => {
+    if (authLoading || filter === "rss") return;
+
+    const channel = supabase
+      .channel("river-live-entries")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "xcrol_entries" },
+        async (payload) => {
+          const newRow: any = payload.new;
+          if (!newRow) return;
+
+          // Skip if already in feed (e.g. own post via local navigation)
+          if (entries.some((e) => e.id === newRow.id)) return;
+
+          // Visibility check via SECURITY DEFINER function
+          const { data: canView } = await supabase.rpc("can_view_xcrol_entry", {
+            p_entry_user_id: newRow.user_id,
+            p_privacy_level: newRow.privacy_level,
+            p_viewer_id: user?.id ?? null,
+          });
+          if (!canView) return;
+
+          // Fetch author profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, avatar_url, username")
+            .eq("id", newRow.user_id)
+            .maybeSingle();
+
+          const newEntry: RiverEntry = {
+            id: newRow.id,
+            content: newRow.content,
+            link: newRow.link,
+            entry_date: newRow.entry_date,
+            privacy_level: newRow.privacy_level,
+            user_id: newRow.user_id,
+            author: {
+              display_name: profile?.display_name ?? null,
+              avatar_url: profile?.avatar_url ?? null,
+              username: profile?.username ?? null,
+            },
+          };
+
+          const isScrolledDown = window.scrollY > 200;
+          if (isScrolledDown && newRow.user_id !== user?.id) {
+            setNewPostsCount((c) => c + 1);
+          } else {
+            setEntries((prev) => [newEntry, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, authLoading, filter, entries.length]);
+
+  const handleShowNewPosts = () => {
+    setNewPostsCount(0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Reload to pull in fresh entries with full reaction/reply data
+    loadEntries();
+  };
+
 
   const loadEntries = async (loadMore = false) => {
     if (!loadMore) {
@@ -268,6 +338,16 @@ export default function TheRiver() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Floating new-posts banner */}
+      {newPostsCount > 0 && (
+        <button
+          onClick={handleShowNewPosts}
+          className="fixed top-20 left-1/2 -translate-x-1/2 z-40 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg hover:scale-105 transition-transform flex items-center gap-2 animate-fade-in"
+        >
+          <ArrowUp className="h-4 w-4" />
+          {newPostsCount} new {newPostsCount === 1 ? "post" : "posts"}
+        </button>
+      )}
       <div className="max-w-2xl mx-auto px-4 pt-20 pb-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

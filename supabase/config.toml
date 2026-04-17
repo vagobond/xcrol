@@ -41,3 +41,9 @@ verify_jwt = true
 
 [functions.fetch-rss-feeds]
 verify_jwt = false
+
+[functions.get-public-stats]
+verify_jwt = false
+
+[functions.send-weekly-digest]
+verify_jwt = false

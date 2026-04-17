@@ -2054,6 +2054,7 @@ export type Database = {
           show_online_status: boolean
           updated_at: string
           user_id: string
+          weekly_digest_enabled: boolean
         }
         Insert: {
           allow_friend_requests?: boolean
@@ -2073,6 +2074,7 @@ export type Database = {
           show_online_status?: boolean
           updated_at?: string
           user_id: string
+          weekly_digest_enabled?: boolean
         }
         Update: {
           allow_friend_requests?: boolean
@@ -2092,6 +2094,7 @@ export type Database = {
           show_online_status?: boolean
           updated_at?: string
           user_id?: string
+          weekly_digest_enabled?: boolean
         }
         Relationships: []
       }
@@ -2116,6 +2119,30 @@ export type Database = {
           id?: string
           invited_at?: string | null
           notes?: string | null
+        }
+        Relationships: []
+      }
+      weekly_digest_log: {
+        Row: {
+          id: string
+          sent_at: string
+          user_id: string
+          week_number: number
+          year: number
+        }
+        Insert: {
+          id?: string
+          sent_at?: string
+          user_id: string
+          week_number: number
+          year: number
+        }
+        Update: {
+          id?: string
+          sent_at?: string
+          user_id?: string
+          week_number?: number
+          year?: number
         }
         Relationships: []
       }
