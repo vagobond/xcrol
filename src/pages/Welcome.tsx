@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
 import xcrolLogo from "@/assets/xcrol-logo.webp";
+import { LiveStatsStrip } from "@/components/LiveStatsStrip";
 
 
 const Welcome = () => {
@@ -121,6 +122,9 @@ const Welcome = () => {
             >
               USE YOUR POWERS
             </Button>
+            <div className="mt-8">
+              <LiveStatsStrip />
+            </div>
           </div>
         </div>
       </div>

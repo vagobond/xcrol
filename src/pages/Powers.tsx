@@ -341,20 +341,20 @@ const Powers = () => {
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="w-full sm:w-auto min-w-[250px]">
-                    <Button 
-                      variant="mystical" 
-                      size="xl"
-                      disabled
-                      className="w-full opacity-60 cursor-not-allowed pointer-events-none"
-                    >
+                  <Button 
+                    variant="mystical" 
+                    size="xl"
+                    asChild
+                    className="w-full sm:w-auto min-w-[250px]"
+                  >
+                    <Link to="/the-castle" data-tutorial="castle">
                       <CastleIcon className="mr-2 h-5 w-5" />
                       THE CASTLE
-                    </Button>
-                  </span>
+                    </Link>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Coming Soon</p>
+                  <p>The path to what lies beyond — a glimpse of what's coming</p>
                 </TooltipContent>
               </Tooltip>
             </div>

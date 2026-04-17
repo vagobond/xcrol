@@ -101,6 +101,18 @@ export const NotificationsPrivacySection = ({ settings, onSettingChange }: Notif
             onCheckedChange={(checked) => onSettingChange("notify_group_activity", checked)}
           />
         </div>
+        <Separator />
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="weekly-digest">Weekly Digest Email</Label>
+            <p className="text-sm text-muted-foreground">A calm Monday recap of your friends' activity, unread messages, and friend requests</p>
+          </div>
+          <Switch
+            id="weekly-digest"
+            checked={settings.weekly_digest_enabled}
+            onCheckedChange={(checked) => onSettingChange("weekly_digest_enabled", checked)}
+          />
+        </div>
       </CardContent>
     </Card>
 
