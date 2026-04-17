@@ -338,6 +338,16 @@ export default function TheRiver() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Floating new-posts banner */}
+      {newPostsCount > 0 && (
+        <button
+          onClick={handleShowNewPosts}
+          className="fixed top-20 left-1/2 -translate-x-1/2 z-40 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg hover:scale-105 transition-transform flex items-center gap-2 animate-fade-in"
+        >
+          <ArrowUp className="h-4 w-4" />
+          {newPostsCount} new {newPostsCount === 1 ? "post" : "posts"}
+        </button>
+      )}
       <div className="max-w-2xl mx-auto px-4 pt-20 pb-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
