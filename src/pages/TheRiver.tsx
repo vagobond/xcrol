@@ -103,6 +103,75 @@ export default function TheRiver() {
     }
   }, [highlightedPostId, hasScrolledToPost, loading, entries]);
 
+  // Realtime: listen for new River entries and prepend them
+  useEffect(() => {
+    if (authLoading || filter === "rss") return;
+
+    const channel = supabase
+      .channel("river-live-entries")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "xcrol_entries" },
+        async (payload) => {
+          const newRow: any = payload.new;
+          if (!newRow) return;
+
+          // Skip if already in feed (e.g. own post via local navigation)
+          if (entries.some((e) => e.id === newRow.id)) return;
+
+          // Visibility check via SECURITY DEFINER function
+          const { data: canView } = await supabase.rpc("can_view_xcrol_entry", {
+            p_entry_user_id: newRow.user_id,
+            p_privacy_level: newRow.privacy_level,
+            p_viewer_id: user?.id ?? null,
+          });
+          if (!canView) return;
+
+          // Fetch author profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, avatar_url, username")
+            .eq("id", newRow.user_id)
+            .maybeSingle();
+
+          const newEntry: RiverEntry = {
+            id: newRow.id,
+            content: newRow.content,
+            link: newRow.link,
+            entry_date: newRow.entry_date,
+            privacy_level: newRow.privacy_level,
+            user_id: newRow.user_id,
+            author: {
+              display_name: profile?.display_name ?? null,
+              avatar_url: profile?.avatar_url ?? null,
+              username: profile?.username ?? null,
+            },
+          };
+
+          const isScrolledDown = window.scrollY > 200;
+          if (isScrolledDown && newRow.user_id !== user?.id) {
+            setNewPostsCount((c) => c + 1);
+          } else {
+            setEntries((prev) => [newEntry, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, authLoading, filter, entries.length]);
+
+  const handleShowNewPosts = () => {
+    setNewPostsCount(0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Reload to pull in fresh entries with full reaction/reply data
+    loadEntries();
+  };
+
+
   const loadEntries = async (loadMore = false) => {
     if (!loadMore) {
       setLoading(true);
