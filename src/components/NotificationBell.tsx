@@ -154,6 +154,8 @@ const NotificationBell = () => {
     }
   };
 
+  if (!user) return null;
+
   const BELL_TYPE_LIST = ["river_reply", "river_reply_reply", "brook_post", "brook_comment", "brook_reaction"];
   const hasUnreadInteractions = bellInteractions.some((n) => !n.isRead);
   const showEmpty =
