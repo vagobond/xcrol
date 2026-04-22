@@ -1,52 +1,81 @@
 
 
-## Plan: Make XCROL Breathe
+## Notifications Cleanup + The World Stream
 
-Four interconnected features to make the network feel alive. All use existing Resend setup — no new infrastructure needed.
+Four-way split of notifications, each living where its activity happens.
 
-### 1. Real-Time River
-- Migration: `ALTER PUBLICATION supabase_realtime ADD TABLE public.xcrol_entries;` + `REPLICA IDENTITY FULL`
-- `src/pages/TheRiver.tsx`: subscribe to `postgres_changes` INSERT events, fetch author profile, prepend with fade-in animation
-- "New post" floating banner appears when user is scrolled down; click scrolls to top
-- Cleanup channel on unmount; respects current filter
+### Notification Streams
 
-### 2. Landing Page Proof of Life
-- New edge function `get-public-stats` (no auth, cached 5 min): returns counts of entries posted today, total users with hometowns, total countries claimed, total brooks active
-- `src/pages/Welcome.tsx`: add a subtle stats strip below the CTA — "X moments shared today · Y hometowns across Z countries · N private streams flowing"
-- Numbers animate up on mount (count-up effect). All counts are aggregate-only, no PII.
+```
+Bell icon          → Personal & social: friend requests, references, mentions,
+                     river replies, brook activity, unread messages
+Village icon       → All group activity: posts, comments, reactions in any group
+                     you're a member of
+World icon (Globe) → IRL Layer activity: new hometowns near you, hosting requests,
+                     meetup requests, introduction requests
+Forest (no badge)  → unchanged; introductions still show in Forest UI
+```
 
-### 3. The Castle Teaser Page
-- New route `/the-castle` (protected)
-- Mysterious atmospheric page: gates rendered as locked, shows user's progress toward unlock criteria (e.g., points threshold, profile completeness, friend count, accepted invites)
-- Progress bars with cryptic labels ("The gatekeepers grow restless...")
-- Hint at what's inside without revealing
-- `src/pages/Powers.tsx`: change disabled Castle button to navigate to `/the-castle`
+### 1. "Show all / unread only" toggle
 
-### 4. Weekly Digest Emails (using existing Resend)
-- Migration: add `weekly_digest_enabled boolean default true` to `user_settings`; create `weekly_digest_log` (user_id, week_number, sent_at) for idempotency
-- New edge function `send-weekly-digest` (uses `RESEND_API_KEY` directly, like existing email functions): for each opted-in user, aggregate past 7 days (new friend posts count, unread messages, pending friend requests, new hometowns nearby) and send personalized HTML email
-- Settings UI: add toggle in `NotificationsPrivacySection.tsx` + field in `useSettingsData.ts`
-- `pg_cron` schedule: Mondays 9am UTC, calls edge function via `pg_net` (cron SQL via insert tool, not migration)
-- Email uses inline HTML matching existing `send-welcome-email` brand styling; includes one-click unsubscribe link → `/settings`
+A small toggle at the top of every notification dropdown (Bell, Village, World):
+- **Unread only** (default) — current behaviour
+- **All recent** — also shows read items from the past 14 days, dimmed
+
+Backend: extend `get_user_notifications` RPC with `p_include_read boolean default false` and `p_types text[] default null` (so each dropdown can scope to its own types). When `p_include_read=true`, return last 14 days regardless of `read_at`, capped at 50. A "Mark all as read" link appears in "All" mode.
+
+### 2. Wire village notifications end-to-end
+
+Today, comments and reactions inside a group never become DB rows for non-authors, and per-group views don't surface "new since last visit."
+
+**Database migration — triggers on:**
+- `group_posts` insert → notification type `group_post` for every group member except author
+- `group_post_comments` insert → type `group_comment` for post author + previous commenters on that post
+- `group_post_reactions` / `group_comment_reactions` → existing types, also notify post author if missing
+
+**Frontend:**
+- `useGroupActivity` & `useVillageActivityCount` — count comments & reactions since `last_visited_at`, not just posts
+- `GroupProfile.tsx` — "X new since your last visit" pill at top of post list
+- `VillageBadge` — total reflects all village types
+
+### 3. Wire World notifications
+
+New notification types written by triggers / existing flows:
+- `nearby_hometown` — when a new user claims a hometown within ~200km of yours (trigger on `profiles.hometown_lat/lng` insert, finds nearby users via existing precision-rounded coords)
+- `hosting_request` — already exists in `hosting_requests`; add trigger to write `notifications` row of type `hosting_request` to `to_user_id`
+- `meetup_request` — same for `meetup_requests`
+- `introduction_request` — same for `introduction_requests` (to introducer)
+
+Add a small dropdown to the World icon (Globe) in `AppHeader` mirroring the Bell — uses the new `p_types` filter to pull only world types. Badge shows unread count.
+
+### 4. Split the Bell
+
+Modify `useNotifications` to partition by type into three buckets:
+- `bellNotifications` — friend_request, friendship_pending, reference_received, river_reply, brook_*, mention, unread_message
+- `villageNotifications` — group_post, group_comment, group_reaction, group_comment_reaction
+- `worldNotifications` — nearby_hometown, hosting_request, meetup_request, introduction_request
+
+Each consumer (Bell, VillageBadge, new WorldBadge) reads from its own bucket only. The Bell badge no longer includes village or world items.
 
 ### Files Touched
+
 **Created:**
-- `supabase/functions/get-public-stats/index.ts`
-- `supabase/functions/send-weekly-digest/index.ts`
-- `src/pages/TheCastle.tsx`
+- `src/components/WorldBadge.tsx` (Globe icon + dropdown + count)
+- One DB migration (RPC update + group + world triggers)
 
 **Modified:**
-- `src/pages/TheRiver.tsx` (realtime)
-- `src/pages/Welcome.tsx` (stats strip)
-- `src/pages/Powers.tsx` (Castle button enabled)
-- `src/App.tsx` (add `/the-castle` route)
-- `src/components/settings/NotificationsPrivacySection.tsx` + `useSettingsData.ts`
-
-**Migrations:** realtime publication, `user_settings.weekly_digest_enabled`, `weekly_digest_log` table with RLS  
-**Insert tool:** pg_cron schedule (project-specific)
+- `src/hooks/use-notifications.ts` — partition, viewMode, type filtering
+- `src/components/NotificationBell.tsx` — toggle UI, render only `bellNotifications`
+- `src/components/VillageBadge.tsx` — toggle + render `villageNotifications` dropdown
+- `src/components/AppHeader.tsx` — replace inline World button with `<WorldBadge />`
+- `src/hooks/use-village-activity.ts` & `use-group-activity.ts` — count comments + reactions
+- `src/pages/GroupProfile.tsx` — "X new since last visit" pill
+- `src/lib/notification-resolver.ts` — handle `group_post`, `nearby_hometown`, `hosting_request`, `meetup_request`, `introduction_request` types
 
 ### Notes
-- Stats endpoint is public (no auth) — needed for unauthenticated landing page
-- Digest email respects `weekly_digest_enabled` and email confirmation status
-- No changes to existing functionality; all additive
+- All additive — no existing flows broken
+- 14-day "All" window keeps dropdowns bounded
+- Respects existing `notify_group_activity` setting; adds `notify_world_activity` (default true) to user settings
+- Hometown-proximity uses already-rounded coords; no new privacy exposure
+- Bell, Village, and World share one toggle component for consistency
 
