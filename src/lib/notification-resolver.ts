@@ -15,11 +15,11 @@ export async function resolveNotifications(
 ): Promise<Map<string, ResolvedNotification>> {
   const result = new Map<string, ResolvedNotification>();
 
-  // Group entity IDs by resolution strategy
   const riverReplyIds: string[] = [];
   const brookPostIds: string[] = [];
   const brookCommentIds: string[] = [];
   const brookReactionIds: string[] = [];
+  const groupPostIds: string[] = [];
   const groupCommentIds: string[] = [];
   const groupReactionIds: string[] = [];
   const groupCommentReactionIds: string[] = [];
@@ -39,6 +39,9 @@ export async function resolveNotifications(
       case "brook_reaction":
         brookReactionIds.push(n.entity_id);
         break;
+      case "group_post":
+        groupPostIds.push(n.entity_id);
+        break;
       case "group_comment":
         groupCommentIds.push(n.entity_id);
         break;
@@ -51,10 +54,8 @@ export async function resolveNotifications(
     }
   }
 
-  // Batch queries in parallel
   const queries: Promise<void>[] = [];
 
-  // River replies -> get entry_id and entry content
   if (riverReplyIds.length > 0) {
     queries.push(
       (async () => {
@@ -63,16 +64,13 @@ export async function resolveNotifications(
           .select("id, entry_id")
           .in("id", riverReplyIds);
         if (!data) return;
-
         const entryIds = [...new Set(data.map((r) => r.entry_id))];
         const { data: entries } = await supabase
           .from("xcrol_entries")
           .select("id, content")
           .in("id", entryIds);
-
         const entryMap = new Map((entries || []).map((e) => [e.id, e.content]));
         const replyToEntry = new Map(data.map((r) => [r.id, r.entry_id]));
-
         for (const n of notifications) {
           if (n.type === "river_reply" || n.type === "river_reply_reply") {
             const entryId = replyToEntry.get(n.entity_id);
@@ -87,7 +85,6 @@ export async function resolveNotifications(
     );
   }
 
-  // Brook posts -> entity_id IS the post, get brook_id from it
   if (brookPostIds.length > 0) {
     queries.push(
       (async () => {
@@ -111,7 +108,6 @@ export async function resolveNotifications(
     );
   }
 
-  // Brook comments -> get post_id -> brook_id
   if (brookCommentIds.length > 0) {
     queries.push(
       (async () => {
@@ -127,7 +123,6 @@ export async function resolveNotifications(
           .in("id", postIds);
         const postMap = new Map((posts || []).map((p) => [p.id, p]));
         const commentMap = new Map(data.map((c) => [c.id, c]));
-
         for (const n of notifications) {
           if (n.type === "brook_comment") {
             const comment = commentMap.get(n.entity_id);
@@ -143,7 +138,6 @@ export async function resolveNotifications(
     );
   }
 
-  // Brook reactions -> entity_id is post_id
   if (brookReactionIds.length > 0) {
     queries.push(
       (async () => {
@@ -159,7 +153,6 @@ export async function resolveNotifications(
           .in("id", postIds);
         const postMap = new Map((posts || []).map((p) => [p.id, p]));
         const reactionMap = new Map(data.map((r) => [r.id, r]));
-
         for (const n of notifications) {
           if (n.type === "brook_reaction") {
             const reaction = reactionMap.get(n.entity_id);
@@ -175,7 +168,37 @@ export async function resolveNotifications(
     );
   }
 
-  // Group comments -> get post_id -> group_id -> slug
+  // group_post: entity_id IS the post; route to group via slug
+  if (groupPostIds.length > 0) {
+    queries.push(
+      (async () => {
+        const { data: posts } = await supabase
+          .from("group_posts")
+          .select("id, group_id, content")
+          .in("id", groupPostIds);
+        if (!posts) return;
+        const groupIds = [...new Set(posts.map((p) => p.group_id))];
+        const { data: groups } = await supabase
+          .from("groups")
+          .select("id, slug")
+          .in("id", groupIds);
+        const groupMap = new Map((groups || []).map((g) => [g.id, g.slug]));
+        const postMap = new Map(posts.map((p) => [p.id, p]));
+        for (const n of notifications) {
+          if (n.type === "group_post") {
+            const post = postMap.get(n.entity_id);
+            const slug = post ? groupMap.get(post.group_id) : null;
+            result.set(n.id, {
+              resolvedRoute: slug ? `/group/${slug}` : "/the-village",
+              contentPreview: post ? truncate(post.content) : null,
+              parentEntityId: post?.group_id || n.entity_id,
+            });
+          }
+        }
+      })()
+    );
+  }
+
   if (groupCommentIds.length > 0) {
     queries.push(
       (async () => {
@@ -197,7 +220,6 @@ export async function resolveNotifications(
         const groupMap = new Map((groups || []).map((g) => [g.id, g.slug]));
         const postMap = new Map((posts || []).map((p) => [p.id, p]));
         const commentMap = new Map(data.map((c) => [c.id, c]));
-
         for (const n of notifications) {
           if (n.type === "group_comment") {
             const comment = commentMap.get(n.entity_id);
@@ -214,7 +236,6 @@ export async function resolveNotifications(
     );
   }
 
-  // Group reactions -> entity_id is reaction id, get post_id -> group slug
   if (groupReactionIds.length > 0) {
     queries.push(
       (async () => {
@@ -236,7 +257,6 @@ export async function resolveNotifications(
         const groupMap = new Map((groups || []).map((g) => [g.id, g.slug]));
         const postMap = new Map((posts || []).map((p) => [p.id, p]));
         const reactionMap = new Map(data.map((r) => [r.id, r]));
-
         for (const n of notifications) {
           if (n.type === "group_reaction") {
             const reaction = reactionMap.get(n.entity_id);
@@ -253,7 +273,6 @@ export async function resolveNotifications(
     );
   }
 
-  // Group comment reactions -> comment_id -> post_id -> group slug
   if (groupCommentReactionIds.length > 0) {
     queries.push(
       (async () => {
@@ -281,7 +300,6 @@ export async function resolveNotifications(
         const postMap = new Map((posts || []).map((p) => [p.id, p]));
         const commentMap = new Map((comments || []).map((c) => [c.id, c]));
         const reactionMap = new Map(data.map((r) => [r.id, r]));
-
         for (const n of notifications) {
           if (n.type === "group_comment_reaction") {
             const reaction = reactionMap.get(n.entity_id);
@@ -299,11 +317,23 @@ export async function resolveNotifications(
     );
   }
 
-  // Hosting/meetup requests - no lookup needed
+  // World types — no lookup needed
   for (const n of notifications) {
     if (n.type === "hosting_request" || n.type === "meetup_request") {
       result.set(n.id, {
         resolvedRoute: "/hearthsurf",
+        contentPreview: null,
+        parentEntityId: n.entity_id,
+      });
+    } else if (n.type === "introduction_request") {
+      result.set(n.id, {
+        resolvedRoute: "/the-forest",
+        contentPreview: null,
+        parentEntityId: n.entity_id,
+      });
+    } else if (n.type === "nearby_hometown") {
+      result.set(n.id, {
+        resolvedRoute: "/irl-layer",
         contentPreview: null,
         parentEntityId: n.entity_id,
       });
@@ -332,6 +362,8 @@ export function getGroupBucket(type: string): string {
       return "brook_comment";
     case "brook_reaction":
       return "brook_reaction";
+    case "group_post":
+      return "group_post";
     case "group_comment":
       return "group_comment";
     case "group_reaction":
@@ -342,6 +374,10 @@ export function getGroupBucket(type: string): string {
       return "hosting_request";
     case "meetup_request":
       return "meetup_request";
+    case "introduction_request":
+      return "introduction_request";
+    case "nearby_hometown":
+      return "nearby_hometown";
     default:
       return type;
   }

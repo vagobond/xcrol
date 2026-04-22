@@ -1,48 +1,43 @@
 import { useNavigate } from "react-router-dom";
+import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useVillageActivityCount } from "@/hooks/use-village-activity";
 import { useNotifications } from "@/hooks/use-notifications";
 import InteractionNotificationItem from "@/components/notifications/InteractionNotificationItem";
 import NotificationViewToggle from "@/components/notifications/NotificationViewToggle";
-import villageIconSrc from "@/assets/village-icon.png";
 
-const VillageBadge = () => {
+const WorldBadge = () => {
   const navigate = useNavigate();
-  const villageActivityCount = useVillageActivityCount();
   const {
     user,
-    villageInteractions,
-    villageBadgeCount,
+    worldInteractions,
+    worldBadgeCount,
     viewMode,
     setViewMode,
     markInteractionRead,
     markAllRead,
   } = useNotifications();
 
-  // Combine: server-side notification count plus the per-group "new since last visit" client count
-  const totalCount = Math.max(villageBadgeCount, villageActivityCount);
-
   if (!user) {
     return (
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => navigate("/the-village")}
-        className="h-9 w-9 relative"
-        title="The Village"
+        onClick={() => navigate("/irl-layer")}
+        className="h-9 w-9"
+        title="The World"
       >
-        <img src={villageIconSrc} alt="Village" className="h-5 w-5 invert dark:invert-0 brightness-150 contrast-150" />
+        <Globe className="h-5 w-5" />
       </Button>
     );
   }
 
-  const VILLAGE_TYPE_LIST = ["group_post", "group_comment", "group_reaction", "group_comment_reaction"];
-  const hasUnread = villageInteractions.some((n) => !n.isRead);
+  const WORLD_TYPE_LIST = ["hosting_request", "meetup_request", "introduction_request", "nearby_hometown"];
+  const hasUnread = worldInteractions.some((n) => !n.isRead);
 
   return (
     <DropdownMenu modal={false}>
@@ -51,16 +46,16 @@ const VillageBadge = () => {
           variant="ghost"
           size="icon"
           className="h-9 w-9 relative"
-          title="The Village"
+          title="The World"
           onContextMenu={(e) => {
             e.preventDefault();
-            navigate("/the-village");
+            navigate("/irl-layer");
           }}
         >
-          <img src={villageIconSrc} alt="Village" className="h-5 w-5 invert dark:invert-0 brightness-150 contrast-150" />
-          {totalCount > 0 && (
+          <Globe className="h-5 w-5" />
+          {worldBadgeCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-              {totalCount > 99 ? "99+" : totalCount}
+              {worldBadgeCount > 99 ? "99+" : worldBadgeCount}
             </span>
           )}
         </Button>
@@ -68,31 +63,31 @@ const VillageBadge = () => {
       <DropdownMenuContent align="end" className="w-80 bg-popover border border-border z-50">
         <div className="p-2">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold">The Village</h3>
+            <h3 className="font-semibold">The World</h3>
             <Button
               variant="ghost"
               size="sm"
               className="h-6 text-[11px] px-2"
-              onClick={() => navigate("/the-village")}
+              onClick={() => navigate("/irl-layer")}
             >
-              Open
+              Open map
             </Button>
           </div>
 
           <NotificationViewToggle
             viewMode={viewMode}
             onChange={setViewMode}
-            onMarkAllRead={() => markAllRead(VILLAGE_TYPE_LIST)}
+            onMarkAllRead={() => markAllRead(WORLD_TYPE_LIST)}
             hasUnread={hasUnread}
           />
 
-          {villageInteractions.length === 0 ? (
+          {worldInteractions.length === 0 ? (
             <p className="text-sm text-muted-foreground p-2">
-              {viewMode === "unread" ? "No new village activity" : "No recent village activity"}
+              {viewMode === "unread" ? "No new world activity" : "No recent world activity"}
             </p>
           ) : (
             <div className="space-y-2 max-h-80 overflow-y-auto">
-              {villageInteractions.map((notif, idx) => (
+              {worldInteractions.map((notif, idx) => (
                 <InteractionNotificationItem
                   key={notif.notificationIds[0] || idx}
                   notification={notif}
@@ -107,4 +102,4 @@ const VillageBadge = () => {
   );
 };
 
-export default VillageBadge;
+export default WorldBadge;
