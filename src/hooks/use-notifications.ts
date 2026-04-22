@@ -70,6 +70,7 @@ export interface GroupedNotification {
   resolvedRoute: string | null;
   created_at: string;
   label: string;
+  isRead?: boolean;
 }
 
 const typeLabels: Record<string, string> = {
@@ -80,10 +81,36 @@ const typeLabels: Record<string, string> = {
   brook_reaction: "reacted to your Brook post",
   hosting_request: "sent you a hosting request",
   meetup_request: "sent you a meetup request",
+  introduction_request: "asked you for an introduction",
+  nearby_hometown: "claimed a hometown near you",
+  group_post: "posted in a group you're in",
   group_comment: "commented on your group post",
   group_reaction: "reacted to your group post",
   group_comment_reaction: "reacted to your group comment",
 };
+
+// Bucket type → which header (Bell/Village/World)
+export const BELL_TYPES = [
+  "river_reply",
+  "river_reply_reply",
+  "brook_post",
+  "brook_comment",
+  "brook_reaction",
+] as const;
+export const VILLAGE_TYPES = [
+  "group_post",
+  "group_comment",
+  "group_reaction",
+  "group_comment_reaction",
+] as const;
+export const WORLD_TYPES = [
+  "hosting_request",
+  "meetup_request",
+  "introduction_request",
+  "nearby_hometown",
+] as const;
+
+export type ViewMode = "unread" | "all";
 
 export const useNotifications = () => {
   const { user } = useAuth();
@@ -92,19 +119,19 @@ export const useNotifications = () => {
   const [newReferences, setNewReferences] = useState<NewReference[]>([]);
   const [unreadMessageSenders, setUnreadMessageSenders] = useState<UnreadMessageSender[]>([]);
   const [groupedNotifications, setGroupedNotifications] = useState<GroupedNotification[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>("unread");
   const { unreadCount: unreadMessageCount } = useUnreadMessages(user?.id || null);
 
   useEffect(() => {
     if (user) {
-      loadAllNotifications();
+      loadAllNotifications(viewMode);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, viewMode]);
 
   // Reload message senders when unread count changes
   useEffect(() => {
     if (user && unreadMessageCount > 0) {
-      // Only reload message senders specifically when count changes
       loadMessageSendersOnly();
     } else {
       setUnreadMessageSenders([]);
@@ -130,15 +157,13 @@ export const useNotifications = () => {
     );
   };
 
-  /**
-   * Single RPC call replaces ~15-20 sequential DB queries.
-   */
-  const loadAllNotifications = async () => {
+  const loadAllNotifications = async (mode: ViewMode = "unread") => {
     if (!user) return;
 
     const { data, error } = await supabase.rpc("get_user_notifications", {
       p_user_id: user.id,
-    });
+      p_include_read: mode === "all",
+    } as any);
 
     if (error) {
       console.error("Error loading notifications:", error);
@@ -147,7 +172,6 @@ export const useNotifications = () => {
 
     const result = data as any;
 
-    // --- Friend requests ---
     const frData = result.friend_requests || [];
     setRequests(
       frData.map((fr: any) => ({
@@ -155,37 +179,24 @@ export const useNotifications = () => {
         from_user_id: fr.from_user_id,
         message: fr.message,
         created_at: fr.created_at,
-        from_profile: {
-          display_name: fr.from_display_name,
-          avatar_url: fr.from_avatar_url,
-        },
+        from_profile: { display_name: fr.from_display_name, avatar_url: fr.from_avatar_url },
       }))
     );
 
-    // --- Pending friendships ---
     const pfData = result.pending_friendships || [];
     setPendingFriendships(
       pfData.map((pf: any) => ({
         id: pf.id,
         friend_id: pf.friend_id,
-        friend_profile: {
-          display_name: pf.friend_display_name,
-          avatar_url: pf.friend_avatar_url,
-        },
+        friend_profile: { display_name: pf.friend_display_name, avatar_url: pf.friend_avatar_url },
       }))
     );
 
-    // --- Unread message senders ---
     const umsData = result.unread_message_senders || [];
     setUnreadMessageSenders(
-      umsData.map((ums: any) => ({
-        id: ums.id,
-        display_name: ums.display_name,
-        avatar_url: ums.avatar_url,
-      }))
+      umsData.map((ums: any) => ({ id: ums.id, display_name: ums.display_name, avatar_url: ums.avatar_url }))
     );
 
-    // --- New references (filter dismissed & unreturned) ---
     const nrData = result.new_references || [];
     const dismissedIds = await getDismissedReferenceIds(user.id);
     const references: NewReference[] = nrData
@@ -205,7 +216,6 @@ export const useNotifications = () => {
       }));
     setNewReferences(references);
 
-    // --- Interaction notifications ---
     const inData = result.interaction_notifications || [];
     const settings = result.notification_settings;
 
@@ -217,6 +227,9 @@ export const useNotifications = () => {
       brook_reaction: settings?.notify_brook_activity ?? true,
       hosting_request: settings?.notify_hosting_requests ?? true,
       meetup_request: settings?.notify_meetup_requests ?? true,
+      introduction_request: settings?.notify_world_activity ?? true,
+      nearby_hometown: settings?.notify_world_activity ?? true,
+      group_post: settings?.notify_group_activity ?? true,
       group_comment: settings?.notify_group_activity ?? true,
       group_reaction: settings?.notify_group_activity ?? true,
       group_comment_reaction: settings?.notify_group_activity ?? true,
@@ -229,12 +242,10 @@ export const useNotifications = () => {
       return;
     }
 
-    // Resolve deep links (still needs client-side resolution for now)
     const resolved = await resolveNotifications(
       filteredNotifs.map((n: any) => ({ id: n.id, type: n.type, entity_id: n.entity_id }))
     );
 
-    // Group notifications by (bucket, parentEntityId)
     const groupMap = new Map<string, {
       notificationIds: string[];
       type: string;
@@ -243,6 +254,7 @@ export const useNotifications = () => {
       contentPreview: string | null;
       resolvedRoute: string | null;
       created_at: string;
+      isRead: boolean;
     }>();
 
     for (const n of filteredNotifs) {
@@ -250,6 +262,7 @@ export const useNotifications = () => {
       const resolution = resolved.get(n.id);
       const parentId = resolution?.parentEntityId || n.entity_id;
       const groupKey = `${bucket}::${parentId}`;
+      const isRead = !!n.read_at;
 
       const actorInfo: ActorInfo = {
         name: n.actor_display_name?.split(" ")[0] || "Someone",
@@ -266,6 +279,7 @@ export const useNotifications = () => {
         if (n.created_at > existing.created_at) existing.created_at = n.created_at;
         if (!existing.resolvedRoute && resolution?.resolvedRoute) existing.resolvedRoute = resolution.resolvedRoute;
         if (!existing.contentPreview && resolution?.contentPreview) existing.contentPreview = resolution.contentPreview;
+        if (!isRead) existing.isRead = false; // group is unread if any item unread
       } else {
         groupMap.set(groupKey, {
           notificationIds: [n.id],
@@ -275,6 +289,7 @@ export const useNotifications = () => {
           contentPreview: resolution?.contentPreview || null,
           resolvedRoute: resolution?.resolvedRoute || null,
           created_at: n.created_at,
+          isRead,
         });
       }
     }
@@ -289,15 +304,15 @@ export const useNotifications = () => {
         resolvedRoute: g.resolvedRoute,
         created_at: g.created_at,
         label: typeLabels[g.type] || "interacted with your content",
+        isRead: g.isRead,
       }))
       .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
     setGroupedNotifications(grouped);
   };
 
-  // Keep these as separate functions for manual refresh after actions
-  const loadRequests = async () => { loadAllNotifications(); };
-  const loadPendingFriendships = async () => { loadAllNotifications(); };
+  const loadRequests = async () => { loadAllNotifications(viewMode); };
+  const loadPendingFriendships = async () => { loadAllNotifications(viewMode); };
 
   const dismissReferenceNotification = async (refId: string) => {
     if (!user) return;
@@ -306,9 +321,7 @@ export const useNotifications = () => {
         user_id: user.id,
         reference_id: refId,
       });
-    } catch {
-      // Ignore duplicate inserts
-    }
+    } catch { /* ignore */ }
     setNewReferences((prev) => prev.filter((ref) => ref.id !== refId));
   };
 
@@ -318,14 +331,64 @@ export const useNotifications = () => {
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
       .in("id", ids);
-    setGroupedNotifications((prev) =>
-      prev.filter((g) => !g.notificationIds.some((id) => ids.includes(id)))
-    );
-  }, []);
+    setGroupedNotifications((prev) => {
+      if (viewMode === "all") {
+        // Just mark them read in-place
+        return prev.map((g) =>
+          g.notificationIds.some((id) => ids.includes(id)) ? { ...g, isRead: true } : g
+        );
+      }
+      return prev.filter((g) => !g.notificationIds.some((id) => ids.includes(id)));
+    });
+  }, [viewMode]);
 
-  const interactionCount = groupedNotifications.length;
-  const totalNotifications =
-    requests.length + pendingFriendships.length + unreadMessageCount + newReferences.length + interactionCount;
+  const markAllRead = useCallback(async (types?: readonly string[]) => {
+    if (!user) return;
+    const targetIds = groupedNotifications
+      .filter((g) => !g.isRead && (!types || (types as readonly string[]).includes(g.type)))
+      .flatMap((g) => g.notificationIds);
+    if (targetIds.length === 0) return;
+    await supabase
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .in("id", targetIds);
+    setGroupedNotifications((prev) => {
+      if (viewMode === "all") {
+        return prev.map((g) =>
+          targetIds.some((id) => g.notificationIds.includes(id)) ? { ...g, isRead: true } : g
+        );
+      }
+      return prev.filter((g) => !targetIds.some((id) => g.notificationIds.includes(id)));
+    });
+  }, [user, groupedNotifications, viewMode]);
+
+  // Partition by stream
+  const bellInteractions = groupedNotifications.filter((g) =>
+    (BELL_TYPES as readonly string[]).includes(g.type)
+  );
+  const villageInteractions = groupedNotifications.filter((g) =>
+    (VILLAGE_TYPES as readonly string[]).includes(g.type)
+  );
+  const worldInteractions = groupedNotifications.filter((g) =>
+    (WORLD_TYPES as readonly string[]).includes(g.type)
+  );
+
+  const unreadCountFor = (items: GroupedNotification[]) =>
+    items.filter((g) => !g.isRead).length;
+
+  // Bell badge: personal/social only — friend requests, pending friendships, references,
+  // unread messages, plus bell-bucket interaction notifications.
+  const bellBadgeCount =
+    requests.length +
+    pendingFriendships.length +
+    unreadMessageCount +
+    newReferences.length +
+    unreadCountFor(bellInteractions);
+
+  const villageBadgeCount = unreadCountFor(villageInteractions);
+  const worldBadgeCount = unreadCountFor(worldInteractions);
+
+  const totalNotifications = bellBadgeCount + villageBadgeCount + worldBadgeCount;
 
   useEffect(() => {
     if ("setAppBadge" in navigator) {
@@ -344,10 +407,23 @@ export const useNotifications = () => {
     newReferences,
     unreadMessageCount,
     unreadMessageSenders,
+    // Streams
+    bellInteractions,
+    villageInteractions,
+    worldInteractions,
+    bellBadgeCount,
+    villageBadgeCount,
+    worldBadgeCount,
+    // Back-compat
     groupedNotifications,
     totalNotifications,
+    // View mode
+    viewMode,
+    setViewMode,
+    // Actions
     dismissReferenceNotification,
     markInteractionRead,
+    markAllRead,
     loadRequests,
     loadPendingFriendships,
   };

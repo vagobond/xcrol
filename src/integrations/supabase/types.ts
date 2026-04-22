@@ -2051,6 +2051,7 @@ export type Database = {
           notify_hosting_requests: boolean
           notify_meetup_requests: boolean
           notify_river_replies: boolean
+          notify_world_activity: boolean
           show_online_status: boolean
           updated_at: string
           user_id: string
@@ -2071,6 +2072,7 @@ export type Database = {
           notify_hosting_requests?: boolean
           notify_meetup_requests?: boolean
           notify_river_replies?: boolean
+          notify_world_activity?: boolean
           show_online_status?: boolean
           updated_at?: string
           user_id: string
@@ -2091,6 +2093,7 @@ export type Database = {
           notify_hosting_requests?: boolean
           notify_meetup_requests?: boolean
           notify_river_replies?: boolean
+          notify_world_activity?: boolean
           show_online_status?: boolean
           updated_at?: string
           user_id?: string
@@ -2502,7 +2505,16 @@ export type Database = {
         }[]
       }
       get_user_invite_stats: { Args: { p_user_id: string }; Returns: Json }
-      get_user_notifications: { Args: { p_user_id: string }; Returns: Json }
+      get_user_notifications:
+        | { Args: { p_user_id: string }; Returns: Json }
+        | {
+            Args: {
+              p_include_read?: boolean
+              p_types?: string[]
+              p_user_id: string
+            }
+            Returns: Json
+          }
       get_visible_friends: {
         Args: { profile_id: string; viewer_id: string }
         Returns: {

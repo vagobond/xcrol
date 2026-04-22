@@ -15,7 +15,6 @@ export function useVillageActivityCount(): number {
     let cancelled = false;
 
     const fetchCount = async () => {
-      // Skip polling when the tab is hidden to save bandwidth/battery
       if (document.visibilityState === "hidden") return;
 
       const { data: memberships } = await supabase
@@ -29,59 +28,77 @@ export function useVillageActivityCount(): number {
         return;
       }
 
-      // Build map of group_id -> effective last visit (fallback to membership created_at)
       const lastVisits = new Map<string, string>();
       let oldestLastVisit: string | null = null;
       for (const m of memberships) {
         const lv = m.last_visited_at ?? m.created_at;
         lastVisits.set(m.group_id, lv);
-        if (!oldestLastVisit || lv < oldestLastVisit) {
-          oldestLastVisit = lv;
-        }
+        if (!oldestLastVisit || lv < oldestLastVisit) oldestLastVisit = lv;
       }
 
       const groupIds = memberships.map((m) => m.group_id);
 
-      let query = supabase
+      // Posts (excluding own)
+      let postsQ = supabase
         .from("group_posts")
-        .select("group_id, created_at")
+        .select("id, group_id, created_at")
         .in("group_id", groupIds)
         .neq("user_id", user.id)
-        .order("created_at", { ascending: false })
         .limit(500);
-
-      if (oldestLastVisit) {
-        query = query.gt("created_at", oldestLastVisit);
-      }
-
-      const { data: posts } = await query;
-
-      if (cancelled) return;
+      if (oldestLastVisit) postsQ = postsQ.gt("created_at", oldestLastVisit);
+      const { data: posts } = await postsQ;
 
       let total = 0;
+      const postIdToGroup = new Map<string, string>();
       for (const post of posts || []) {
-        const lastVisit = lastVisits.get(post.group_id);
-        if (lastVisit && new Date(post.created_at) > new Date(lastVisit)) {
-          total++;
+        const lv = lastVisits.get(post.group_id);
+        if (lv && new Date(post.created_at) > new Date(lv)) total++;
+        postIdToGroup.set(post.id, post.group_id);
+      }
+
+      // Comments on any group post (excluding own) — fetch via post→group join client-side
+      // Get all group posts in user's groups (lightweight) to map post→group
+      const { data: allPosts } = await supabase
+        .from("group_posts")
+        .select("id, group_id")
+        .in("group_id", groupIds)
+        .limit(2000);
+      const postGroup = new Map<string, string>();
+      for (const p of allPosts || []) postGroup.set(p.id, p.group_id);
+
+      if (postGroup.size > 0) {
+        let commentsQ = supabase
+          .from("group_post_comments")
+          .select("post_id, created_at")
+          .in("post_id", Array.from(postGroup.keys()))
+          .neq("user_id", user.id)
+          .limit(500);
+        if (oldestLastVisit) commentsQ = commentsQ.gt("created_at", oldestLastVisit);
+        const { data: comments } = await commentsQ;
+        for (const c of comments || []) {
+          const gid = postGroup.get(c.post_id);
+          const lv = gid ? lastVisits.get(gid) : null;
+          if (lv && new Date(c.created_at) > new Date(lv)) total++;
         }
       }
 
       if (!cancelled) setCount(total);
     };
 
-    // Catch up immediately when tab becomes visible again
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && !cancelled) {
-        fetchCount();
-      }
+      if (document.visibilityState === "visible" && !cancelled) fetchCount();
     };
-
     const handleVillageVisited = () => { if (!cancelled) fetchCount(); };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("village-visited", handleVillageVisited);
     fetchCount();
-    const interval = setInterval(fetchCount, 600_000); // 10 minutes
-    return () => { cancelled = true; clearInterval(interval); document.removeEventListener("visibilitychange", handleVisibilityChange); window.removeEventListener("village-visited", handleVillageVisited); };
+    const interval = setInterval(fetchCount, 600_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("village-visited", handleVillageVisited);
+    };
   }, [user?.id]);
 
   return count;

@@ -6,6 +6,8 @@ import {
   MapPin,
   Users,
   Droplets,
+  Globe,
+  UserPlus,
 } from "lucide-react";
 import type { GroupedNotification } from "@/hooks/use-notifications";
 
@@ -17,7 +19,10 @@ const typeConfig: Record<string, { icon: typeof MessageCircle; color: string }> 
   brook_reaction: { icon: Heart, color: "text-cyan-500" },
   hosting_request: { icon: Home, color: "text-orange-500" },
   meetup_request: { icon: MapPin, color: "text-violet-500" },
-  group_comment: { icon: Users, color: "text-blue-500" },
+  introduction_request: { icon: UserPlus, color: "text-amber-500" },
+  nearby_hometown: { icon: Globe, color: "text-sky-500" },
+  group_post: { icon: Users, color: "text-blue-500" },
+  group_comment: { icon: MessageCircle, color: "text-blue-500" },
   group_reaction: { icon: Heart, color: "text-blue-500" },
   group_comment_reaction: { icon: Heart, color: "text-blue-500" },
 };
@@ -41,9 +46,10 @@ const InteractionNotificationItem = ({ notification, onMarkRead }: Props) => {
     color: "text-muted-foreground",
   };
   const Icon = config.icon;
+  const isRead = !!notification.isRead;
 
   const handleClick = async () => {
-    onMarkRead(notification.notificationIds);
+    if (!isRead) onMarkRead(notification.notificationIds);
     if (notification.resolvedRoute) {
       navigate(notification.resolvedRoute);
     }
@@ -52,7 +58,9 @@ const InteractionNotificationItem = ({ notification, onMarkRead }: Props) => {
   return (
     <button
       onClick={handleClick}
-      className="w-full p-3 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors text-left"
+      className={`w-full p-3 rounded-lg border border-border transition-colors text-left ${
+        isRead ? "bg-muted/20 opacity-60 hover:opacity-80" : "bg-muted/50 hover:bg-muted"
+      }`}
     >
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
