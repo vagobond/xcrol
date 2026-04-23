@@ -548,6 +548,41 @@ const GettingStarted = () => {
           </div>
         </section>
 
+        {/* The Forest - Friends Hub */}
+        <section className="space-y-4 p-6 rounded-xl bg-card/50 border border-border/50">
+          <div className="flex items-center gap-3">
+            <TreePine className="w-8 h-8 text-primary" />
+            <h2 className="text-2xl md:text-3xl font-bold">The Forest - Your Friends Hub</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p>
+              The Forest (<code>/the-forest</code>) is the centralized social hub where every friendship-related
+              action lives in one place.
+            </p>
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg bg-background/50">
+                <strong>Friends list</strong>
+                <p className="text-sm">All your connections, grouped by friendship level. Edit a level inline anytime.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <strong>Incoming & outgoing requests</strong>
+                <p className="text-sm">Friend requests with the sender's reference summary attached, so you can decide with context.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <strong>Ask for an introduction</strong>
+                <p className="text-sm">Request a mutual friend to introduce you to someone in their network. The introducer chooses how (or whether) to relay it.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <strong>Blocked users</strong>
+                <p className="text-sm">Manage anyone you've blocked from one tab.</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              <strong>Single nudge rule:</strong> You can send one gentle nudge per pending request—no spam loops.
+            </p>
+          </div>
+        </section>
+
         {/* References */}
         <section className="space-y-4 p-6 rounded-xl bg-card/50 border border-border/50">
           <div className="flex items-center gap-3">
