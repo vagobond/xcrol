@@ -281,10 +281,12 @@ const GettingStarted = () => {
               Unlike algorithmic feeds, The River shows entries chronologically based on your friendship levels.
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Filter by friendship level to see specific circles</li>
-              <li>React to entries with emoji</li>
+              <li><strong>Real-time updates:</strong> New posts appear instantly with a "New post" banner you can tap to load</li>
+              <li><strong>Threaded replies:</strong> Up to 3 levels of nested conversation, with emoji reactions on every reply</li>
+              <li><strong>Filter by friendship level</strong> to focus on specific circles</li>
+              <li><strong>Personal RSS feeds:</strong> Subscribe to news sources in Settings—they flow into your River alongside friends' posts</li>
+              <li><strong>Shareable posts:</strong> Public entries get rich link previews (OpenGraph) and a public URL at <code>/post/:id</code></li>
               <li>Write your own Xcrol directly from The River</li>
-              <li>Only see what friends have chosen to share with you</li>
             </ul>
             <p className="text-sm text-muted-foreground">
               The River respects privacy—you'll only see entries from friends who've granted you access at their chosen level.
