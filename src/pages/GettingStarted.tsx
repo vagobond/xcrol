@@ -1051,13 +1051,13 @@ const GettingStarted = () => {
             <div className="mt-6 p-4 rounded-lg bg-background/30 border border-amber-500/20">
               <div className="flex items-center gap-2 mb-2">
                 <Castle className="w-5 h-5 text-amber-500" />
-                <strong className="text-amber-500">But why do points matter?</strong>
+                <strong className="text-amber-500">The Castle</strong>
               </div>
-              <p className="text-sm text-foreground/60 italic">
-                That remains to be seen. For now, know that your points are being counted. 
-                When the gates of <strong>The Castle</strong> finally open, those who have built something here 
-                will find the threshold more welcoming than those who have not. 
-                More will be revealed in time.
+              <p className="text-sm text-foreground/70">
+                Points unlock <strong>The Castle</strong> — a destination reachable from the Powers page.
+                Your progress toward the unlock criteria (points, friends, accepted invites) is shown there.
+                Those who have built something here will find the threshold more welcoming. More will be
+                revealed in time.
               </p>
             </div>
           </div>
