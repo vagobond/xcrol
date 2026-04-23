@@ -355,6 +355,10 @@ const GettingStarted = () => {
               <strong>Privacy first:</strong> Brooks are fully private—not visible on profiles, no public indicators, 
               no streaks, read receipts, typing indicators, or activity metrics. Just calm, daily awareness.
             </p>
+            <p className="text-sm text-muted-foreground">
+              <strong>NOSTR bridge (optional):</strong> If both Brook participants have enabled NOSTR identity in Settings, 
+              Brook posts can be relayed as encrypted NIP-17 direct messages—keeping the conversation portable across the open NOSTR network.
+            </p>
           </div>
         </section>
 
