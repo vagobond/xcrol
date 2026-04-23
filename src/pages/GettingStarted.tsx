@@ -474,6 +474,30 @@ const GettingStarted = () => {
           </div>
         </section>
 
+        {/* NOSTR Identity & Federation */}
+        <section className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/30">
+          <div className="flex items-center gap-3">
+            <Zap className="w-8 h-8 text-purple-500" />
+            <h2 className="text-2xl md:text-3xl font-bold">NOSTR Identity & Federation</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p>
+              XCROL plugs into the open <strong>NOSTR</strong> protocol so your identity and posts can travel beyond
+              this app. Setup lives in <strong>Settings → NOSTR Identity</strong>.
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
+              <li><strong>Your npub</strong> (public key) is stored on your XCROL profile and discoverable.</li>
+              <li><strong>Your nsec</strong> (private key) is generated and stored <strong>only in your browser's IndexedDB</strong>—never on our servers.</li>
+              <li><strong>Auto-publish:</strong> When enabled, your public Xcrol entries are mirrored as kind 1 notes to three default relays (Damus, Nostr.band, Nos.lol).</li>
+              <li><strong>NIP-05 discovery:</strong> Set a custom NOSTR handle and you become findable as <code>handle@xcrol.com</code> across the network.</li>
+              <li><strong>Clean disable:</strong> Turning NOSTR off clears the npub from your profile, removes local keys, and resets all related flags.</li>
+            </ul>
+            <p className="text-sm text-muted-foreground">
+              NOSTR is fully optional. Use it to make your identity portable, or ignore it entirely.
+            </p>
+          </div>
+        </section>
+
         {/* The World */}
         <section className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/30">
           <div className="flex items-center gap-3">
