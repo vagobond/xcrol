@@ -836,6 +836,16 @@ const GettingStarted = () => {
                 <h3 className="font-bold text-lg mb-2">💜 The Cure to Loneliness and Boredom</h3>
                 <p className="text-sm">An AI-powered adventure game with creative suggestions for meaningful activities and connections. Get wild, offbeat ideas for curing boredom or meeting new people.</p>
               </div>
+
+              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
+                <h3 className="font-bold text-lg mb-2">✈️ Dream Trip</h3>
+                <p className="text-sm">A 20-step choose-your-own-adventure that visits 10 real XCROL users' hometowns. Each playthrough is unique and may inspire your next real-world journey.</p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
+                <h3 className="font-bold text-lg mb-2">🪵 Rough Living</h3>
+                <p className="text-sm">A survival-flavored adventure exploring how you'd cope when the comforts disappear.</p>
+              </div>
             </div>
           </div>
         </section>
