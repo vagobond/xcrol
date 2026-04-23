@@ -894,6 +894,27 @@ const GettingStarted = () => {
                 </div>
                 <p className="text-sm">Create OAuth apps for "Login with XCROL"</p>
               </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <div className="flex items-center gap-2 mb-1">
+                  <Mail className="w-4 h-4 text-amber-500" />
+                  <strong>Weekly Digest Email</strong>
+                </div>
+                <p className="text-sm">Opt-in Monday email summarizing the past week's activity. Toggle from Settings → Notifications.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <div className="flex items-center gap-2 mb-1">
+                  <Download className="w-4 h-4 text-cyan-500" />
+                  <strong>Download My Data</strong>
+                </div>
+                <p className="text-sm">GDPR-compliant export of everything XCROL stores about you, as a single JSON archive.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <div className="flex items-center gap-2 mb-1">
+                  <Smartphone className="w-4 h-4 text-pink-500" />
+                  <strong>Install as an App</strong>
+                </div>
+                <p className="text-sm">XCROL is a PWA—add it to your phone's home screen. Step-by-step guide at <code>/install-app</code>.</p>
+              </div>
               <div className="p-3 rounded-lg bg-background/50 border border-destructive/30">
                 <div className="flex items-center gap-2 mb-1">
                   <AlertTriangle className="w-4 h-4 text-destructive" />
