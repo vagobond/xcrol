@@ -952,8 +952,24 @@ const GettingStarted = () => {
                 <strong>THE TOWN</strong> - Community marketplace, classifieds, listings
               </div>
               <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                <TreePine className="w-5 h-5 text-emerald-500" />
+                <strong>THE FOREST</strong> - Friends, requests, introductions, blocked users
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                <Castle className="w-5 h-5 text-amber-500" />
+                <strong>THE CASTLE</strong> - Mysterious destination unlocked through participation
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                <MapIcon className="w-5 h-5 text-cyan-500" />
+                <strong>THE MAP</strong> - Illustrated SVG world map navigation hub
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                <Gamepad2 className="w-5 h-5 text-pink-500" />
+                <strong>ADVENTURE HUB</strong> - Mini games (Every Country, Cure to Loneliness, Dream Trip, Rough Living)
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded bg-background/50">
                 <User className="w-5 h-5 text-green-500" />
-                <strong>YOU</strong> - Profile, friends, settings, Xcrol diary, Brooks
+                <strong>YOU</strong> - Profile, settings, Xcrol diary, Brooks
               </div>
             </div>
           </div>
