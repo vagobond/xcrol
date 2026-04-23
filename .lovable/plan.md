@@ -1,81 +1,73 @@
 
 
-## Notifications Cleanup + The World Stream
+## Update Getting Started Guide
 
-Four-way split of notifications, each living where its activity happens.
+The Getting Started page is missing many recently shipped features. I'll add new sections and update outdated ones, keeping the existing structure and tone.
 
-### Notification Streams
+### New sections to add
 
-```
-Bell icon          → Personal & social: friend requests, references, mentions,
-                     river replies, brook activity, unread messages
-Village icon       → All group activity: posts, comments, reactions in any group
-                     you're a member of
-World icon (Globe) → IRL Layer activity: new hometowns near you, hosting requests,
-                     meetup requests, introduction requests
-Forest (no badge)  → unchanged; introductions still show in Forest UI
-```
+1. **Notifications — Bell, Village & World** (after Messaging section)
+   - Bell: personal/social (friend requests, references, mentions, river replies, brook activity, messages)
+   - Village icon: all group activity (posts, comments, reactions)
+   - World icon: IRL Layer activity (nearby hometowns, hosting/meetup/introduction requests)
+   - "Unread only / All recent" toggle
+   - Forest still surfaces introductions
 
-### 1. "Show all / unread only" toggle
+2. **The Forest — Friends Hub** (before "References & Trust")
+   - Centralized friends, requests, introductions, blocked users
+   - Ask for Introduction flow, references shown on requests
+   - Single nudge rule
 
-A small toggle at the top of every notification dropdown (Bell, Village, World):
-- **Unread only** (default) — current behaviour
-- **All recent** — also shows read items from the past 14 days, dimmed
+3. **The Castle** (after Earning Points)
+   - Mysterious teaser; shows progress toward unlock criteria (points, friends, accepted invites)
+   - Reachable from Powers; entry earned over time
 
-Backend: extend `get_user_notifications` RPC with `p_include_read boolean default false` and `p_types text[] default null` (so each dropdown can scope to its own types). When `p_include_read=true`, return last 14 days regardless of `read_at`, capped at 50. A "Mark all as read" link appears in "All" mode.
+4. **NOSTR Identity & Federation** (after Decentralized Media Hosting)
+   - Optional npub stored on profile, nsec in IndexedDB only
+   - Auto-publish public Xcrol entries as kind 1 to default relays
+   - NIP-05 discovery via @username at xcrol.com
+   - Disable cleanly resets local + DB flags
 
-### 2. Wire village notifications end-to-end
+5. **Mini Games** (expand existing Adventure Hub section)
+   - Add Dream Trip (20-step adventure visiting users' hometowns)
+   - Add Rough Living
+   - Keep Every Country & Cure to Loneliness
 
-Today, comments and reactions inside a group never become DB rows for non-authors, and per-group views don't surface "new since last visit."
+6. **The River — additions** (update existing section)
+   - Real-time updates with "New post" banner
+   - Threaded replies (3 levels) with emoji reactions
+   - RSS feed integration
+   - Shareable public posts with rich OG previews
 
-**Database migration — triggers on:**
-- `group_posts` insert → notification type `group_post` for every group member except author
-- `group_post_comments` insert → type `group_comment` for post author + previous commenters on that post
-- `group_post_reactions` / `group_comment_reactions` → existing types, also notify post author if missing
+7. **The Brook — additions** (small update)
+   - Mention NOSTR NIP-17 bridge for Brook participants who opt in
 
-**Frontend:**
-- `useGroupActivity` & `useVillageActivityCount` — count comments & reactions since `last_visited_at`, not just posts
-- `GroupProfile.tsx` — "X new since your last visit" pill at top of post list
-- `VillageBadge` — total reflects all village types
+8. **Custom Usernames** (small standalone block under Profile)
+   - Immutable lowercase @handles, profile at xcrol.com/@username
 
-### 3. Wire World notifications
+9. **Weekly Digest Email** (under Settings & Notifications)
+   - Opt-in Monday digest of past week's activity
+   - Toggle in Settings → Notifications
 
-New notification types written by triggers / existing flows:
-- `nearby_hometown` — when a new user claims a hometown within ~200km of yours (trigger on `profiles.hometown_lat/lng` insert, finds nearby users via existing precision-rounded coords)
-- `hosting_request` — already exists in `hosting_requests`; add trigger to write `notifications` row of type `hosting_request` to `to_user_id`
-- `meetup_request` — same for `meetup_requests`
-- `introduction_request` — same for `introduction_requests` (to introducer)
+10. **PWA Install** (small mention with link to /install-app)
 
-Add a small dropdown to the World icon (Globe) in `AppHeader` mirroring the Bell — uses the new `p_types` filter to pull only world types. Badge shows unread count.
+11. **Data Sovereignty / Export** (small block in Settings section)
+    - Download My Data (GDPR-compliant export)
 
-### 4. Split the Bell
+### Sections to update
 
-Modify `useNotifications` to partition by type into three buckets:
-- `bellNotifications` — friend_request, friendship_pending, reference_received, river_reply, brook_*, mention, unread_message
-- `villageNotifications` — group_post, group_comment, group_reaction, group_comment_reaction
-- `worldNotifications` — nearby_hometown, hosting_request, meetup_request, introduction_request
+- **Friendship Levels**: align labels with current trust tiers (Blood Bound = Family with orange; Wayfarer level for references/meetup access; Shadow Friend wording for Secret Enemy)
+- **Meetups & Hosting**: note Wayfarer+ requirement to send requests; reference the 4 reference types match current system
+- **Quick Navigation Guide**: add THE FOREST, THE CASTLE, MAP, ADVENTURE HUB
+- **Earning Points**: add +1 for brook/group comments per current rules; clarify points unlock The Castle
+- **The Town**: confirm category list and "My Listings" via URL search params still accurate
 
-Each consumer (Bell, VillageBadge, new WorldBadge) reads from its own bucket only. The Bell badge no longer includes village or world items.
+### File touched
 
-### Files Touched
-
-**Created:**
-- `src/components/WorldBadge.tsx` (Globe icon + dropdown + count)
-- One DB migration (RPC update + group + world triggers)
-
-**Modified:**
-- `src/hooks/use-notifications.ts` — partition, viewMode, type filtering
-- `src/components/NotificationBell.tsx` — toggle UI, render only `bellNotifications`
-- `src/components/VillageBadge.tsx` — toggle + render `villageNotifications` dropdown
-- `src/components/AppHeader.tsx` — replace inline World button with `<WorldBadge />`
-- `src/hooks/use-village-activity.ts` & `use-group-activity.ts` — count comments + reactions
-- `src/pages/GroupProfile.tsx` — "X new since last visit" pill
-- `src/lib/notification-resolver.ts` — handle `group_post`, `nearby_hometown`, `hosting_request`, `meetup_request`, `introduction_request` types
+- `src/pages/GettingStarted.tsx` — add sections, update existing ones, add icons (`Bell`, `Castle`, `Send`, `Mail`, `Download`, `Smartphone`) where needed
 
 ### Notes
-- All additive — no existing flows broken
-- 14-day "All" window keeps dropdowns bounded
-- Respects existing `notify_group_activity` setting; adds `notify_world_activity` (default true) to user settings
-- Hometown-proximity uses already-rounded coords; no new privacy exposure
-- Bell, Village, and World share one toggle component for consistency
+- Pure additive content edit; no logic changes
+- Keep the collapsible "deep dive" pattern for any new long sections
+- Maintain existing visual style (gradient cards for highlight sections, plain cards for standard)
 
