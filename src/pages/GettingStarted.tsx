@@ -35,7 +35,15 @@ import {
   Image,
   Video,
   CircleDollarSign,
-  Castle
+  Castle,
+  Send,
+  Mail,
+  Download,
+  Smartphone,
+  TreePine,
+  Zap,
+  Gift,
+  Map as MapIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { 
@@ -161,42 +169,42 @@ const GettingStarted = () => {
               <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
                 <Heart className="w-5 h-5 text-pink-500 mt-0.5" />
                 <div>
-                  <strong className="text-pink-500">Close Friend</strong>
+                  <strong className="text-pink-500">Oath Bound (Close Friend)</strong>
                   <p className="text-sm">Your inner circle. Complete access to all your information, including home address, birth year, and private contact details.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
                 <Users className="w-5 h-5 text-orange-500 mt-0.5" />
                 <div>
-                  <strong className="text-orange-500">Family</strong>
+                  <strong className="text-orange-500">Blood Bound (Family)</strong>
                   <p className="text-sm">An independent category outside the trust hierarchy. Family members get phone number, private email, and full birthday—but not social links or other friend-tier info unless you choose to share.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
                 <Star className="w-5 h-5 text-yellow-500 mt-0.5" />
                 <div>
-                  <strong className="text-yellow-500">Buddy</strong>
+                  <strong className="text-yellow-500">Companion (Buddy)</strong>
                   <p className="text-sm">Good friends you hang out with regularly. Access to birthday (without year), mailing address, and most contact info.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
                 <UserCheck className="w-5 h-5 text-blue-500 mt-0.5" />
                 <div>
-                  <strong className="text-blue-500">Friendly Acquaintance</strong>
-                  <p className="text-sm">People you know and like, but aren't super close with. Basic contact info and public details only.</p>
+                  <strong className="text-blue-500">Wayfarer (Friendly Acquaintance)</strong>
+                  <p className="text-sm">People you know and like, but aren't super close with. Basic contact info and public details. <strong>Wayfarer or above</strong> is the minimum tier required to send meetup/hosting requests and leave references.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
                 <EyeOff className="w-5 h-5 text-purple-500 mt-0.5" />
                 <div>
-                  <strong className="text-purple-500">Secret Friend</strong>
-                  <p className="text-sm">A close connection hidden from public view. Same access as Close Friend, but the relationship isn't visible to others.</p>
+                  <strong className="text-purple-500">Invisible Ally (Secret Friend)</strong>
+                  <p className="text-sm">A close connection hidden from public view. Same access as Oath Bound, but the relationship isn't visible to others.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
                 <Eye className="w-5 h-5 text-red-500 mt-0.5" />
                 <div>
-                  <strong className="text-red-500">Secret Enemy</strong>
+                  <strong className="text-red-500">Shadow Friend (Secret Enemy)</strong>
                   <p className="text-sm">Appears as a friend publicly, but has minimal actual access. For social situations requiring diplomacy. You can optionally give them decoy information.</p>
                 </div>
               </div>
@@ -273,10 +281,12 @@ const GettingStarted = () => {
               Unlike algorithmic feeds, The River shows entries chronologically based on your friendship levels.
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Filter by friendship level to see specific circles</li>
-              <li>React to entries with emoji</li>
+              <li><strong>Real-time updates:</strong> New posts appear instantly with a "New post" banner you can tap to load</li>
+              <li><strong>Threaded replies:</strong> Up to 3 levels of nested conversation, with emoji reactions on every reply</li>
+              <li><strong>Filter by friendship level</strong> to focus on specific circles</li>
+              <li><strong>Personal RSS feeds:</strong> Subscribe to news sources in Settings—they flow into your River alongside friends' posts</li>
+              <li><strong>Shareable posts:</strong> Public entries get rich link previews (OpenGraph) and a public URL at <code>/post/:id</code></li>
               <li>Write your own Xcrol directly from The River</li>
-              <li>Only see what friends have chosen to share with you</li>
             </ul>
             <p className="text-sm text-muted-foreground">
               The River respects privacy—you'll only see entries from friends who've granted you access at their chosen level.
@@ -344,6 +354,10 @@ const GettingStarted = () => {
             <p className="text-sm text-muted-foreground">
               <strong>Privacy first:</strong> Brooks are fully private—not visible on profiles, no public indicators, 
               no streaks, read receipts, typing indicators, or activity metrics. Just calm, daily awareness.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              <strong>NOSTR bridge (optional):</strong> If both Brook participants have enabled NOSTR identity in Settings, 
+              Brook posts can be relayed as encrypted NIP-17 direct messages—keeping the conversation portable across the open NOSTR network.
             </p>
           </div>
         </section>
@@ -460,6 +474,30 @@ const GettingStarted = () => {
           </div>
         </section>
 
+        {/* NOSTR Identity & Federation */}
+        <section className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/30">
+          <div className="flex items-center gap-3">
+            <Zap className="w-8 h-8 text-purple-500" />
+            <h2 className="text-2xl md:text-3xl font-bold">NOSTR Identity & Federation</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p>
+              XCROL plugs into the open <strong>NOSTR</strong> protocol so your identity and posts can travel beyond
+              this app. Setup lives in <strong>Settings → NOSTR Identity</strong>.
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
+              <li><strong>Your npub</strong> (public key) is stored on your XCROL profile and discoverable.</li>
+              <li><strong>Your nsec</strong> (private key) is generated and stored <strong>only in your browser's IndexedDB</strong>—never on our servers.</li>
+              <li><strong>Auto-publish:</strong> When enabled, your public Xcrol entries are mirrored as kind 1 notes to three default relays (Damus, Nostr.band, Nos.lol).</li>
+              <li><strong>NIP-05 discovery:</strong> Set a custom NOSTR handle and you become findable as <code>handle@xcrol.com</code> across the network.</li>
+              <li><strong>Clean disable:</strong> Turning NOSTR off clears the npub from your profile, removes local keys, and resets all related flags.</li>
+            </ul>
+            <p className="text-sm text-muted-foreground">
+              NOSTR is fully optional. Use it to make your identity portable, or ignore it entirely.
+            </p>
+          </div>
+        </section>
+
         {/* The World */}
         <section className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/30">
           <div className="flex items-center gap-3">
@@ -530,6 +568,42 @@ const GettingStarted = () => {
             </div>
             <p className="text-sm text-muted-foreground">
               Both features respect friendship levels—only friends meeting your minimum level can send requests.
+              By default, anyone at <strong>Wayfarer</strong> (Friendly Acquaintance) or above can send a request, but you can raise the bar.
+            </p>
+          </div>
+        </section>
+
+        {/* The Forest - Friends Hub */}
+        <section className="space-y-4 p-6 rounded-xl bg-card/50 border border-border/50">
+          <div className="flex items-center gap-3">
+            <TreePine className="w-8 h-8 text-primary" />
+            <h2 className="text-2xl md:text-3xl font-bold">The Forest - Your Friends Hub</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p>
+              The Forest (<code>/the-forest</code>) is the centralized social hub where every friendship-related
+              action lives in one place.
+            </p>
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg bg-background/50">
+                <strong>Friends list</strong>
+                <p className="text-sm">All your connections, grouped by friendship level. Edit a level inline anytime.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <strong>Incoming & outgoing requests</strong>
+                <p className="text-sm">Friend requests with the sender's reference summary attached, so you can decide with context.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <strong>Ask for an introduction</strong>
+                <p className="text-sm">Request a mutual friend to introduce you to someone in their network. The introducer chooses how (or whether) to relay it.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <strong>Blocked users</strong>
+                <p className="text-sm">Manage anyone you've blocked from one tab.</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              <strong>Single nudge rule:</strong> You can send one gentle nudge per pending request—no spam loops.
             </p>
           </div>
         </section>
@@ -585,6 +659,65 @@ const GettingStarted = () => {
             </ul>
             <p className="text-sm text-muted-foreground">
               XCROL's messaging is designed to bridge you to the right platform rather than replace existing communication tools.
+            </p>
+          </div>
+        </section>
+
+        {/* Notification Streams */}
+        <section className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/30">
+          <div className="flex items-center gap-3">
+            <Bell className="w-8 h-8 text-primary" />
+            <h2 className="text-2xl md:text-3xl font-bold">Notifications - Bell, Village & World</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p>
+              XCROL splits notifications across three icons in the top bar so each kind of activity lives where you'd
+              naturally look for it.
+            </p>
+            <div className="grid gap-3">
+              <div className="p-3 rounded-lg bg-background/50 border border-border/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <Bell className="w-5 h-5 text-yellow-500" />
+                  <strong className="text-yellow-500">Bell — Personal & Social</strong>
+                </div>
+                <p className="text-sm">Friend requests, references received, mentions, river replies, brook activity, unread messages.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50 border border-border/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <Building2 className="w-5 h-5 text-orange-500" />
+                  <strong className="text-orange-500">Village — Group activity</strong>
+                </div>
+                <p className="text-sm">Posts, comments, and reactions in any group you've joined. The badge surfaces only what's new since you last visited each group.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50 border border-border/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <Globe className="w-5 h-5 text-blue-500" />
+                  <strong className="text-blue-500">World — IRL Layer activity</strong>
+                </div>
+                <p className="text-sm">New hometowns claimed near yours (~200 km), hosting requests, meetup requests, and introduction requests.</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Each dropdown has an <strong>"Unread only / All recent"</strong> toggle. Switch to "All recent" to revisit
+              the past 14 days; "Mark all as read" appears alongside it. Introductions still surface in The Forest as well.
+            </p>
+          </div>
+        </section>
+
+        {/* Custom Usernames */}
+        <section className="space-y-4 p-6 rounded-xl bg-card/50 border border-border/50">
+          <div className="flex items-center gap-3">
+            <User className="w-8 h-8 text-primary" />
+            <h2 className="text-2xl md:text-3xl font-bold">Custom @Usernames</h2>
+          </div>
+          <div className="space-y-3 text-foreground/80 leading-relaxed">
+            <p>
+              Pick a unique <strong>@username</strong> (lowercase letters, numbers, underscores) once during onboarding or
+              from your profile. Your shareable profile lives at <code>xcrol.com/@username</code>.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Usernames are <strong>immutable</strong> once chosen—pick something you'll be happy with long-term. They also
+              power @mentions across Xcrol entries, messages, brooks, and group posts.
             </p>
           </div>
         </section>
@@ -704,6 +837,16 @@ const GettingStarted = () => {
                 <h3 className="font-bold text-lg mb-2">💜 The Cure to Loneliness and Boredom</h3>
                 <p className="text-sm">An AI-powered adventure game with creative suggestions for meaningful activities and connections. Get wild, offbeat ideas for curing boredom or meeting new people.</p>
               </div>
+
+              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
+                <h3 className="font-bold text-lg mb-2">✈️ Dream Trip</h3>
+                <p className="text-sm">A 20-step choose-your-own-adventure that visits 10 real XCROL users' hometowns. Each playthrough is unique and may inspire your next real-world journey.</p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
+                <h3 className="font-bold text-lg mb-2">🪵 Rough Living</h3>
+                <p className="text-sm">A survival-flavored adventure exploring how you'd cope when the comforts disappear.</p>
+              </div>
             </div>
           </div>
         </section>
@@ -752,6 +895,27 @@ const GettingStarted = () => {
                 </div>
                 <p className="text-sm">Create OAuth apps for "Login with XCROL"</p>
               </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <div className="flex items-center gap-2 mb-1">
+                  <Mail className="w-4 h-4 text-amber-500" />
+                  <strong>Weekly Digest Email</strong>
+                </div>
+                <p className="text-sm">Opt-in Monday email summarizing the past week's activity. Toggle from Settings → Notifications.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <div className="flex items-center gap-2 mb-1">
+                  <Download className="w-4 h-4 text-cyan-500" />
+                  <strong>Download My Data</strong>
+                </div>
+                <p className="text-sm">GDPR-compliant export of everything XCROL stores about you, as a single JSON archive.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50">
+                <div className="flex items-center gap-2 mb-1">
+                  <Smartphone className="w-4 h-4 text-pink-500" />
+                  <strong>Install as an App</strong>
+                </div>
+                <p className="text-sm">XCROL is a PWA—add it to your phone's home screen. Step-by-step guide at <code>/install-app</code>.</p>
+              </div>
               <div className="p-3 rounded-lg bg-background/50 border border-destructive/30">
                 <div className="flex items-center gap-2 mb-1">
                   <AlertTriangle className="w-4 h-4 text-destructive" />
@@ -789,8 +953,24 @@ const GettingStarted = () => {
                 <strong>THE TOWN</strong> - Community marketplace, classifieds, listings
               </div>
               <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                <TreePine className="w-5 h-5 text-emerald-500" />
+                <strong>THE FOREST</strong> - Friends, requests, introductions, blocked users
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                <Castle className="w-5 h-5 text-amber-500" />
+                <strong>THE CASTLE</strong> - Mysterious destination unlocked through participation
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                <MapIcon className="w-5 h-5 text-cyan-500" />
+                <strong>THE MAP</strong> - Illustrated SVG world map navigation hub
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                <Gamepad2 className="w-5 h-5 text-pink-500" />
+                <strong>ADVENTURE HUB</strong> - Mini games (Every Country, Cure to Loneliness, Dream Trip, Rough Living)
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded bg-background/50">
                 <User className="w-5 h-5 text-green-500" />
-                <strong>YOU</strong> - Profile, friends, settings, Xcrol diary, Brooks
+                <strong>YOU</strong> - Profile, settings, Xcrol diary, Brooks
               </div>
             </div>
           </div>
@@ -822,6 +1002,10 @@ const GettingStarted = () => {
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
                 <span>Each friend you have</span>
+                <span className="font-bold text-amber-500">+1</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Comment on a brook or group post</span>
                 <span className="font-bold text-amber-500">+1</span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
@@ -868,13 +1052,13 @@ const GettingStarted = () => {
             <div className="mt-6 p-4 rounded-lg bg-background/30 border border-amber-500/20">
               <div className="flex items-center gap-2 mb-2">
                 <Castle className="w-5 h-5 text-amber-500" />
-                <strong className="text-amber-500">But why do points matter?</strong>
+                <strong className="text-amber-500">The Castle</strong>
               </div>
-              <p className="text-sm text-foreground/60 italic">
-                That remains to be seen. For now, know that your points are being counted. 
-                When the gates of <strong>The Castle</strong> finally open, those who have built something here 
-                will find the threshold more welcoming than those who have not. 
-                More will be revealed in time.
+              <p className="text-sm text-foreground/70">
+                Points unlock <strong>The Castle</strong> — a destination reachable from the Powers page.
+                Your progress toward the unlock criteria (points, friends, accepted invites) is shown there.
+                Those who have built something here will find the threshold more welcoming. More will be
+                revealed in time.
               </p>
             </div>
           </div>
