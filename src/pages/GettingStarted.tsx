@@ -568,6 +568,7 @@ const GettingStarted = () => {
             </div>
             <p className="text-sm text-muted-foreground">
               Both features respect friendship levels—only friends meeting your minimum level can send requests.
+              By default, anyone at <strong>Wayfarer</strong> (Friendly Acquaintance) or above can send a request, but you can raise the bar.
             </p>
           </div>
         </section>
