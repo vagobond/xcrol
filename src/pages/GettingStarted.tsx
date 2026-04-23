@@ -638,6 +638,65 @@ const GettingStarted = () => {
           </div>
         </section>
 
+        {/* Notification Streams */}
+        <section className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/30">
+          <div className="flex items-center gap-3">
+            <Bell className="w-8 h-8 text-primary" />
+            <h2 className="text-2xl md:text-3xl font-bold">Notifications - Bell, Village & World</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p>
+              XCROL splits notifications across three icons in the top bar so each kind of activity lives where you'd
+              naturally look for it.
+            </p>
+            <div className="grid gap-3">
+              <div className="p-3 rounded-lg bg-background/50 border border-border/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <Bell className="w-5 h-5 text-yellow-500" />
+                  <strong className="text-yellow-500">Bell — Personal & Social</strong>
+                </div>
+                <p className="text-sm">Friend requests, references received, mentions, river replies, brook activity, unread messages.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50 border border-border/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <Building2 className="w-5 h-5 text-orange-500" />
+                  <strong className="text-orange-500">Village — Group activity</strong>
+                </div>
+                <p className="text-sm">Posts, comments, and reactions in any group you've joined. The badge surfaces only what's new since you last visited each group.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background/50 border border-border/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <Globe className="w-5 h-5 text-blue-500" />
+                  <strong className="text-blue-500">World — IRL Layer activity</strong>
+                </div>
+                <p className="text-sm">New hometowns claimed near yours (~200 km), hosting requests, meetup requests, and introduction requests.</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Each dropdown has an <strong>"Unread only / All recent"</strong> toggle. Switch to "All recent" to revisit
+              the past 14 days; "Mark all as read" appears alongside it. Introductions still surface in The Forest as well.
+            </p>
+          </div>
+        </section>
+
+        {/* Custom Usernames */}
+        <section className="space-y-4 p-6 rounded-xl bg-card/50 border border-border/50">
+          <div className="flex items-center gap-3">
+            <User className="w-8 h-8 text-primary" />
+            <h2 className="text-2xl md:text-3xl font-bold">Custom @Usernames</h2>
+          </div>
+          <div className="space-y-3 text-foreground/80 leading-relaxed">
+            <p>
+              Pick a unique <strong>@username</strong> (lowercase letters, numbers, underscores) once during onboarding or
+              from your profile. Your shareable profile lives at <code>xcrol.com/@username</code>.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Usernames are <strong>immutable</strong> once chosen—pick something you'll be happy with long-term. They also
+              power @mentions across Xcrol entries, messages, brooks, and group posts.
+            </p>
+          </div>
+        </section>
+
         {/* XCROL as OAuth Identity - NEW IMPORTANT SECTION */}
         <section className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30">
           <div className="flex items-center gap-3">
