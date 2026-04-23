@@ -35,7 +35,15 @@ import {
   Image,
   Video,
   CircleDollarSign,
-  Castle
+  Castle,
+  Send,
+  Mail,
+  Download,
+  Smartphone,
+  TreePine,
+  Zap,
+  Gift,
+  Map as MapIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { 
