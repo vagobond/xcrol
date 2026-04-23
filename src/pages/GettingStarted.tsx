@@ -1004,6 +1004,10 @@ const GettingStarted = () => {
                 <span className="font-bold text-amber-500">+1</span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                <span>Comment on a brook or group post</span>
+                <span className="font-bold text-amber-500">+1</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
                 <span>Post in a group</span>
                 <span className="font-bold text-amber-500">+1</span>
               </div>
