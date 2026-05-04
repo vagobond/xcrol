@@ -336,16 +336,15 @@ export const useNotifications = () => {
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
       .in("id", ids);
-    setGroupedNotifications((prev) => {
-      if (viewMode === "all") {
-        // Just mark them read in-place
-        return prev.map((g) =>
-          g.notificationIds.some((id) => ids.includes(id)) ? { ...g, isRead: true } : g
-        );
-      }
-      return prev.filter((g) => !g.notificationIds.some((id) => ids.includes(id)));
-    });
-  }, [viewMode]);
+    // Mark as read in-place. They'll only disappear from the "unread" list on the
+    // next reload (e.g. when the dropdown reopens), so the user can re-tap a
+    // notification they didn't fully process the first time.
+    setGroupedNotifications((prev) =>
+      prev.map((g) =>
+        g.notificationIds.some((id) => ids.includes(id)) ? { ...g, isRead: true } : g
+      )
+    );
+  }, []);
 
   const markAllRead = useCallback(async (types?: readonly string[]) => {
     if (!user) return;
