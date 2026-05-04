@@ -60,6 +60,9 @@ interface BrookPost {
 
 const Brook = () => {
   const { brookId } = useParams<{ brookId: string }>();
+  const [searchParams] = useSearchParams();
+  const highlightedPostId = searchParams.get("post");
+  const highlightedCommentId = searchParams.get("comment");
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [brook, setBrook] = useState<BrookData | null>(null);
@@ -69,6 +72,18 @@ const Brook = () => {
   const [editingName, setEditingName] = useState(false);
   const [customName, setCustomName] = useState("");
   const [myUsername, setMyUsername] = useState<string | null>(null);
+  const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const hasScrolledRef = useRef(false);
+
+  // Scroll to highlighted post once posts load
+  useEffect(() => {
+    if (!highlightedPostId || hasScrolledRef.current || loading || posts.length === 0) return;
+    const el = postRefs.current.get(highlightedPostId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      hasScrolledRef.current = true;
+    }
+  }, [highlightedPostId, loading, posts]);
 
   // Redirect to auth if not logged in
   useEffect(() => {
