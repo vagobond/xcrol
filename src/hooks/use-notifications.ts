@@ -67,6 +67,7 @@ export interface GroupedNotification {
   actors: ActorInfo[];
   count: number;
   contentPreview: string | null;
+  parentSnippet: string | null;
   resolvedRoute: string | null;
   created_at: string;
   label: string;
