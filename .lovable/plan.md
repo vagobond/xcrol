@@ -1,73 +1,88 @@
+## Notification Flow — Weaknesses & Fix Options
 
+### What's broken today
 
-## Update Getting Started Guide
+When a user clicks a notification, they land on a page but often can't tell **what** the notification was actually about. Here's where each notification type lands and why it's unsatisfying:
 
-The Getting Started page is missing many recently shipped features. I'll add new sections and update outdated ones, keeping the existing structure and tone.
+| Notification | Currently routes to | Problem |
+|---|---|---|
+| River reply / reply-to-reply | `/the-river?post={entryId}` | Scrolls to and ring-highlights the entry, but **doesn't open or scroll to the actual reply** the user was notified about. |
+| Brook post | `/brook/{brookId}` | Drops user at top of brook with no scroll/highlight to the new post. |
+| Brook comment | `/brook/{brookId}` | Same — no scroll to the post, comments collapsed, the actual comment is invisible. |
+| Brook reaction | `/brook/{brookId}` | Same — user can't see who reacted to which post. |
+| Group post | `/group/{slug}` | Lands on Posts tab with no scroll/highlight to the new post. |
+| Group comment / reaction | `/group/{slug}` | Same — comment/reaction not visible. |
+| Hosting request | `/hearthsurf` | Generic landing page — user must hunt for the specific incoming request. |
+| Meetup request | `/hearthsurf` | Same problem. |
+| Introduction request | `/the-forest` | Lands on default tab; no scroll/highlight to the specific intro request. |
+| Nearby hometown | `/irl-layer` | World map opens unfocused — the new neighbour isn't shown. |
+| Unread messages | `/messages` | Doesn't open the specific thread. |
+| Reference | `/profile` | Doesn't scroll to or highlight the new reference. |
 
-### New sections to add
+Also: the **content preview** shown in the notification dropdown is the **parent post content** (e.g., "X commented on your post: 'your own post text…'") — so the user sees their own words quoted back at them, not what the other person actually said.
 
-1. **Notifications — Bell, Village & World** (after Messaging section)
-   - Bell: personal/social (friend requests, references, mentions, river replies, brook activity, messages)
-   - Village icon: all group activity (posts, comments, reactions)
-   - World icon: IRL Layer activity (nearby hometowns, hosting/meetup/introduction requests)
-   - "Unread only / All recent" toggle
-   - Forest still surfaces introductions
+And: in "Unread only" view (the default), notifications disappear the moment they're clicked, so if the user's deep link fails them, they can't go back and re-read what it was even about.
 
-2. **The Forest — Friends Hub** (before "References & Trust")
-   - Centralized friends, requests, introductions, blocked users
-   - Ask for Introduction flow, references shown on requests
-   - Single nudge rule
+### Root causes
 
-3. **The Castle** (after Earning Points)
-   - Mysterious teaser; shows progress toward unlock criteria (points, friends, accepted invites)
-   - Reachable from Powers; entry earned over time
+1. **Resolver routes are too coarse** — most types resolve to a parent page URL, not to the entity itself, and target pages don't accept entity query params.
+2. **Content preview = parent content, not the new content** — the resolver fetches and stores the post the comment is *on*, never the comment itself.
+3. **Target pages lack deep-link handlers** — only `TheRiver` reads `?post=`. Brook, Group, HearthSurf, Forest, IRL Layer, Messages, Profile have no equivalent.
+4. **No in-place expansion** — even with deep links, brook/group comments are collapsed by default; users have to click again to see what was said.
 
-4. **NOSTR Identity & Federation** (after Decentralized Media Hosting)
-   - Optional npub stored on profile, nsec in IndexedDB only
-   - Auto-publish public Xcrol entries as kind 1 to default relays
-   - NIP-05 discovery via @username at xcrol.com
-   - Disable cleanly resets local + DB flags
+---
 
-5. **Mini Games** (expand existing Adventure Hub section)
-   - Add Dream Trip (20-step adventure visiting users' hometowns)
-   - Add Rough Living
-   - Keep Every Country & Cure to Loneliness
+### Three options
 
-6. **The River — additions** (update existing section)
-   - Real-time updates with "New post" banner
-   - Threaded replies (3 levels) with emoji reactions
-   - RSS feed integration
-   - Shareable public posts with rich OG previews
+#### Option A — Minimum viable: better previews + show-on-arrival
 
-7. **The Brook — additions** (small update)
-   - Mention NOSTR NIP-17 bridge for Brook participants who opt in
+Lowest risk, highest immediate clarity gain.
 
-8. **Custom Usernames** (small standalone block under Profile)
-   - Immutable lowercase @handles, profile at xcrol.com/@username
+- Change the resolver so `contentPreview` is the **new content** (the reply, comment, or post that triggered the notification) — not the parent post. Show parent context as secondary line where useful (e.g. "replied: '<reply>' on your post '<parent>'").
+- For request-type notifications (hosting/meetup/introduction), include the requester's message snippet as `contentPreview`.
+- Keep current routing, but in "Unread only" view, **don't immediately remove** clicked notifications — fade them to read state for ~10 seconds before hiding. Lets users re-click if the deep link disappoints.
 
-9. **Weekly Digest Email** (under Settings & Notifications)
-   - Opt-in Monday digest of past week's activity
-   - Toggle in Settings → Notifications
+No new query params, no page changes. Just makes the dropdown self-explanatory so the user already knows what happened before they click.
 
-10. **PWA Install** (small mention with link to /install-app)
+#### Option B — Recommended: deep-link every notification type
 
-11. **Data Sovereignty / Export** (small block in Settings section)
-    - Download My Data (GDPR-compliant export)
+Option A **plus** real deep links and scroll/highlight on every target page.
 
-### Sections to update
+Changes per surface:
+- **Brook page** — accept `?post={postId}&comment={commentId}` query params, scroll to the post, auto-expand its comments, and ring-highlight the post or comment.
+- **Group profile** — accept `?post={postId}&comment={commentId}`, force the Posts tab, scroll, expand, highlight.
+- **HearthSurf** — accept `?request={requestId}&type=hosting|meetup`, scroll to and ring-highlight that incoming request card.
+- **The Forest** — accept `?intro={requestId}`, switch to the Introductions tab and highlight.
+- **IRL Layer (world map)** — accept `?focus={profileId}` (or rounded coords), centre the map and open that hometown's profile preview.
+- **Messages** — already supports thread routes; switch the notification's link from `/messages` to `/messages/{threadId}` or the equivalent thread URL.
+- **Profile** — accept `?reference={referenceId}`, scroll to and highlight the references section / specific reference.
 
-- **Friendship Levels**: align labels with current trust tiers (Blood Bound = Family with orange; Wayfarer level for references/meetup access; Shadow Friend wording for Secret Enemy)
-- **Meetups & Hosting**: note Wayfarer+ requirement to send requests; reference the 4 reference types match current system
-- **Quick Navigation Guide**: add THE FOREST, THE CASTLE, MAP, ADVENTURE HUB
-- **Earning Points**: add +1 for brook/group comments per current rules; clarify points unlock The Castle
-- **The Town**: confirm category list and "My Listings" via URL search params still accurate
+Resolver changes:
+- Update `resolveNotifications` to produce these richer routes for each type.
+- Continue to enrich `contentPreview` (Option A behaviour).
 
-### File touched
+This is the version that actually solves "I clicked but don't know what it was."
 
-- `src/pages/GettingStarted.tsx` — add sections, update existing ones, add icons (`Bell`, `Castle`, `Send`, `Mail`, `Download`, `Smartphone`) where needed
+#### Option C — Ambitious: in-place notification preview
 
-### Notes
-- Pure additive content edit; no logic changes
-- Keep the collapsible "deep dive" pattern for any new long sections
-- Maintain existing visual style (gradient cards for highlight sections, plain cards for standard)
+Option B **plus** an inline expand in the dropdown itself. Clicking the notification chevron expands the row to show the full reply/comment/request inline (with reply/accept/dismiss actions) without leaving the page. The bell/village/world dropdown becomes a real activity feed. Clicking the notification body still navigates as in Option B.
 
+Bigger UX lift; uses existing data fetched by the enriched resolver, so cost is mostly in the dropdown component. Best long-term direction but more surface to touch.
+
+---
+
+### Suggested path
+
+Ship **Option B**. It's the proportionate fix: every notification gets a route that lands the user on exactly the thing they were notified about, and the dropdown preview already tells them what happened before they click. Option C can follow later as a polish pass once the deep links exist.
+
+### Files that would change for Option B
+
+- `src/lib/notification-resolver.ts` — richer routes + new-content previews.
+- `src/pages/Brook.tsx`, `src/pages/GroupProfile.tsx`, `src/pages/HearthSurfing.tsx`, `src/pages/TheForest.tsx`, `src/pages/IRLLayer.tsx`, `src/pages/Profile.tsx`, `src/pages/Messages.tsx` — read query params, scroll, highlight, auto-expand.
+- `src/components/BrookComments.tsx`, `src/components/group/GroupPostComments.tsx` — support `defaultExpanded` / target-comment prop.
+- `src/components/notifications/InteractionNotificationItem.tsx` — show new-content preview prominently.
+- `src/hooks/use-notifications.ts` — soft-hide-on-click delay in "Unread only" mode.
+
+No DB migrations needed; everything builds on existing entities and the existing `read_at` flag.
+
+Which option do you want?

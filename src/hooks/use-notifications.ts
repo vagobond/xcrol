@@ -67,6 +67,7 @@ export interface GroupedNotification {
   actors: ActorInfo[];
   count: number;
   contentPreview: string | null;
+  parentSnippet: string | null;
   resolvedRoute: string | null;
   created_at: string;
   label: string;
@@ -252,6 +253,7 @@ export const useNotifications = () => {
       actors: ActorInfo[];
       actorIdSet: Set<string>;
       contentPreview: string | null;
+      parentSnippet: string | null;
       resolvedRoute: string | null;
       created_at: string;
       isRead: boolean;
@@ -279,6 +281,7 @@ export const useNotifications = () => {
         if (n.created_at > existing.created_at) existing.created_at = n.created_at;
         if (!existing.resolvedRoute && resolution?.resolvedRoute) existing.resolvedRoute = resolution.resolvedRoute;
         if (!existing.contentPreview && resolution?.contentPreview) existing.contentPreview = resolution.contentPreview;
+        if (!existing.parentSnippet && resolution?.parentSnippet) existing.parentSnippet = resolution.parentSnippet;
         if (!isRead) existing.isRead = false; // group is unread if any item unread
       } else {
         groupMap.set(groupKey, {
@@ -287,6 +290,7 @@ export const useNotifications = () => {
           actors: [actorInfo],
           actorIdSet: new Set([n.actor_id]),
           contentPreview: resolution?.contentPreview || null,
+          parentSnippet: resolution?.parentSnippet || null,
           resolvedRoute: resolution?.resolvedRoute || null,
           created_at: n.created_at,
           isRead,
@@ -301,6 +305,7 @@ export const useNotifications = () => {
         actors: g.actors,
         count: g.actors.length,
         contentPreview: g.contentPreview,
+        parentSnippet: g.parentSnippet,
         resolvedRoute: g.resolvedRoute,
         created_at: g.created_at,
         label: typeLabels[g.type] || "interacted with your content",
@@ -331,16 +336,15 @@ export const useNotifications = () => {
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
       .in("id", ids);
-    setGroupedNotifications((prev) => {
-      if (viewMode === "all") {
-        // Just mark them read in-place
-        return prev.map((g) =>
-          g.notificationIds.some((id) => ids.includes(id)) ? { ...g, isRead: true } : g
-        );
-      }
-      return prev.filter((g) => !g.notificationIds.some((id) => ids.includes(id)));
-    });
-  }, [viewMode]);
+    // Mark as read in-place. They'll only disappear from the "unread" list on the
+    // next reload (e.g. when the dropdown reopens), so the user can re-tap a
+    // notification they didn't fully process the first time.
+    setGroupedNotifications((prev) =>
+      prev.map((g) =>
+        g.notificationIds.some((id) => ids.includes(id)) ? { ...g, isRead: true } : g
+      )
+    );
+  }, []);
 
   const markAllRead = useCallback(async (types?: readonly string[]) => {
     if (!user) return;

@@ -72,8 +72,13 @@ const InteractionNotificationItem = ({ notification, onMarkRead }: Props) => {
             {notification.label}
           </p>
           {notification.contentPreview && (
-            <p className="text-xs text-muted-foreground mt-0.5 truncate italic">
+            <p className="text-sm text-foreground/90 mt-1 break-words">
               "{notification.contentPreview}"
+            </p>
+          )}
+          {notification.parentSnippet && (
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              on "{notification.parentSnippet}"
             </p>
           )}
           <p className="text-xs text-muted-foreground mt-0.5">

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,9 @@ interface BrookPost {
 
 const Brook = () => {
   const { brookId } = useParams<{ brookId: string }>();
+  const [searchParams] = useSearchParams();
+  const highlightedPostId = searchParams.get("post");
+  const highlightedCommentId = searchParams.get("comment");
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [brook, setBrook] = useState<BrookData | null>(null);
@@ -69,6 +72,18 @@ const Brook = () => {
   const [editingName, setEditingName] = useState(false);
   const [customName, setCustomName] = useState("");
   const [myUsername, setMyUsername] = useState<string | null>(null);
+  const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const hasScrolledRef = useRef(false);
+
+  // Scroll to highlighted post once posts load
+  useEffect(() => {
+    if (!highlightedPostId || hasScrolledRef.current || loading || posts.length === 0) return;
+    const el = postRefs.current.get(highlightedPostId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      hasScrolledRef.current = true;
+    }
+  }, [highlightedPostId, loading, posts]);
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -387,12 +402,22 @@ const Brook = () => {
             </Card>
           ) : (
             posts.map((post) => (
-              <BrookPostCard
+              <div
                 key={post.id}
-                post={post}
-                currentUserId={user?.id || ""}
-                onDelete={handleDeletePost}
-              />
+                ref={(el) => {
+                  if (el) postRefs.current.set(post.id, el);
+                  else postRefs.current.delete(post.id);
+                }}
+                className={highlightedPostId === post.id ? "ring-2 ring-primary rounded-lg transition-all" : ""}
+              >
+                <BrookPostCard
+                  post={post}
+                  currentUserId={user?.id || ""}
+                  onDelete={handleDeletePost}
+                  defaultCommentsOpen={highlightedPostId === post.id && !!highlightedCommentId}
+                  highlightedCommentId={highlightedPostId === post.id ? highlightedCommentId : null}
+                />
+              </div>
             ))
           )}
         </div>

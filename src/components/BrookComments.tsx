@@ -27,9 +27,11 @@ interface Comment {
 interface BrookCommentsProps {
   postId: string;
   currentUserId: string;
+  defaultOpen?: boolean;
+  highlightedCommentId?: string | null;
 }
 
-export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => {
+export const BrookComments = ({ postId, currentUserId, defaultOpen, highlightedCommentId }: BrookCommentsProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentCount, setCommentCount] = useState(0);
   const draftKey = `brook-comment-draft-${postId}`;
@@ -45,7 +47,7 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
       sessionStorage.removeItem(draftKey);
     }
   };
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(!!defaultOpen);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -164,7 +166,12 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
         ) : (
           <>
             {comments.map((comment) => (
-              <div key={comment.id} className="flex gap-2 items-start">
+              <div
+                key={comment.id}
+                className={`flex gap-2 items-start rounded-lg p-1 ${
+                  highlightedCommentId === comment.id ? "ring-2 ring-primary" : ""
+                }`}
+              >
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={comment.author.avatar_url || undefined} />
                   <AvatarFallback className="text-xs">
