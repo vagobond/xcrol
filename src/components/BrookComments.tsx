@@ -166,7 +166,12 @@ export const BrookComments = ({ postId, currentUserId, defaultOpen, highlightedC
         ) : (
           <>
             {comments.map((comment) => (
-              <div key={comment.id} className="flex gap-2 items-start">
+              <div
+                key={comment.id}
+                className={`flex gap-2 items-start rounded-lg p-1 ${
+                  highlightedCommentId === comment.id ? "ring-2 ring-primary" : ""
+                }`}
+              >
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={comment.author.avatar_url || undefined} />
                   <AvatarFallback className="text-xs">
