@@ -402,12 +402,22 @@ const Brook = () => {
             </Card>
           ) : (
             posts.map((post) => (
-              <BrookPostCard
+              <div
                 key={post.id}
-                post={post}
-                currentUserId={user?.id || ""}
-                onDelete={handleDeletePost}
-              />
+                ref={(el) => {
+                  if (el) postRefs.current.set(post.id, el);
+                  else postRefs.current.delete(post.id);
+                }}
+                className={highlightedPostId === post.id ? "ring-2 ring-primary rounded-lg transition-all" : ""}
+              >
+                <BrookPostCard
+                  post={post}
+                  currentUserId={user?.id || ""}
+                  onDelete={handleDeletePost}
+                  defaultCommentsOpen={highlightedPostId === post.id && !!highlightedCommentId}
+                  highlightedCommentId={highlightedPostId === post.id ? highlightedCommentId : null}
+                />
+              </div>
             ))
           )}
         </div>
