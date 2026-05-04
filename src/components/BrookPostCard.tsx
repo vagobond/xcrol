@@ -35,9 +35,11 @@ interface BrookPostCardProps {
   };
   currentUserId: string;
   onDelete?: (postId: string) => void;
+  defaultCommentsOpen?: boolean;
+  highlightedCommentId?: string | null;
 }
 
-export const BrookPostCard = ({ post, currentUserId, onDelete }: BrookPostCardProps) => {
+export const BrookPostCard = ({ post, currentUserId, onDelete, defaultCommentsOpen, highlightedCommentId }: BrookPostCardProps) => {
   const isOwn = post.user_id === currentUserId;
 
   return (
