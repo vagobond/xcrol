@@ -124,7 +124,7 @@ export const BrookPostCard = ({ post, currentUserId, onDelete, defaultCommentsOp
 
             <div className="mt-3 space-y-2">
               <BrookReactions postId={post.id} currentUserId={currentUserId} />
-              <BrookComments postId={post.id} currentUserId={currentUserId} />
+              <BrookComments postId={post.id} currentUserId={currentUserId} defaultOpen={defaultCommentsOpen} highlightedCommentId={highlightedCommentId} />
             </div>
           </div>
         </div>

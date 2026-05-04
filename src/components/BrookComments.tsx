@@ -27,9 +27,11 @@ interface Comment {
 interface BrookCommentsProps {
   postId: string;
   currentUserId: string;
+  defaultOpen?: boolean;
+  highlightedCommentId?: string | null;
 }
 
-export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => {
+export const BrookComments = ({ postId, currentUserId, defaultOpen, highlightedCommentId }: BrookCommentsProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentCount, setCommentCount] = useState(0);
   const draftKey = `brook-comment-draft-${postId}`;
@@ -45,7 +47,7 @@ export const BrookComments = ({ postId, currentUserId }: BrookCommentsProps) => 
       sessionStorage.removeItem(draftKey);
     }
   };
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(!!defaultOpen);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
