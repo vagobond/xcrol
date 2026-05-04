@@ -253,6 +253,7 @@ export const useNotifications = () => {
       actors: ActorInfo[];
       actorIdSet: Set<string>;
       contentPreview: string | null;
+      parentSnippet: string | null;
       resolvedRoute: string | null;
       created_at: string;
       isRead: boolean;
@@ -280,6 +281,7 @@ export const useNotifications = () => {
         if (n.created_at > existing.created_at) existing.created_at = n.created_at;
         if (!existing.resolvedRoute && resolution?.resolvedRoute) existing.resolvedRoute = resolution.resolvedRoute;
         if (!existing.contentPreview && resolution?.contentPreview) existing.contentPreview = resolution.contentPreview;
+        if (!existing.parentSnippet && resolution?.parentSnippet) existing.parentSnippet = resolution.parentSnippet;
         if (!isRead) existing.isRead = false; // group is unread if any item unread
       } else {
         groupMap.set(groupKey, {
@@ -288,6 +290,7 @@ export const useNotifications = () => {
           actors: [actorInfo],
           actorIdSet: new Set([n.actor_id]),
           contentPreview: resolution?.contentPreview || null,
+          parentSnippet: resolution?.parentSnippet || null,
           resolvedRoute: resolution?.resolvedRoute || null,
           created_at: n.created_at,
           isRead,
@@ -302,6 +305,7 @@ export const useNotifications = () => {
         actors: g.actors,
         count: g.actors.length,
         contentPreview: g.contentPreview,
+        parentSnippet: g.parentSnippet,
         resolvedRoute: g.resolvedRoute,
         created_at: g.created_at,
         label: typeLabels[g.type] || "interacted with your content",
