@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -25,6 +25,9 @@ import GroupSettingsTab from "@/components/group/GroupSettingsTab";
 
 const GroupProfile = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
+  const focusPostId = searchParams.get("post");
+  const focusCommentId = searchParams.get("comment");
   const { user } = useAuth();
   const { data: group, isLoading } = useGroupBySlug(slug);
   const { data: members } = useGroupMembers(group?.id);
@@ -137,6 +140,8 @@ const GroupProfile = () => {
               onDeletePost={(postId) => deletePost.mutate({ postId, groupId: group.id })}
               createPending={createPost.isPending}
               lastVisitedAt={lastVisitedAt}
+              focusPostId={focusPostId}
+              focusCommentId={focusCommentId}
             />
           </TabsContent>
 

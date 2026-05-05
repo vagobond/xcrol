@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { MessageSquare, Send, ChevronDown, ChevronUp } from "lucide-react";
@@ -25,15 +25,30 @@ interface GroupPostCommentsProps {
   postId: string;
   currentUserId: string | null;
   lastVisitedAt?: string | null;
+  focusCommentId?: string | null;
 }
 
-export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt }: GroupPostCommentsProps) => {
+export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusCommentId }: GroupPostCommentsProps) => {
   const navigate = useNavigate();
   const [comments, setComments] = useState<Comment[]>([]);
   const [showInput, setShowInput] = useState(false);
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const focusedCommentRef = useRef<HTMLDivElement | null>(null);
+  const [highlightOn, setHighlightOn] = useState(false);
+
+  // Auto-expand and scroll to a focused comment when present
+  useEffect(() => {
+    if (!focusCommentId || !comments.some((c) => c.id === focusCommentId)) return;
+    setExpanded(true);
+    const t = setTimeout(() => {
+      focusedCommentRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightOn(true);
+      setTimeout(() => setHighlightOn(false), 3000);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [focusCommentId, comments]);
 
   const loadComments = useCallback(async () => {
     try {
@@ -169,8 +184,14 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt }: Grou
 
       {visible.length > 0 && (
         <div className="space-y-2">
-          {visible.map((comment) => (
-            <div key={comment.id} className="flex gap-2 group">
+          {visible.map((comment) => {
+            const isFocused = comment.id === focusCommentId;
+            return (
+            <div
+              key={comment.id}
+              ref={isFocused ? focusedCommentRef : undefined}
+              className={`flex gap-2 group rounded-lg transition-all ${isFocused && highlightOn ? "ring-2 ring-primary p-1 -m-1" : ""}`}
+            >
               <Avatar
                 className="h-7 w-7 cursor-pointer hover:ring-2 hover:ring-primary transition-all shrink-0 mt-0.5"
                 onClick={() => handleAuthorClick(comment)}
@@ -216,7 +237,8 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt }: Grou
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
 
           {hasMore && (
             <Button

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,12 +22,26 @@ interface GroupPostsTabProps {
   onDeletePost: (postId: string) => void;
   createPending: boolean;
   lastVisitedAt?: string | null;
+  focusPostId?: string | null;
+  focusCommentId?: string | null;
 }
 
-const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, createPending, lastVisitedAt }: GroupPostsTabProps) => {
+const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, createPending, lastVisitedAt, focusPostId, focusCommentId }: GroupPostsTabProps) => {
   const navigate = useNavigate();
   const [postContent, setPostContent] = useState("");
   const [postLink, setPostLink] = useState("");
+  const focusedRef = useRef<HTMLDivElement | null>(null);
+  const [highlightOn, setHighlightOn] = useState(false);
+
+  useEffect(() => {
+    if (!focusPostId || !posts?.some((p) => p.id === focusPostId)) return;
+    const t = setTimeout(() => {
+      focusedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightOn(true);
+      setTimeout(() => setHighlightOn(false), 3000);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [focusPostId, posts]);
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,8 +79,14 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
         </CardContent>
       </Card>
 
-      {posts?.map((post) => (
-        <Card key={post.id} className="hover:bg-accent/50 transition-colors">
+      {posts?.map((post) => {
+        const isFocused = post.id === focusPostId;
+        return (
+        <Card
+          key={post.id}
+          ref={isFocused ? focusedRef : undefined}
+          className={`hover:bg-accent/50 transition-all ${isFocused && highlightOn ? "ring-2 ring-primary" : ""}`}
+        >
           <CardContent className="pt-4">
             <div className="flex items-start gap-3">
               <Avatar
@@ -132,12 +152,18 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
                 </div>
 
                 {/* Threaded Comments */}
-                <GroupPostComments postId={post.id} currentUserId={userId ?? null} lastVisitedAt={lastVisitedAt} />
+                <GroupPostComments
+                  postId={post.id}
+                  currentUserId={userId ?? null}
+                  lastVisitedAt={lastVisitedAt}
+                  focusCommentId={isFocused ? focusCommentId ?? null : null}
+                />
               </div>
             </div>
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
 
       {(!posts || posts.length === 0) && (
         <p className="text-center text-muted-foreground py-8">No posts yet. Be the first to share!</p>
