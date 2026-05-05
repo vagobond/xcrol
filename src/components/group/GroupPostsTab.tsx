@@ -152,12 +152,18 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
                 </div>
 
                 {/* Threaded Comments */}
-                <GroupPostComments postId={post.id} currentUserId={userId ?? null} lastVisitedAt={lastVisitedAt} />
+                <GroupPostComments
+                  postId={post.id}
+                  currentUserId={userId ?? null}
+                  lastVisitedAt={lastVisitedAt}
+                  focusCommentId={isFocused ? focusCommentId ?? null : null}
+                />
               </div>
             </div>
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
 
       {(!posts || posts.length === 0) && (
         <p className="text-center text-muted-foreground py-8">No posts yet. Be the first to share!</p>
