@@ -79,8 +79,14 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
         </CardContent>
       </Card>
 
-      {posts?.map((post) => (
-        <Card key={post.id} className="hover:bg-accent/50 transition-colors">
+      {posts?.map((post) => {
+        const isFocused = post.id === focusPostId;
+        return (
+        <Card
+          key={post.id}
+          ref={isFocused ? focusedRef : undefined}
+          className={`hover:bg-accent/50 transition-all ${isFocused && highlightOn ? "ring-2 ring-primary" : ""}`}
+        >
           <CardContent className="pt-4">
             <div className="flex items-start gap-3">
               <Avatar
