@@ -140,6 +140,8 @@ const GroupProfile = () => {
               onDeletePost={(postId) => deletePost.mutate({ postId, groupId: group.id })}
               createPending={createPost.isPending}
               lastVisitedAt={lastVisitedAt}
+              focusPostId={focusPostId}
+              focusCommentId={focusCommentId}
             />
           </TabsContent>
 
