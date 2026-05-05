@@ -22,12 +22,26 @@ interface GroupPostsTabProps {
   onDeletePost: (postId: string) => void;
   createPending: boolean;
   lastVisitedAt?: string | null;
+  focusPostId?: string | null;
+  focusCommentId?: string | null;
 }
 
-const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, createPending, lastVisitedAt }: GroupPostsTabProps) => {
+const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, createPending, lastVisitedAt, focusPostId, focusCommentId }: GroupPostsTabProps) => {
   const navigate = useNavigate();
   const [postContent, setPostContent] = useState("");
   const [postLink, setPostLink] = useState("");
+  const focusedRef = useRef<HTMLDivElement | null>(null);
+  const [highlightOn, setHighlightOn] = useState(false);
+
+  useEffect(() => {
+    if (!focusPostId || !posts?.some((p) => p.id === focusPostId)) return;
+    const t = setTimeout(() => {
+      focusedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightOn(true);
+      setTimeout(() => setHighlightOn(false), 3000);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [focusPostId, posts]);
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
