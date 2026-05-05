@@ -237,7 +237,8 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
 
           {hasMore && (
             <Button
