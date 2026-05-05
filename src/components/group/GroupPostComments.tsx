@@ -184,8 +184,14 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
 
       {visible.length > 0 && (
         <div className="space-y-2">
-          {visible.map((comment) => (
-            <div key={comment.id} className="flex gap-2 group">
+          {visible.map((comment) => {
+            const isFocused = comment.id === focusCommentId;
+            return (
+            <div
+              key={comment.id}
+              ref={isFocused ? focusedCommentRef : undefined}
+              className={`flex gap-2 group rounded-lg transition-all ${isFocused && highlightOn ? "ring-2 ring-primary p-1 -m-1" : ""}`}
+            >
               <Avatar
                 className="h-7 w-7 cursor-pointer hover:ring-2 hover:ring-primary transition-all shrink-0 mt-0.5"
                 onClick={() => handleAuthorClick(comment)}
