@@ -1,88 +1,63 @@
-## Notification Flow — Weaknesses & Fix Options
+## Why the Village reply notification "disappeared"
 
-### What's broken today
+Two compounding bugs make a Village reply effectively invisible after clicking the notification:
 
-When a user clicks a notification, they land on a page but often can't tell **what** the notification was actually about. Here's where each notification type lands and why it's unsatisfying:
+1. **`GroupProfile` ignores deep-link params.** The notification resolver already builds a rich URL like `/group/{slug}?post={postId}&comment={commentId}`, but `src/pages/GroupProfile.tsx` never reads `useSearchParams`. It just renders the Posts tab with the default 2-comment collapse. If the new comment is the 3rd+ on a post, it stays hidden behind "Show N more comments" and there is no scroll or highlight, so the user sees nothing changed.
 
-| Notification | Currently routes to | Problem |
-|---|---|---|
-| River reply / reply-to-reply | `/the-river?post={entryId}` | Scrolls to and ring-highlights the entry, but **doesn't open or scroll to the actual reply** the user was notified about. |
-| Brook post | `/brook/{brookId}` | Drops user at top of brook with no scroll/highlight to the new post. |
-| Brook comment | `/brook/{brookId}` | Same — no scroll to the post, comments collapsed, the actual comment is invisible. |
-| Brook reaction | `/brook/{brookId}` | Same — user can't see who reacted to which post. |
-| Group post | `/group/{slug}` | Lands on Posts tab with no scroll/highlight to the new post. |
-| Group comment / reaction | `/group/{slug}` | Same — comment/reaction not visible. |
-| Hosting request | `/hearthsurf` | Generic landing page — user must hunt for the specific incoming request. |
-| Meetup request | `/hearthsurf` | Same problem. |
-| Introduction request | `/the-forest` | Lands on default tab; no scroll/highlight to the specific intro request. |
-| Nearby hometown | `/irl-layer` | World map opens unfocused — the new neighbour isn't shown. |
-| Unread messages | `/messages` | Doesn't open the specific thread. |
-| Reference | `/profile` | Doesn't scroll to or highlight the new reference. |
+2. **`TheVillage` page bulk-clears every group's `last_visited_at`.** The effect in `src/pages/TheVillage.tsx` runs on every mount and updates `last_visited_at = now()` for **all** active memberships. So if the user opens The Village (or it's preloaded) before entering the group, every per-post "New" badge inside the group is wiped out. Combined with bug #1, the reply has no visual marker anywhere.
 
-Also: the **content preview** shown in the notification dropdown is the **parent post content** (e.g., "X commented on your post: 'your own post text…'") — so the user sees their own words quoted back at them, not what the other person actually said.
+A third minor issue: clicking through from the dropdown lands on the Posts tab, but the "new" badge on the parent comment count (in `GroupPostComments`) only counts comments newer than the captured `lastVisitedAt`. Once #2 is fixed it works, but we should also make sure the targeted comment is always rendered regardless of the collapse state.
 
-And: in "Unread only" view (the default), notifications disappear the moment they're clicked, so if the user's deep link fails them, they can't go back and re-read what it was even about.
+## Fix
 
-### Root causes
+### 1. Stop bulk-clearing village badges from the list page
+File: `src/pages/TheVillage.tsx`
 
-1. **Resolver routes are too coarse** — most types resolve to a parent page URL, not to the entity itself, and target pages don't accept entity query params.
-2. **Content preview = parent content, not the new content** — the resolver fetches and stores the post the comment is *on*, never the comment itself.
-3. **Target pages lack deep-link handlers** — only `TheRiver` reads `?post=`. Brook, Group, HearthSurf, Forest, IRL Layer, Messages, Profile have no equivalent.
-4. **No in-place expansion** — even with deep links, brook/group comments are collapsed by default; users have to click again to see what was said.
+Remove the `useEffect` that updates `last_visited_at` for every membership. The village badge in the header should clear based on **visiting individual groups**, not on opening the index. The `useGroupActivity` hook already derives the per-group counts from each membership's `last_visited_at`, and `GroupProfile` already updates its own row on visit — that's the correct source of truth.
 
----
+If we still want the global village bell to clear when the list is opened, do it client-side only: dispatch the existing `village-visited` event so the header badge hides locally, but do **not** write to the DB. Per-group "New" markers then survive until the user actually opens that group.
 
-### Three options
+### 2. Make `GroupProfile` deep-link aware
+File: `src/pages/GroupProfile.tsx`
 
-#### Option A — Minimum viable: better previews + show-on-arrival
+- Read `useSearchParams()` and pull `post` and `comment`.
+- Pass them down to `GroupPostsTab` as `focusPostId` / `focusCommentId` props.
+- Force the `Tabs` `defaultValue` to `"posts"` whenever a `post` param is present (already the default, but keep explicit).
 
-Lowest risk, highest immediate clarity gain.
+File: `src/components/group/GroupPostsTab.tsx`
 
-- Change the resolver so `contentPreview` is the **new content** (the reply, comment, or post that triggered the notification) — not the parent post. Show parent context as secondary line where useful (e.g. "replied: '<reply>' on your post '<parent>'").
-- For request-type notifications (hosting/meetup/introduction), include the requester's message snippet as `contentPreview`.
-- Keep current routing, but in "Unread only" view, **don't immediately remove** clicked notifications — fade them to read state for ~10 seconds before hiding. Lets users re-click if the deep link disappoints.
+- Accept the two new props and pass them to `GroupPostComments` for the matching post.
+- For the focused post: add a `ref`, scroll into view on mount, and apply a temporary `ring-2 ring-primary` highlight that fades after ~3s.
 
-No new query params, no page changes. Just makes the dropdown self-explanatory so the user already knows what happened before they click.
+File: `src/components/group/GroupPostComments.tsx`
 
-#### Option B — Recommended: deep-link every notification type
+- Accept `focusCommentId` prop.
+- On load, if the focused comment exists in the loaded list:
+  - Force `expanded = true` so the full thread renders (bypass the 2-comment collapse).
+  - Scroll the comment's row into view and apply the same temporary primary ring highlight.
+- If the focused comment isn't in the initial fetch (e.g., very recent), keep the existing query — `loadComments` already pulls all comments for the post, so this should be sufficient.
 
-Option A **plus** real deep links and scroll/highlight on every target page.
+### 3. Resolver: keep route shape, no change needed
+`src/lib/notification-resolver.ts` already emits `?post=…&comment=…` for `group_comment`/`group_comment_reaction` — leave as-is.
 
-Changes per surface:
-- **Brook page** — accept `?post={postId}&comment={commentId}` query params, scroll to the post, auto-expand its comments, and ring-highlight the post or comment.
-- **Group profile** — accept `?post={postId}&comment={commentId}`, force the Posts tab, scroll, expand, highlight.
-- **HearthSurf** — accept `?request={requestId}&type=hosting|meetup`, scroll to and ring-highlight that incoming request card.
-- **The Forest** — accept `?intro={requestId}`, switch to the Introductions tab and highlight.
-- **IRL Layer (world map)** — accept `?focus={profileId}` (or rounded coords), centre the map and open that hometown's profile preview.
-- **Messages** — already supports thread routes; switch the notification's link from `/messages` to `/messages/{threadId}` or the equivalent thread URL.
-- **Profile** — accept `?reference={referenceId}`, scroll to and highlight the references section / specific reference.
+### 4. Optional polish (small, additive)
 
-Resolver changes:
-- Update `resolveNotifications` to produce these richer routes for each type.
-- Continue to enrich `contentPreview` (Option A behaviour).
+- In `GroupPostComments`, when a `focusCommentId` is passed, auto-show the input area off (don't open the textarea) but ensure the "X new" badge logic still applies relative to `lastVisitedAt`.
+- In `InteractionNotificationItem`, no changes needed; the contentPreview already shows the reply text.
 
-This is the version that actually solves "I clicked but don't know what it was."
+## Files touched
 
-#### Option C — Ambitious: in-place notification preview
+- `src/pages/TheVillage.tsx` — remove DB bulk update, keep client-side event dispatch
+- `src/pages/GroupProfile.tsx` — read `post`/`comment` from URL, pass down
+- `src/components/group/GroupPostsTab.tsx` — accept focus props, scroll+highlight target post
+- `src/components/group/GroupPostComments.tsx` — accept focus prop, force-expand and scroll+highlight target comment
 
-Option B **plus** an inline expand in the dropdown itself. Clicking the notification chevron expands the row to show the full reply/comment/request inline (with reply/accept/dismiss actions) without leaving the page. The bell/village/world dropdown becomes a real activity feed. Clicking the notification body still navigates as in Option B.
+No DB migrations, no schema changes, no resolver changes.
 
-Bigger UX lift; uses existing data fetched by the enriched resolver, so cost is mostly in the dropdown component. Best long-term direction but more surface to touch.
+## Result
 
----
-
-### Suggested path
-
-Ship **Option B**. It's the proportionate fix: every notification gets a route that lands the user on exactly the thing they were notified about, and the dropdown preview already tells them what happened before they click. Option C can follow later as a polish pass once the deep links exist.
-
-### Files that would change for Option B
-
-- `src/lib/notification-resolver.ts` — richer routes + new-content previews.
-- `src/pages/Brook.tsx`, `src/pages/GroupProfile.tsx`, `src/pages/HearthSurfing.tsx`, `src/pages/TheForest.tsx`, `src/pages/IRLLayer.tsx`, `src/pages/Profile.tsx`, `src/pages/Messages.tsx` — read query params, scroll, highlight, auto-expand.
-- `src/components/BrookComments.tsx`, `src/components/group/GroupPostComments.tsx` — support `defaultExpanded` / target-comment prop.
-- `src/components/notifications/InteractionNotificationItem.tsx` — show new-content preview prominently.
-- `src/hooks/use-notifications.ts` — soft-hide-on-click delay in "Unread only" mode.
-
-No DB migrations needed; everything builds on existing entities and the existing `read_at` flag.
-
-Which option do you want?
+Clicking a Village reply notification:
+- Lands on the correct group, Posts tab.
+- Scrolls to the parent post, highlights it briefly.
+- Auto-expands the comment thread and highlights the new reply.
+- The "X new" badge on the comments count still appears, since `last_visited_at` is no longer prematurely cleared by visiting `/the-village`.

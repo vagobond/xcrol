@@ -24,17 +24,12 @@ const TheVillage = () => {
   const memberGroupIds = useMemo(() => myGroups.map((g) => g.id), [myGroups]);
   const activityCounts = useGroupActivity(memberGroupIds);
 
-  // Bulk-clear village badge by updating last_visited_at for all memberships
+  // Clear the header village badge locally on visit, but DO NOT touch
+  // per-group last_visited_at — that's updated only when the user actually
+  // opens an individual group, so per-post "New" markers survive.
   useEffect(() => {
     if (!user?.id) return;
-    supabase
-      .from("group_members")
-      .update({ last_visited_at: new Date().toISOString() })
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .then(() => {
-        window.dispatchEvent(new Event("village-visited"));
-      });
+    window.dispatchEvent(new Event("village-visited"));
   }, [user?.id]);
 
   return (
