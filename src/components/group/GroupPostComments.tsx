@@ -25,15 +25,30 @@ interface GroupPostCommentsProps {
   postId: string;
   currentUserId: string | null;
   lastVisitedAt?: string | null;
+  focusCommentId?: string | null;
 }
 
-export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt }: GroupPostCommentsProps) => {
+export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusCommentId }: GroupPostCommentsProps) => {
   const navigate = useNavigate();
   const [comments, setComments] = useState<Comment[]>([]);
   const [showInput, setShowInput] = useState(false);
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const focusedCommentRef = useRef<HTMLDivElement | null>(null);
+  const [highlightOn, setHighlightOn] = useState(false);
+
+  // Auto-expand and scroll to a focused comment when present
+  useEffect(() => {
+    if (!focusCommentId || !comments.some((c) => c.id === focusCommentId)) return;
+    setExpanded(true);
+    const t = setTimeout(() => {
+      focusedCommentRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightOn(true);
+      setTimeout(() => setHighlightOn(false), 3000);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [focusCommentId, comments]);
 
   const loadComments = useCallback(async () => {
     try {
