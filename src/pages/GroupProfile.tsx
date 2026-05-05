@@ -25,6 +25,9 @@ import GroupSettingsTab from "@/components/group/GroupSettingsTab";
 
 const GroupProfile = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
+  const focusPostId = searchParams.get("post");
+  const focusCommentId = searchParams.get("comment");
   const { user } = useAuth();
   const { data: group, isLoading } = useGroupBySlug(slug);
   const { data: members } = useGroupMembers(group?.id);
