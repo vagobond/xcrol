@@ -385,6 +385,13 @@ export const useNotifications = () => {
     const touchedVillage = targetGroups.some((g) =>
       (VILLAGE_TYPES as readonly string[]).includes(g.type)
     );
+    const touchedVillageGroupIds = [
+      ...new Set(
+        targetGroups
+          .filter((g) => (VILLAGE_TYPES as readonly string[]).includes(g.type) && g.groupId)
+          .map((g) => g.groupId as string)
+      ),
+    ];
     await supabase
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
@@ -398,6 +405,14 @@ export const useNotifications = () => {
       return prev.filter((g) => !targetIds.some((id) => g.notificationIds.includes(id)));
     });
     if (touchedVillage) {
+      if (touchedVillageGroupIds.length > 0) {
+        await supabase
+          .from("group_members")
+          .update({ last_visited_at: new Date().toISOString() })
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .in("group_id", touchedVillageGroupIds);
+      }
       window.dispatchEvent(new Event("village-visited"));
     }
   }, [user, groupedNotifications, viewMode]);
