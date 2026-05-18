@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   useGroupBySlug,
@@ -71,6 +72,11 @@ const GroupProfile = () => {
         .eq("group_id", group.id)
         .eq("user_id", user.id)
         .eq("status", "active");
+
+      // Tell the Village activity hook to recompute so the header badge clears
+      if (!cancelled) {
+        window.dispatchEvent(new Event("village-visited"));
+      }
     };
 
     recordVisit();
@@ -106,6 +112,18 @@ const GroupProfile = () => {
         <title>{group.name} | The Village | Xcrol</title>
         <meta name="description" content={group.description ?? `${group.name} group`} />
       </Helmet>
+
+      <Button
+        asChild
+        variant="ghost"
+        size="sm"
+        className="mb-2 -ml-2 text-muted-foreground hover:text-foreground"
+      >
+        <Link to="/the-village">
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back to The Village
+        </Link>
+      </Button>
 
       <GroupHeader
         group={group}
