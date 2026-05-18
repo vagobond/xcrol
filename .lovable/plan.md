@@ -1,4 +1,8 @@
-## Two small fixes
+## Two small fixes — implemented and diagnosed
+
+**Status:** Implemented in code. The reason this looked stuck is that the previous pass only made the group page dispatch a refresh event and marked notifications as read; it did not update `group_members.last_visited_at` when Village notifications were marked read from the dropdown. Since the Village icon uses `Math.max(villageBadgeCount, villageActivityCount)`, the activity half of the badge could still stay red even after notification rows were read.
+
+**Additional fix now applied:** Village notification resolution now carries `groupId`, and `markInteractionRead` / `markAllRead` update the touched groups' `last_visited_at` before dispatching `village-visited`.
 
 ### 1) No back button from a group (e.g. The Inn) to The Village
 
