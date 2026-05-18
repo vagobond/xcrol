@@ -306,6 +306,7 @@ export const useNotifications = () => {
       .map((g) => ({
         notificationIds: g.notificationIds,
         type: g.type,
+        groupId: g.groupId,
         actors: g.actors,
         count: g.actors.length,
         contentPreview: g.contentPreview,
@@ -336,6 +337,15 @@ export const useNotifications = () => {
 
   const markInteractionRead = useCallback(async (notifIds: string | string[]) => {
     const ids = Array.isArray(notifIds) ? notifIds : [notifIds];
+    const touchedVillageGroupIds = new Set(
+      groupedNotifications
+        .filter((g) =>
+          g.notificationIds.some((id) => ids.includes(id)) &&
+          (VILLAGE_TYPES as readonly string[]).includes(g.type) &&
+          g.groupId
+        )
+        .map((g) => g.groupId as string)
+    );
     await supabase
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
@@ -354,9 +364,17 @@ export const useNotifications = () => {
       })
     );
     if (touchedVillage) {
+      if (user && touchedVillageGroupIds.size > 0) {
+        await supabase
+          .from("group_members")
+          .update({ last_visited_at: new Date().toISOString() })
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .in("group_id", Array.from(touchedVillageGroupIds));
+      }
       window.dispatchEvent(new Event("village-visited"));
     }
-  }, []);
+  }, [groupedNotifications, user]);
 
   const markAllRead = useCallback(async (types?: readonly string[]) => {
     if (!user) return;
