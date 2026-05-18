@@ -339,11 +339,19 @@ export const useNotifications = () => {
     // Mark as read in-place. They'll only disappear from the "unread" list on the
     // next reload (e.g. when the dropdown reopens), so the user can re-tap a
     // notification they didn't fully process the first time.
+    let touchedVillage = false;
     setGroupedNotifications((prev) =>
-      prev.map((g) =>
-        g.notificationIds.some((id) => ids.includes(id)) ? { ...g, isRead: true } : g
-      )
+      prev.map((g) => {
+        if (g.notificationIds.some((id) => ids.includes(id))) {
+          if ((VILLAGE_TYPES as readonly string[]).includes(g.type)) touchedVillage = true;
+          return { ...g, isRead: true };
+        }
+        return g;
+      })
     );
+    if (touchedVillage) {
+      window.dispatchEvent(new Event("village-visited"));
+    }
   }, []);
 
   const markAllRead = useCallback(async (types?: readonly string[]) => {
