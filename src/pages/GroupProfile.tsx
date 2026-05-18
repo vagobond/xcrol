@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Loader2, Users } from "lucide-react";
 import GroupHeader from "@/components/group/GroupHeader";
 import GroupPostsTab from "@/components/group/GroupPostsTab";
