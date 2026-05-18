@@ -107,6 +107,7 @@ const App = () => (
             <AppHeader />
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
+              <main>
               <Routes>
                 <Route path="/" element={<Welcome />} />
                 <Route path="/powers" element={<ProtectedRoute><Powers /></ProtectedRoute>} />
@@ -147,6 +148,7 @@ const App = () => (
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </main>
             </Suspense>
             </ErrorBoundary>
           </TutorialProvider>
