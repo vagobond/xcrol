@@ -65,7 +65,9 @@ const PublicProfile = () => {
     );
   }
 
-  const profileUrl = typeof window !== "undefined" ? window.location.href : "";
+  const canonicalUrl = username
+    ? `https://xcrol.com/${username.replace(/^@/, "")}`
+    : `https://xcrol.com/u/${resolvedUserId ?? ""}`;
   const metaDescription = profile.bio
     ? profile.bio.slice(0, 155) + (profile.bio.length > 155 ? "..." : "")
     : `View ${displayName}'s profile on XCROL`;
@@ -75,16 +77,29 @@ const PublicProfile = () => {
       <Helmet>
         <title>{displayName} | XCROL</title>
         <meta name="description" content={metaDescription} />
+        <link rel="canonical" href={canonicalUrl} />
         <meta property="og:type" content="profile" />
         <meta property="og:title" content={`${displayName} | XCROL`} />
         <meta property="og:description" content={metaDescription} />
-        <meta property="og:url" content={profileUrl} />
+        <meta property="og:url" content={canonicalUrl} />
         {profile.avatar_url && <meta property="og:image" content={profile.avatar_url} />}
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content={`${displayName} | XCROL`} />
         <meta name="twitter:description" content={metaDescription} />
         {profile.avatar_url && <meta name="twitter:image" content={profile.avatar_url} />}
         {hometown && <meta property="profile:hometown" content={hometown} />}
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "ProfilePage",
+          "url": canonicalUrl,
+          "mainEntity": {
+            "@type": "Person",
+            "name": displayName,
+            ...(profile.bio ? { "description": profile.bio } : {}),
+            ...(profile.avatar_url ? { "image": profile.avatar_url } : {}),
+            ...(hometown ? { "homeLocation": { "@type": "Place", "name": hometown } } : {}),
+          },
+        })}</script>
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4 pt-20">

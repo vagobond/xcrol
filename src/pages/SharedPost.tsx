@@ -102,11 +102,26 @@ const SharedPost = () => {
       <Helmet>
         <title>{`${displayName} on XCROL`}</title>
         <meta name="description" content={entry.content.slice(0, 155)} />
+        <link rel="canonical" href={`https://xcrol.com/post/${entry.id}`} />
         <meta property="og:title" content={`${displayName} on XCROL`} />
         <meta property="og:description" content={entry.content.slice(0, 155)} />
         <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://xcrol.com/post/${entry.id}`} />
         {author.avatar_url && <meta property="og:image" content={author.avatar_url} />}
         <meta name="twitter:card" content="summary" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SocialMediaPosting",
+          "headline": entry.content.slice(0, 110),
+          "articleBody": entry.content,
+          "datePublished": entry.entry_date,
+          "url": `https://xcrol.com/post/${entry.id}`,
+          "author": {
+            "@type": "Person",
+            "name": displayName,
+            ...(author.username ? { "url": `https://xcrol.com/${author.username}` } : {}),
+          },
+        })}</script>
       </Helmet>
 
       <div className="max-w-xl mx-auto space-y-6">

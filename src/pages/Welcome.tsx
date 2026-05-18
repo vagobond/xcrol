@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
@@ -51,6 +52,9 @@ const Welcome = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 overflow-hidden relative">
+      <Helmet>
+        <link rel="canonical" href="https://xcrol.com/" />
+      </Helmet>
       
       <div className="text-center space-y-12 relative w-full h-full">
         {/* GIF Animation - Full Page */}
