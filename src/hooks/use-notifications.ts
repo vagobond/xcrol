@@ -339,19 +339,30 @@ export const useNotifications = () => {
     // Mark as read in-place. They'll only disappear from the "unread" list on the
     // next reload (e.g. when the dropdown reopens), so the user can re-tap a
     // notification they didn't fully process the first time.
+    let touchedVillage = false;
     setGroupedNotifications((prev) =>
-      prev.map((g) =>
-        g.notificationIds.some((id) => ids.includes(id)) ? { ...g, isRead: true } : g
-      )
+      prev.map((g) => {
+        if (g.notificationIds.some((id) => ids.includes(id))) {
+          if ((VILLAGE_TYPES as readonly string[]).includes(g.type)) touchedVillage = true;
+          return { ...g, isRead: true };
+        }
+        return g;
+      })
     );
+    if (touchedVillage) {
+      window.dispatchEvent(new Event("village-visited"));
+    }
   }, []);
 
   const markAllRead = useCallback(async (types?: readonly string[]) => {
     if (!user) return;
-    const targetIds = groupedNotifications
-      .filter((g) => !g.isRead && (!types || (types as readonly string[]).includes(g.type)))
-      .flatMap((g) => g.notificationIds);
+    const targetGroups = groupedNotifications
+      .filter((g) => !g.isRead && (!types || (types as readonly string[]).includes(g.type)));
+    const targetIds = targetGroups.flatMap((g) => g.notificationIds);
     if (targetIds.length === 0) return;
+    const touchedVillage = targetGroups.some((g) =>
+      (VILLAGE_TYPES as readonly string[]).includes(g.type)
+    );
     await supabase
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
@@ -364,6 +375,9 @@ export const useNotifications = () => {
       }
       return prev.filter((g) => !targetIds.some((id) => g.notificationIds.includes(id)));
     });
+    if (touchedVillage) {
+      window.dispatchEvent(new Event("village-visited"));
+    }
   }, [user, groupedNotifications, viewMode]);
 
   // Partition by stream
