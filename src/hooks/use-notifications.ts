@@ -64,6 +64,7 @@ export interface ActorInfo {
 export interface GroupedNotification {
   notificationIds: string[];
   type: string;
+  groupId?: string | null;
   actors: ActorInfo[];
   count: number;
   contentPreview: string | null;
@@ -250,6 +251,7 @@ export const useNotifications = () => {
     const groupMap = new Map<string, {
       notificationIds: string[];
       type: string;
+      groupId?: string | null;
       actors: ActorInfo[];
       actorIdSet: Set<string>;
       contentPreview: string | null;
@@ -280,6 +282,7 @@ export const useNotifications = () => {
         }
         if (n.created_at > existing.created_at) existing.created_at = n.created_at;
         if (!existing.resolvedRoute && resolution?.resolvedRoute) existing.resolvedRoute = resolution.resolvedRoute;
+        if (!existing.groupId && resolution?.groupId) existing.groupId = resolution.groupId;
         if (!existing.contentPreview && resolution?.contentPreview) existing.contentPreview = resolution.contentPreview;
         if (!existing.parentSnippet && resolution?.parentSnippet) existing.parentSnippet = resolution.parentSnippet;
         if (!isRead) existing.isRead = false; // group is unread if any item unread
@@ -289,6 +292,7 @@ export const useNotifications = () => {
           type: n.type,
           actors: [actorInfo],
           actorIdSet: new Set([n.actor_id]),
+          groupId: resolution?.groupId || null,
           contentPreview: resolution?.contentPreview || null,
           parentSnippet: resolution?.parentSnippet || null,
           resolvedRoute: resolution?.resolvedRoute || null,
@@ -302,6 +306,7 @@ export const useNotifications = () => {
       .map((g) => ({
         notificationIds: g.notificationIds,
         type: g.type,
+        groupId: g.groupId,
         actors: g.actors,
         count: g.actors.length,
         contentPreview: g.contentPreview,
@@ -332,6 +337,15 @@ export const useNotifications = () => {
 
   const markInteractionRead = useCallback(async (notifIds: string | string[]) => {
     const ids = Array.isArray(notifIds) ? notifIds : [notifIds];
+    const touchedVillageGroupIds = new Set(
+      groupedNotifications
+        .filter((g) =>
+          g.notificationIds.some((id) => ids.includes(id)) &&
+          (VILLAGE_TYPES as readonly string[]).includes(g.type) &&
+          g.groupId
+        )
+        .map((g) => g.groupId as string)
+    );
     await supabase
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
@@ -350,9 +364,17 @@ export const useNotifications = () => {
       })
     );
     if (touchedVillage) {
+      if (user && touchedVillageGroupIds.size > 0) {
+        await supabase
+          .from("group_members")
+          .update({ last_visited_at: new Date().toISOString() })
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .in("group_id", Array.from(touchedVillageGroupIds));
+      }
       window.dispatchEvent(new Event("village-visited"));
     }
-  }, []);
+  }, [groupedNotifications, user]);
 
   const markAllRead = useCallback(async (types?: readonly string[]) => {
     if (!user) return;
@@ -363,6 +385,13 @@ export const useNotifications = () => {
     const touchedVillage = targetGroups.some((g) =>
       (VILLAGE_TYPES as readonly string[]).includes(g.type)
     );
+    const touchedVillageGroupIds = [
+      ...new Set(
+        targetGroups
+          .filter((g) => (VILLAGE_TYPES as readonly string[]).includes(g.type) && g.groupId)
+          .map((g) => g.groupId as string)
+      ),
+    ];
     await supabase
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
@@ -376,6 +405,14 @@ export const useNotifications = () => {
       return prev.filter((g) => !targetIds.some((id) => g.notificationIds.includes(id)));
     });
     if (touchedVillage) {
+      if (touchedVillageGroupIds.length > 0) {
+        await supabase
+          .from("group_members")
+          .update({ last_visited_at: new Date().toISOString() })
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .in("group_id", touchedVillageGroupIds);
+      }
       window.dispatchEvent(new Event("village-visited"));
     }
   }, [user, groupedNotifications, viewMode]);

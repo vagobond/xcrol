@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface ResolvedNotification {
   resolvedRoute: string | null;
+  groupId?: string | null;
   /** Short preview of the new content that triggered the notification (the reply, comment, post, message, emoji…). */
   contentPreview: string | null;
   /** Optional snippet of the parent entity for context (e.g., the post that was commented on). */
@@ -212,6 +213,7 @@ export async function resolveNotifications(
         const slug = post ? groupMap.get(post.group_id) : null;
         result.set(n.id, {
           resolvedRoute: slug ? `/group/${slug}?post=${post!.id}` : "/the-village",
+          groupId: post?.group_id || null,
           contentPreview: truncate(post?.content),
           parentSnippet: null,
           parentEntityId: post?.group_id || n.entity_id,
@@ -250,6 +252,7 @@ export async function resolveNotifications(
           resolvedRoute: slug
             ? `/group/${slug}?post=${post!.id}&comment=${n.entity_id}`
             : "/the-village",
+          groupId: post?.group_id || null,
           contentPreview: truncate(comment?.content),
           parentSnippet: truncate(post?.content),
           parentEntityId: comment?.post_id || n.entity_id,
@@ -286,6 +289,7 @@ export async function resolveNotifications(
         const slug = post ? groupMap.get(post.group_id) : null;
         result.set(n.id, {
           resolvedRoute: slug ? `/group/${slug}?post=${post!.id}` : "/the-village",
+          groupId: post?.group_id || null,
           contentPreview: reaction?.emoji ? `Reacted ${reaction.emoji}` : null,
           parentSnippet: truncate(post?.content),
           parentEntityId: reaction?.post_id || n.entity_id,
@@ -331,6 +335,7 @@ export async function resolveNotifications(
           resolvedRoute: slug
             ? `/group/${slug}?post=${post!.id}&comment=${comment!.id}`
             : "/the-village",
+          groupId: post?.group_id || null,
           contentPreview: reaction?.emoji ? `Reacted ${reaction.emoji}` : null,
           parentSnippet: truncate(comment?.content),
           parentEntityId: comment?.post_id || n.entity_id,
