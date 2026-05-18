@@ -356,10 +356,13 @@ export const useNotifications = () => {
 
   const markAllRead = useCallback(async (types?: readonly string[]) => {
     if (!user) return;
-    const targetIds = groupedNotifications
-      .filter((g) => !g.isRead && (!types || (types as readonly string[]).includes(g.type)))
-      .flatMap((g) => g.notificationIds);
+    const targetGroups = groupedNotifications
+      .filter((g) => !g.isRead && (!types || (types as readonly string[]).includes(g.type)));
+    const targetIds = targetGroups.flatMap((g) => g.notificationIds);
     if (targetIds.length === 0) return;
+    const touchedVillage = targetGroups.some((g) =>
+      (VILLAGE_TYPES as readonly string[]).includes(g.type)
+    );
     await supabase
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
@@ -372,6 +375,9 @@ export const useNotifications = () => {
       }
       return prev.filter((g) => !targetIds.some((id) => g.notificationIds.includes(id)));
     });
+    if (touchedVillage) {
+      window.dispatchEvent(new Event("village-visited"));
+    }
   }, [user, groupedNotifications, viewMode]);
 
   // Partition by stream
