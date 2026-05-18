@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 const XCROL_API_BASE_URL = import.meta.env.VITE_SUPABASE_URL;
 // Public API key required to access Xcrol backend endpoints (safe to embed client-side).
@@ -82,6 +83,14 @@ export default function Developers() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Xcrol Developers — OAuth & API Documentation</title>
+        <meta name="description" content="Build apps on XCROL. OAuth 2.0 flows, API endpoints, and the connection-degree primitive for trust-aware integrations." />
+        <link rel="canonical" href="https://xcrol.com/developers" />
+        <meta property="og:title" content="Xcrol Developers — OAuth & API Documentation" />
+        <meta property="og:description" content="Build apps on XCROL. OAuth 2.0 flows, API endpoints, and the connection-degree primitive for trust-aware integrations." />
+        <meta property="og:url" content="https://xcrol.com/developers" />
+      </Helmet>
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { ArrowLeft } from "lucide-react";
 
 const Terms = () => {
@@ -7,6 +8,14 @@ const Terms = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4 pt-20">
+      <Helmet>
+        <title>Terms and Conditions | XCROL</title>
+        <meta name="description" content="XCROL Terms and Conditions. Read the rules and responsibilities for using the platform." />
+        <link rel="canonical" href="https://xcrol.com/terms" />
+        <meta property="og:title" content="Terms and Conditions | XCROL" />
+        <meta property="og:description" content="XCROL Terms and Conditions. Read the rules and responsibilities for using the platform." />
+        <meta property="og:url" content="https://xcrol.com/terms" />
+      </Helmet>
       <div className="max-w-3xl mx-auto space-y-8">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
