@@ -289,6 +289,7 @@ export async function resolveNotifications(
         const slug = post ? groupMap.get(post.group_id) : null;
         result.set(n.id, {
           resolvedRoute: slug ? `/group/${slug}?post=${post!.id}` : "/the-village",
+          groupId: post?.group_id || null,
           contentPreview: reaction?.emoji ? `Reacted ${reaction.emoji}` : null,
           parentSnippet: truncate(post?.content),
           parentEntityId: reaction?.post_id || n.entity_id,
@@ -334,6 +335,7 @@ export async function resolveNotifications(
           resolvedRoute: slug
             ? `/group/${slug}?post=${post!.id}&comment=${comment!.id}`
             : "/the-village",
+          groupId: post?.group_id || null,
           contentPreview: reaction?.emoji ? `Reacted ${reaction.emoji}` : null,
           parentSnippet: truncate(comment?.content),
           parentEntityId: comment?.post_id || n.entity_id,
