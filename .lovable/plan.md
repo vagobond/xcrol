@@ -1,43 +1,46 @@
-## Two small fixes — implemented and diagnosed
+## Cascade River reply visibility down the thread
 
-**Status:** Implemented in code. The reason this looked stuck is that the previous pass only made the group page dispatch a refresh event and marked notifications as read; it did not update `group_members.last_visited_at` when Village notifications were marked read from the dropdown. Since the Village icon uses `Math.max(villageBadgeCount, villageActivityCount)`, the activity half of the badge could still stay red even after notification rows were read.
+Right now every River reply is gated to the author + their friends, regardless of whether the parent reply is visible. So if a friend of yours replies to a non-friend's visible reply, you can see your friend's name but not their content — even though they were responding to something you can already read.
 
-**Additional fix now applied:** Village notification resolution now carries `groupId`, and `markInteractionRead` / `markAllRead` update the touched groups' `last_visited_at` before dispatching `village-visited`.
+### New rule
+A reply's content is viewable to a viewer when **any** of these is true:
+1. The viewer is the reply's author.
+2. The viewer is a friend of the reply's author (current rule: levels `close_friend`, `buddy`, `friendly_acquaintance`, `family`, `secret_friend`).
+3. **(new)** The reply has a `parent_reply_id`, and the viewer can view the parent reply's content (applied recursively up the chain).
 
-### 1) No back button from a group (e.g. The Inn) to The Village
+Top-level replies (no parent) keep today's friend-only rule. Anonymous viewers (`p_viewer_id IS NULL`) keep seeing nothing — no behavior change for logged-out users.
 
-`GroupHeader.tsx` renders only the title, member badge, and join/leave buttons. There is no link back to `/the-village`. Users have to use the browser back button or the header Village icon.
+### Where the change lives
 
-**Fix:** Add a small "Back to The Village" link/button at the top of `src/pages/GroupProfile.tsx` (above `GroupHeader`), styled to match the existing back button in `TheVillage.tsx` (`ArrowLeft` + "Back" ghost button). It should navigate to `/the-village` directly (not `navigate(-1)`), so it always lands on the Village index even if the user arrived via a notification deep-link.
+Only the `get_river_replies(uuid[], uuid)` SQL function needs to change. Both `content` and `can_view_content` are computed there, and the frontend (`RiverReplies.tsx` / `RiverReplyItem.tsx`) already renders correctly based on `can_view_content` — no UI work needed.
 
-### 2) Village notification count doesn't clear after viewing
+### Technical sketch
 
-The Village header badge shows `Math.max(villageBadgeCount, villageActivityCount)` (see `src/components/VillageBadge.tsx`):
+Rewrite the function using a recursive CTE that walks each reply up to its top-level ancestor, then marks the reply visible if any node in that chain passes the friend check (or is authored by the viewer):
 
-- `villageBadgeCount` comes from `useNotifications` and clears when items are marked read.
-- `villageActivityCount` comes from `useVillageActivityCount`, which counts group posts/comments newer than each membership's `last_visited_at`.
+```text
+WITH RECURSIVE chain AS (
+  -- start: each reply with viewer-vs-author check
+  SELECT r.id AS leaf_id, r.id AS node_id, r.user_id, r.parent_reply_id,
+         (r.user_id = viewer
+          OR EXISTS friendship(viewer -> r.user_id)) AS visible_here
+  FROM river_replies r
+  WHERE r.entry_id = ANY(entry_ids)
+  UNION ALL
+  SELECT c.leaf_id, p.id, p.user_id, p.parent_reply_id,
+         (p.user_id = viewer
+          OR EXISTS friendship(viewer -> p.user_id))
+  FROM chain c
+  JOIN river_replies p ON p.id = c.parent_reply_id
+)
+SELECT leaf_id, BOOL_OR(visible_here) AS can_view
+FROM chain GROUP BY leaf_id;
+```
 
-When the user clicks a Village notification:
-- The deep-link opens `GroupProfile`, which updates that group's `last_visited_at` on the server.
-- But `useVillageActivityCount` only re-fetches on: `village-visited` event, tab visibility change, or its 10-minute interval. Visiting a single group does **not** dispatch `village-visited`, so the activity count keeps showing the stale number until the user opens `/the-village` or 10 minutes pass.
-- Result: the red badge "persists even after the thing has been checked."
+Then the outer SELECT joins this aggregate back onto `river_replies` to populate `content` (NULL when `can_view = false`) and `can_view_content`. Signature, return columns, ordering, and `SECURITY DEFINER` + `search_path = public` settings stay identical so the existing `supabase.rpc("get_river_replies", …)` calls and TypeScript types keep working.
 
-A second contributor: `markInteractionRead` updates local state but does not trigger the activity-count refetch either.
+### Out of scope
 
-**Fix:**
-
-- In `src/pages/GroupProfile.tsx`, after the `recordVisit()` server update succeeds, `window.dispatchEvent(new Event("village-visited"))` so the activity-count hook recomputes immediately.
-- In `src/hooks/use-notifications.ts` `markInteractionRead`, after the DB update, also dispatch `village-visited` when any of the marked notifications belong to `VILLAGE_TYPES`. This covers users who mark-read from the dropdown without navigating.
-- (Optional, low-risk) In `useVillageActivityCount`, also refetch on a custom `group-visited` event for symmetry — not strictly required if we dispatch `village-visited` from `GroupProfile`.
-
-No DB changes, no resolver changes, no new components.
-
-## Files touched
-
-- `src/pages/GroupProfile.tsx` — add Back-to-Village button; dispatch `village-visited` after `recordVisit`.
-- `src/hooks/use-notifications.ts` — dispatch `village-visited` from `markInteractionRead` (and `markAllRead`) when village-type notifs are touched.
-
-## Result
-
-- Every group page has a clear "Back" affordance to The Village.
-- Clicking a Village notification (or marking it read) immediately clears the red badge on the Village icon, instead of waiting for the next poll.
+- No change to `river_replies` RLS (it already lets everyone select rows; the function masks content).
+- No change to group post comments — they're already member-gated, not friend-gated.
+- No new column or "public" flag is introduced; visibility remains derived.
