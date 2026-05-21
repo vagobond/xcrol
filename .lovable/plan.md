@@ -1,46 +1,61 @@
-## Cascade River reply visibility down the thread
+# Scrolls — bundle your own content into a book
 
-Right now every River reply is gated to the author + their friends, regardless of whether the parent reply is visible. So if a friend of yours replies to a non-friend's visible reply, you can see your friend's name but not their content — even though they were responding to something you can already read.
+A Scroll is a user-curated collection of *their own* writing pulled from XCROL, exported as an ePub/PDF/Markdown they own. v1 is a free personal archive tool; the Castle marketplace is sketched but not built.
 
-### New rule
-A reply's content is viewable to a viewer when **any** of these is true:
-1. The viewer is the reply's author.
-2. The viewer is a friend of the reply's author (current rule: levels `close_friend`, `buddy`, `friendly_acquaintance`, `family`, `secret_friend`).
-3. **(new)** The reply has a `parent_reply_id`, and the viewer can view the parent reply's content (applied recursively up the chain).
+## What goes in a Scroll
 
-Top-level replies (no parent) keep today's friend-only rule. Anonymous viewers (`p_viewer_id IS NULL`) keep seeing nothing — no behavior change for logged-out users.
+Only the author's own first-party content:
+- **Xcrol entries** (any privacy level — author owns them)
+- **River posts** (author's posts only — no other users' replies, even on their own threads, since those belong to other authors)
+- **Group posts** they authored
 
-### Where the change lives
+Out of v1: Brook posts (would need both participants' consent — revisit later), replies from other people, reactions.
 
-Only the `get_river_replies(uuid[], uuid)` SQL function needs to change. Both `content` and `can_view_content` are computed there, and the frontend (`RiverReplies.tsx` / `RiverReplyItem.tsx`) already renders correctly based on `can_view_content` — no UI work needed.
+## Bundling UX (hybrid)
 
-### Technical sketch
+A new `/scrolls` page under Powers, plus a "Bundle into a Scroll" button on My Xcrol.
 
-Rewrite the function using a recursive CTE that walks each reply up to its top-level ancestor, then marks the reply visible if any node in that chain passes the friend check (or is authored by the viewer):
+1. **Create a draft Scroll** — title, optional subtitle, cover blurb.
+2. **Auto-compile step** — user picks date range + which content types to include. We pre-populate the draft with everything matching, in chronological order, grouped by month as "chapters".
+3. **Manual curation** — reorder items via drag handle, rename chapters, exclude individual entries (soft — they stay in DB, just unchecked in this Scroll), add free-text "interlude" notes between entries.
+4. **Preview** — rendered like a long-form reading view.
+5. **Export** — Markdown, ePub, PDF download. Encourage in copy: "Take this to ChatGPT/Claude to polish into a publishable book."
+6. **Archive** — Scrolls live in the user's library; can be re-exported anytime, edited, or deleted. Re-running auto-compile on the same Scroll merges new entries without losing manual edits.
 
-```text
-WITH RECURSIVE chain AS (
-  -- start: each reply with viewer-vs-author check
-  SELECT r.id AS leaf_id, r.id AS node_id, r.user_id, r.parent_reply_id,
-         (r.user_id = viewer
-          OR EXISTS friendship(viewer -> r.user_id)) AS visible_here
-  FROM river_replies r
-  WHERE r.entry_id = ANY(entry_ids)
-  UNION ALL
-  SELECT c.leaf_id, p.id, p.user_id, p.parent_reply_id,
-         (p.user_id = viewer
-          OR EXISTS friendship(viewer -> p.user_id))
-  FROM chain c
-  JOIN river_replies p ON p.id = c.parent_reply_id
-)
-SELECT leaf_id, BOOL_OR(visible_here) AS can_view
-FROM chain GROUP BY leaf_id;
-```
+## Castle / Library of Alexandria (v2 sketch, not built now)
 
-Then the outer SELECT joins this aggregate back onto `river_replies` to populate `content` (NULL when `can_view = false`) and `can_view_content`. Signature, return columns, ordering, and `SECURITY DEFINER` + `search_path = public` settings stay identical so the existing `supabase.rpc("get_river_replies", …)` calls and TypeScript types keep working.
+Frame the existing Castle page as the future home of published Scrolls. v1 adds a single teaser card: "Soon: publish your Scroll to the Castle library. 60% to you, 40% to XCROL." No marketplace, no payments, no Stripe wiring yet. We revisit once users actually have Scrolls to sell.
 
-### Out of scope
+## Technical sketch
 
-- No change to `river_replies` RLS (it already lets everyone select rows; the function masks content).
-- No change to group post comments — they're already member-gated, not friend-gated.
-- No new column or "public" flag is introduced; visibility remains derived.
+**New tables**
+- `scrolls` — `id, user_id, title, subtitle, blurb, cover_image_url, created_at, updated_at`. RLS: owner-only for SELECT/INSERT/UPDATE/DELETE in v1. (Public visibility column reserved for v2.)
+- `scroll_items` — `id, scroll_id, position int, item_type ('xcrol'|'river'|'group_post'|'interlude'), source_id uuid nullable, custom_title text nullable, custom_body text nullable, chapter_label text nullable`. RLS via parent scroll ownership. `source_id` references the original row; `custom_body` only used for interludes.
+
+**Resolution at render time**
+Single RPC `get_scroll_contents(scroll_id)` joins items to their source tables (`xcrol_entries`, `river_entries`, `group_posts`), filtering to rows where `user_id = scroll.user_id` (defensive — also enforces "only your own content" if a source ever gets reassigned). Returns ordered array with resolved content.
+
+**Auto-compile**
+RPC `compile_scroll_draft(scroll_id, start_date, end_date, include_xcrol bool, include_river bool, include_groups bool)` inserts `scroll_items` for the user's matching rows, skipping any source_id already in the scroll. Default chapter_label = `to_char(entry_date, 'Mon YYYY')`.
+
+**Export**
+Client-side for Markdown + PDF (use `jspdf` already-or-similar, or simple `window.print` styled view for PDF v1). ePub via a small edge function `export-scroll-epub` using a Deno epub library — returns a downloadable blob. Keep the edge function stateless; it calls `get_scroll_contents` with the user's JWT.
+
+**Frontend**
+- `src/pages/Scrolls.tsx` — list + create
+- `src/pages/ScrollEditor.tsx` — draft editing, drag-reorder (`@dnd-kit` already in deps if present, else add), auto-compile modal
+- `src/pages/ScrollReader.tsx` — preview / printable view
+- `src/components/scrolls/*` — item row, chapter divider, export menu
+
+**Entry points**
+- Card on `/powers` ("Bundle your Scroll")
+- Button on `/xcrol/me` and on user's own River feed header
+- Castle page gets a single "Coming soon: publish to the library" teaser card
+
+## Out of scope for this plan
+
+- Payments, Stripe Connect, 60/40 split — deferred to v2 after we see adoption.
+- In-app AI rewriting — user said export-only; we just provide clean Markdown.
+- Cover image generation — user can attach an image, no AI generation in v1.
+- Public/shared Scroll URLs — defer to v2 alongside the marketplace.
+- Brook bundling — needs consent flow, defer.
