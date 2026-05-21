@@ -77,6 +77,9 @@ const Developers = lazy(() => import("./pages/Developers"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
 const SharedPost = lazy(() => import("./pages/SharedPost"));
 const Map = lazy(() => import("./pages/Map"));
+const Scrolls = lazy(() => import("./pages/Scrolls"));
+const ScrollEditor = lazy(() => import("./pages/ScrollEditor"));
+const ScrollReader = lazy(() => import("./pages/ScrollReader"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
