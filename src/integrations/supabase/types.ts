@@ -1738,6 +1738,83 @@ export type Database = {
           },
         ]
       }
+      scroll_items: {
+        Row: {
+          chapter_label: string | null
+          created_at: string
+          custom_body: string | null
+          custom_title: string | null
+          id: string
+          item_position: number
+          item_type: string
+          scroll_id: string
+          source_id: string | null
+        }
+        Insert: {
+          chapter_label?: string | null
+          created_at?: string
+          custom_body?: string | null
+          custom_title?: string | null
+          id?: string
+          item_position?: number
+          item_type: string
+          scroll_id: string
+          source_id?: string | null
+        }
+        Update: {
+          chapter_label?: string | null
+          created_at?: string
+          custom_body?: string | null
+          custom_title?: string | null
+          id?: string
+          item_position?: number
+          item_type?: string
+          scroll_id?: string
+          source_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scroll_items_scroll_id_fkey"
+            columns: ["scroll_id"]
+            isOneToOne: false
+            referencedRelation: "scrolls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scrolls: {
+        Row: {
+          blurb: string | null
+          cover_image_url: string | null
+          created_at: string
+          id: string
+          subtitle: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blurb?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          id?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blurb?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          id?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sly_doubt_game_state: {
         Row: {
           bloot_collected: number
@@ -2338,6 +2415,16 @@ export type Database = {
         Returns: boolean
       }
       check_invite_code: { Args: { p_invite_code: string }; Returns: boolean }
+      compile_scroll_draft: {
+        Args: {
+          p_end_date: string
+          p_include_groups?: boolean
+          p_include_xcrol?: boolean
+          p_scroll_id: string
+          p_start_date: string
+        }
+        Returns: number
+      }
       get_admin_profiles: {
         Args: never
         Returns: {
@@ -2502,6 +2589,23 @@ export type Database = {
           parent_reply_id: string
           user_id: string
           username: string
+        }[]
+      }
+      get_scroll_contents: {
+        Args: { p_scroll_id: string }
+        Returns: {
+          chapter_label: string
+          content: string
+          custom_body: string
+          custom_title: string
+          group_name: string
+          item_date: string
+          item_id: string
+          item_position: number
+          item_type: string
+          link: string
+          privacy_level: string
+          source_id: string
         }[]
       }
       get_user_invite_stats: { Args: { p_user_id: string }; Returns: Json }
