@@ -131,14 +131,14 @@ const ScrollEditor = () => {
     if (j < 0 || j >= items.length) return;
     const a = items[idx], b = items[j];
     const newItems = [...items];
-    newItems[idx] = b;
-    newItems[j] = a;
+    newItems[idx] = { ...b, item_position: a.item_position };
+    newItems[j] = { ...a, item_position: b.item_position };
     setItems(newItems);
-    // swap positions in DB
-    const { error } = await supabase.from("scroll_items").upsert([
-      { id: a.item_id, item_position: b.item_position, scroll_id: scrollId!, item_type: a.item_type, source_id: a.source_id, chapter_label: a.chapter_label, custom_title: a.custom_title, custom_body: a.custom_body },
-      { id: b.item_id, item_position: a.item_position, scroll_id: scrollId!, item_type: b.item_type, source_id: b.source_id, chapter_label: b.chapter_label, custom_title: b.custom_title, custom_body: b.custom_body },
+    const [r1, r2] = await Promise.all([
+      supabase.from("scroll_items").update({ item_position: b.item_position }).eq("id", a.item_id),
+      supabase.from("scroll_items").update({ item_position: a.item_position }).eq("id", b.item_id),
     ]);
+    const error = r1.error || r2.error;
     if (error) {
       toast({ title: "Reorder failed", description: error.message, variant: "destructive" });
       load();
