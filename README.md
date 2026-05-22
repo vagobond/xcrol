@@ -47,7 +47,7 @@ A personal micro-journal limited to **one entry per day** and **240 characters**
 
 ### 🌊 The River — Friends' Feed
 
-A chronological stream of Xcrol entries from your friends. No algorithm—just time-ordered updates filtered by friendship level. React with emoji and reply to entries.
+A chronological stream of Xcrol entries from your friends. No algorithm—just time-ordered updates (sorted by true UTC creation time, so posts always appear in the order they were actually written, regardless of the poster's timezone) filtered by friendship level. React with emoji and reply to entries. Optional RSS feed integration lets you pipe external blogs into your private feed.
 
 ---
 
