@@ -47,7 +47,7 @@ A personal micro-journal limited to **one entry per day** and **240 characters**
 
 ### 🌊 The River — Friends' Feed
 
-A chronological stream of Xcrol entries from your friends. No algorithm—just time-ordered updates filtered by friendship level. React with emoji and reply to entries.
+A chronological stream of Xcrol entries from your friends. No algorithm—just time-ordered updates (sorted by true UTC creation time, so posts always appear in the order they were actually written, regardless of the poster's timezone) filtered by friendship level. React with emoji and reply to entries. Optional RSS feed integration lets you pipe external blogs into your private feed.
 
 ---
 
@@ -146,6 +146,21 @@ Build trust through testimonials from friends:
 
 - **Every Country in the World**: Invite friends from different countries toward global representation
 - **The Cure to Loneliness and Boredom**: AI-powered adventure game with creative suggestions
+- **Dream Trip**: Plan an imaginary journey with AI assistance
+
+---
+
+### 📖 Your Scrolls — Bundle Your Writing
+
+Turn your XCROL content into a personal archive — your own book-in-progress.
+
+- Bundle your **Xcrol entries** and your own **group posts** into a Scroll
+- **Auto-compile** by date range, then reorder, label chapters, and add interludes
+- Add a title, subtitle, blurb, and cover
+- **Export** to Markdown or print to PDF — take it to ChatGPT/Claude to polish into a publishable book
+- Only your own first-party content is included — never anyone else's
+
+**Coming soon — The Castle**: a library where you'll be able to publish finished Scrolls (ePub, PDF) for sale. Revenue split: **60% to you, 40% to XCROL**. Build your Scroll now; the gates open later.
 
 ---
 
