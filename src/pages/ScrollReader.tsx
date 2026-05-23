@@ -12,6 +12,7 @@ interface ScrollMeta {
   title: string;
   subtitle: string | null;
   blurb: string | null;
+  cover_image_url: string | null;
 }
 
 interface ScrollItem {
@@ -38,7 +39,7 @@ const ScrollReader = () => {
     if (authLoading || !user || !scrollId) return;
     (async () => {
       const [m, c] = await Promise.all([
-        supabase.from("scrolls").select("id, title, subtitle, blurb").eq("id", scrollId).maybeSingle(),
+        supabase.from("scrolls").select("id, title, subtitle, blurb, cover_image_url").eq("id", scrollId).maybeSingle(),
         supabase.rpc("get_scroll_contents", { p_scroll_id: scrollId }),
       ]);
       if (m.data) setMeta(m.data as ScrollMeta);
