@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Globe, Waves, TreePine, Layers, ScrollText } from "lucide-react";
+import { Globe, Waves, TreePine, Layers } from "lucide-react";
 import villageIconSrc from "@/assets/village-icon.png";
 import {
   Tooltip,
