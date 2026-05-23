@@ -94,6 +94,14 @@ const Profile = () => {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => navigate("/scrolls")}
+            >
+              <ScrollText className="w-4 h-4 mr-2" />
+              Your Scrolls
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => navigate(username ? `/@${username}` : `/u/${user.id}`)}
             >
               <Eye className="w-4 h-4 mr-2" />
