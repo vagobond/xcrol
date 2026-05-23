@@ -103,7 +103,12 @@ const ScrollEditor = () => {
     setSaving(true);
     const { error } = await supabase
       .from("scrolls")
-      .update({ title: meta.title, subtitle: meta.subtitle, blurb: meta.blurb })
+      .update({
+        title: meta.title,
+        subtitle: meta.subtitle,
+        blurb: meta.blurb,
+        cover_image_url: meta.cover_image_url?.trim() ? meta.cover_image_url.trim() : null,
+      })
       .eq("id", meta.id);
     setSaving(false);
     if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
