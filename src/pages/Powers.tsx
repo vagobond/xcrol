@@ -358,24 +358,6 @@ const Powers = () => {
                 </TooltipContent>
               </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="mystical" 
-                    size="xl"
-                    asChild
-                    className="w-full sm:w-auto min-w-[250px]"
-                  >
-                    <Link to="/scrolls">
-                      <ScrollText className="mr-2 h-5 w-5" />
-                      YOUR SCROLLS
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Bundle your writing into a Scroll you can export and keep</p>
-                </TooltipContent>
-              </Tooltip>
             </div>
           </div>
         </TooltipProvider>
