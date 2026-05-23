@@ -217,6 +217,23 @@ const ScrollEditor = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleExport = async (format: "epub" | "pdf") => {
+    if (!meta) return;
+    setExporting(format);
+    try {
+      await downloadScrollExport(meta.id, format, meta.title);
+      toast({ title: `${format.toUpperCase()} downloaded` });
+    } catch (e) {
+      toast({
+        title: "Export failed",
+        description: e instanceof Error ? e.message : "Try again in a moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(null);
+    }
+  };
+
   if (authLoading || loading || !meta) {
     return (
       <div className="min-h-screen flex items-center justify-center">
