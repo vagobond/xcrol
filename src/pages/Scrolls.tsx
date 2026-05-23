@@ -15,6 +15,7 @@ interface Scroll {
   title: string;
   subtitle: string | null;
   blurb: string | null;
+  cover_image_url: string | null;
   updated_at: string;
 }
 
@@ -36,7 +37,7 @@ const Scrolls = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("scrolls")
-      .select("id, title, subtitle, blurb, updated_at")
+      .select("id, title, subtitle, blurb, cover_image_url, updated_at")
       .order("updated_at", { ascending: false });
     if (error) {
       toast({ title: "Couldn't load Scrolls", description: error.message, variant: "destructive" });
@@ -128,7 +129,21 @@ const Scrolls = () => {
           ) : (
             scrolls.map((s) => (
               <Card key={s.id} className="hover:border-primary/40 transition-colors">
-                <CardContent className="p-4 flex items-center justify-between gap-3">
+                <CardContent className="p-4 flex items-center gap-4">
+                  {s.cover_image_url ? (
+                    <img
+                      src={s.cover_image_url}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      className="h-16 w-12 object-cover rounded border border-border flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="h-16 w-12 rounded border border-border bg-muted flex items-center justify-center flex-shrink-0">
+                      <ScrollText className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  )}
                   <Link to={`/scrolls/${s.id}`} className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{s.title}</div>
                     {s.subtitle && <div className="text-sm text-muted-foreground truncate">{s.subtitle}</div>}

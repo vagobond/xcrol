@@ -12,6 +12,7 @@ interface ScrollMeta {
   title: string;
   subtitle: string | null;
   blurb: string | null;
+  cover_image_url: string | null;
 }
 
 interface ScrollItem {
@@ -38,7 +39,7 @@ const ScrollReader = () => {
     if (authLoading || !user || !scrollId) return;
     (async () => {
       const [m, c] = await Promise.all([
-        supabase.from("scrolls").select("id, title, subtitle, blurb").eq("id", scrollId).maybeSingle(),
+        supabase.from("scrolls").select("id, title, subtitle, blurb, cover_image_url").eq("id", scrollId).maybeSingle(),
         supabase.rpc("get_scroll_contents", { p_scroll_id: scrollId }),
       ]);
       if (m.data) setMeta(m.data as ScrollMeta);
@@ -66,11 +67,21 @@ const ScrollReader = () => {
           </Button>
         </div>
 
-        <article className="prose prose-neutral dark:prose-invert max-w-none">
+        <article className="prose prose-neutral dark:prose-invert max-w-none font-serif">
           <header className="text-center mb-12 not-prose">
-            <h1 className="text-4xl font-bold mb-2">{meta.title}</h1>
+            {meta.cover_image_url && (
+              <img
+                src={meta.cover_image_url}
+                alt={meta.title}
+                referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                className="mx-auto mb-8 max-h-96 rounded shadow-lg"
+              />
+            )}
+            <h1 className="text-4xl font-bold mb-2 font-serif tracking-tight">{meta.title}</h1>
             {meta.subtitle && <p className="text-lg italic text-muted-foreground">{meta.subtitle}</p>}
-            {meta.blurb && <p className="mt-6 text-muted-foreground max-w-xl mx-auto">{meta.blurb}</p>}
+            {meta.blurb && <p className="mt-6 text-muted-foreground max-w-xl mx-auto italic">{meta.blurb}</p>}
           </header>
 
           {items.map((it) => {
@@ -78,15 +89,19 @@ const ScrollReader = () => {
             if (showChapter) lastChapter = it.chapter_label;
             return (
               <section key={it.item_id} className="mb-8">
-                {showChapter && <h2 className="mt-12 mb-6 text-2xl font-semibold border-b pb-2">{it.chapter_label}</h2>}
-                {it.custom_title && <h3 className="text-xl font-semibold">{it.custom_title}</h3>}
+                {showChapter && (
+                  <h2 className="mt-16 mb-8 text-center text-2xl font-normal uppercase tracking-[0.2em] text-muted-foreground">
+                    {it.chapter_label}
+                  </h2>
+                )}
+                {it.custom_title && <h3 className="text-xl font-semibold font-serif">{it.custom_title}</h3>}
                 {it.item_date && (
                   <p className="text-xs italic text-muted-foreground mb-2">
                     {format(new Date(it.item_date), "MMMM d, yyyy")}
                     {it.group_name ? ` — in ${it.group_name}` : ""}
                   </p>
                 )}
-                <p className="whitespace-pre-wrap leading-relaxed">{it.content}</p>
+                <p className="whitespace-pre-wrap leading-relaxed font-serif text-[1.05rem] first-letter:text-3xl first-letter:font-semibold first-letter:mr-1 first-letter:float-left first-letter:leading-none first-letter:mt-1">{it.content}</p>
                 {it.link && (
                   <p className="text-sm">
                     <a href={it.link.startsWith("http") ? it.link : `https://${it.link}`} target="_blank" rel="noreferrer">

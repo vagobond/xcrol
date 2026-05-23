@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.send-weekly-digest]
 verify_jwt = false
+
+[functions.export-scroll]
+verify_jwt = true

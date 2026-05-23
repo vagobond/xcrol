@@ -17,10 +17,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ArrowLeft, ArrowUp, ArrowDown, Loader2, Plus, Sparkles, Trash2,
-  Download, Eye, BookOpen,
+  Download, Eye, BookOpen, ImageIcon,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { downloadScrollExport } from "@/lib/scroll-export";
 
 interface ScrollMeta {
   id: string;
@@ -28,6 +29,7 @@ interface ScrollMeta {
   title: string;
   subtitle: string | null;
   blurb: string | null;
+  cover_image_url: string | null;
 }
 
 interface ScrollItem {
@@ -66,6 +68,8 @@ const ScrollEditor = () => {
   const [incXcrol, setIncXcrol] = useState(true);
   const [incGroups, setIncGroups] = useState(true);
   const [compiling, setCompiling] = useState(false);
+  const [exporting, setExporting] = useState<"epub" | "pdf" | null>(null);
+  const [coverOk, setCoverOk] = useState(true);
 
   useEffect(() => {
     if (authLoading || !user || !scrollId) return;
@@ -77,7 +81,7 @@ const ScrollEditor = () => {
     if (!scrollId) return;
     setLoading(true);
     const [{ data: metaRow, error: metaErr }, { data: itemRows, error: itemsErr }] = await Promise.all([
-      supabase.from("scrolls").select("id, user_id, title, subtitle, blurb").eq("id", scrollId).maybeSingle(),
+      supabase.from("scrolls").select("id, user_id, title, subtitle, blurb, cover_image_url").eq("id", scrollId).maybeSingle(),
       supabase.rpc("get_scroll_contents", { p_scroll_id: scrollId }),
     ]);
     if (metaErr || !metaRow) {
@@ -99,7 +103,12 @@ const ScrollEditor = () => {
     setSaving(true);
     const { error } = await supabase
       .from("scrolls")
-      .update({ title: meta.title, subtitle: meta.subtitle, blurb: meta.blurb })
+      .update({
+        title: meta.title,
+        subtitle: meta.subtitle,
+        blurb: meta.blurb,
+        cover_image_url: meta.cover_image_url?.trim() ? meta.cover_image_url.trim() : null,
+      })
       .eq("id", meta.id);
     setSaving(false);
     if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
@@ -208,6 +217,23 @@ const ScrollEditor = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleExport = async (format: "epub" | "pdf") => {
+    if (!meta) return;
+    setExporting(format);
+    try {
+      await downloadScrollExport(meta.id, format, meta.title);
+      toast({ title: `${format.toUpperCase()} downloaded` });
+    } catch (e) {
+      toast({
+        title: "Export failed",
+        description: e instanceof Error ? e.message : "Try again in a moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(null);
+    }
+  };
+
   if (authLoading || loading || !meta) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -234,13 +260,15 @@ const ScrollEditor = () => {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm"><Download className="h-4 w-4 mr-2" /> Export</Button>
+                <Button size="sm" disabled={!!exporting}>
+                  {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                  Export
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleExport("pdf")}>PDF (.pdf)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("epub")}>ePub (.epub)</DropdownMenuItem>
                 <DropdownMenuItem onClick={exportMarkdown}>Markdown (.md)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => window.print()}>
-                  Print / Save as PDF
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -259,6 +287,34 @@ const ScrollEditor = () => {
             <div>
               <Label>Blurb</Label>
               <Textarea value={meta.blurb ?? ""} onChange={(e) => setMeta({ ...meta, blurb: e.target.value })} maxLength={1000} rows={3} />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Cover image URL</Label>
+              <Input
+                type="url"
+                placeholder="https://example.com/your-cover.jpg"
+                value={meta.cover_image_url ?? ""}
+                onChange={(e) => { setMeta({ ...meta, cover_image_url: e.target.value }); setCoverOk(true); }}
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground">
+                Paste a link to an image you've hosted elsewhere (your site, Imgur, NOSTR host, IPFS gateway, etc.).
+                Xcrol doesn't host images. Try Nano Banana, DALL·E, Midjourney or Leonardo to generate one, then host it
+                yourself and paste the URL here. Use a direct <code>.jpg</code> or <code>.png</code> link for it to embed in exports.
+              </p>
+              {meta.cover_image_url?.trim() && coverOk && (
+                <img
+                  src={meta.cover_image_url.trim()}
+                  alt="Cover preview"
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  onError={() => setCoverOk(false)}
+                  className="mt-2 max-h-48 rounded border border-border"
+                />
+              )}
+              {meta.cover_image_url?.trim() && !coverOk && (
+                <p className="text-xs text-destructive">Couldn't load that image. Check the URL is a direct link to a JPG/PNG.</p>
+              )}
             </div>
             <Button onClick={saveMeta} disabled={saving} size="sm">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save details"}
