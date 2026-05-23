@@ -17,10 +17,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ArrowLeft, ArrowUp, ArrowDown, Loader2, Plus, Sparkles, Trash2,
-  Download, Eye, BookOpen,
+  Download, Eye, BookOpen, ImageIcon,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { downloadScrollExport } from "@/lib/scroll-export";
 
 interface ScrollMeta {
   id: string;
@@ -28,6 +29,7 @@ interface ScrollMeta {
   title: string;
   subtitle: string | null;
   blurb: string | null;
+  cover_image_url: string | null;
 }
 
 interface ScrollItem {
@@ -66,6 +68,8 @@ const ScrollEditor = () => {
   const [incXcrol, setIncXcrol] = useState(true);
   const [incGroups, setIncGroups] = useState(true);
   const [compiling, setCompiling] = useState(false);
+  const [exporting, setExporting] = useState<"epub" | "pdf" | null>(null);
+  const [coverOk, setCoverOk] = useState(true);
 
   useEffect(() => {
     if (authLoading || !user || !scrollId) return;
