@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Eye, Share2 } from "lucide-react";
+import { ArrowLeft, Eye, Share2, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { useProfileData } from "@/components/profile/useProfileData";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
