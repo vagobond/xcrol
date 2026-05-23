@@ -81,7 +81,7 @@ const ScrollEditor = () => {
     if (!scrollId) return;
     setLoading(true);
     const [{ data: metaRow, error: metaErr }, { data: itemRows, error: itemsErr }] = await Promise.all([
-      supabase.from("scrolls").select("id, user_id, title, subtitle, blurb").eq("id", scrollId).maybeSingle(),
+      supabase.from("scrolls").select("id, user_id, title, subtitle, blurb, cover_image_url").eq("id", scrollId).maybeSingle(),
       supabase.rpc("get_scroll_contents", { p_scroll_id: scrollId }),
     ]);
     if (metaErr || !metaRow) {
