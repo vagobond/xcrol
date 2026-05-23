@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Eye, Share2 } from "lucide-react";
+import { ArrowLeft, Eye, Share2, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { useProfileData } from "@/components/profile/useProfileData";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
@@ -91,6 +91,14 @@ const Profile = () => {
             Back
           </Button>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/scrolls")}
+            >
+              <ScrollText className="w-4 h-4 mr-2" />
+              Your Scrolls
+            </Button>
             <Button
               variant="outline"
               size="sm"
