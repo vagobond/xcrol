@@ -22,6 +22,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { downloadScrollExport } from "@/lib/scroll-export";
+import { ScrollAiButton, toAiItems } from "@/components/ScrollAiButton";
+import type { ScrollContextForAi } from "@/lib/scroll-ai-prompts";
 
 interface ScrollMeta {
   id: string;
