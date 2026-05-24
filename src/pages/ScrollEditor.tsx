@@ -319,7 +319,16 @@ const ScrollEditor = () => {
         <Card>
           <CardContent className="p-4 space-y-3">
             <div>
-              <Label>Title</Label>
+              <div className="flex items-center justify-between">
+                <Label>Title</Label>
+                <ScrollAiButton
+                  action="suggest_title"
+                  label="Suggest"
+                  scrollId={meta.id}
+                  getContext={buildAiContext}
+                  onAccept={(p) => p.kind === "title" && setMeta({ ...meta, title: p.value })}
+                />
+              </div>
               <Input value={meta.title} onChange={(e) => setMeta({ ...meta, title: e.target.value })} maxLength={120} />
             </div>
             <div>
@@ -327,7 +336,16 @@ const ScrollEditor = () => {
               <Input value={meta.subtitle ?? ""} onChange={(e) => setMeta({ ...meta, subtitle: e.target.value })} maxLength={200} />
             </div>
             <div>
-              <Label>Blurb</Label>
+              <div className="flex items-center justify-between">
+                <Label>Blurb</Label>
+                <ScrollAiButton
+                  action="suggest_blurb"
+                  label="Suggest"
+                  scrollId={meta.id}
+                  getContext={buildAiContext}
+                  onAccept={(p) => p.kind === "blurb" && setMeta({ ...meta, blurb: p.value })}
+                />
+              </div>
               <Textarea value={meta.blurb ?? ""} onChange={(e) => setMeta({ ...meta, blurb: e.target.value })} maxLength={1000} rows={3} />
             </div>
             <div className="space-y-2">
