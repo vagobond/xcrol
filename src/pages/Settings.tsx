@@ -16,6 +16,7 @@ import { NotificationsPrivacySection } from "@/components/settings/Notifications
 import { PasswordSection } from "@/components/settings/PasswordSection";
 import { AccountDeletionSection } from "@/components/settings/AccountDeletionSection";
 import { NostrIdentitySection } from "@/components/settings/NostrIdentitySection";
+import { AiAssistanceSection } from "@/components/settings/AiAssistanceSection";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -77,6 +78,8 @@ const Settings = () => {
             <PasswordSection />
 
             <NostrIdentitySection />
+
+            <AiAssistanceSection />
 
             {/* Blocked Users */}
             <Card>
