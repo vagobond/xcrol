@@ -22,6 +22,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { downloadScrollExport } from "@/lib/scroll-export";
+import { ScrollAiButton, toAiItems } from "@/components/ScrollAiButton";
+import type { ScrollContextForAi } from "@/lib/scroll-ai-prompts";
 
 interface ScrollMeta {
   id: string;
@@ -234,6 +236,46 @@ const ScrollEditor = () => {
     }
   };
 
+  const buildAiContext = (): ScrollContextForAi => ({
+    title: meta?.title ?? "",
+    subtitle: meta?.subtitle ?? null,
+    blurb: meta?.blurb ?? null,
+    items: toAiItems(items),
+  });
+
+  const applyChapterAssignments = async (
+    assignments: { item_id: string; chapter_label: string }[],
+  ) => {
+    const map = new Map(assignments.map((a) => [a.item_id, a.chapter_label]));
+    setItems((prev) => prev.map((p) => map.has(p.item_id) ? { ...p, chapter_label: map.get(p.item_id)! } : p));
+    const results = await Promise.all(
+      assignments.map((a) =>
+        supabase.from("scroll_items").update({ chapter_label: a.chapter_label }).eq("id", a.item_id),
+      ),
+    );
+    if (results.some((r) => r.error)) {
+      toast({ title: "Some chapter labels didn't save", variant: "destructive" });
+      load();
+    } else {
+      toast({ title: "Chapter labels applied" });
+    }
+  };
+
+  const applyPolishedInterlude = async (itemId: string, polished: string) => {
+    setItems((prev) => prev.map((p) => p.item_id === itemId ? { ...p, content: polished, custom_body: polished } : p));
+    const { error } = await supabase
+      .from("scroll_items")
+      .update({ custom_body: polished })
+      .eq("id", itemId);
+    if (error) {
+      toast({ title: "Couldn't save", description: error.message, variant: "destructive" });
+      load();
+    } else {
+      toast({ title: "Interlude updated" });
+    }
+  };
+
+
   if (authLoading || loading || !meta) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -277,7 +319,16 @@ const ScrollEditor = () => {
         <Card>
           <CardContent className="p-4 space-y-3">
             <div>
-              <Label>Title</Label>
+              <div className="flex items-center justify-between">
+                <Label>Title</Label>
+                <ScrollAiButton
+                  action="suggest_title"
+                  label="Suggest"
+                  scrollId={meta.id}
+                  getContext={buildAiContext}
+                  onAccept={(p) => p.kind === "title" && setMeta({ ...meta, title: p.value })}
+                />
+              </div>
               <Input value={meta.title} onChange={(e) => setMeta({ ...meta, title: e.target.value })} maxLength={120} />
             </div>
             <div>
@@ -285,7 +336,16 @@ const ScrollEditor = () => {
               <Input value={meta.subtitle ?? ""} onChange={(e) => setMeta({ ...meta, subtitle: e.target.value })} maxLength={200} />
             </div>
             <div>
-              <Label>Blurb</Label>
+              <div className="flex items-center justify-between">
+                <Label>Blurb</Label>
+                <ScrollAiButton
+                  action="suggest_blurb"
+                  label="Suggest"
+                  scrollId={meta.id}
+                  getContext={buildAiContext}
+                  onAccept={(p) => p.kind === "blurb" && setMeta({ ...meta, blurb: p.value })}
+                />
+              </div>
               <Textarea value={meta.blurb ?? ""} onChange={(e) => setMeta({ ...meta, blurb: e.target.value })} maxLength={1000} rows={3} />
             </div>
             <div className="space-y-2">
@@ -387,6 +447,16 @@ const ScrollEditor = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {items.length > 0 && (
+            <ScrollAiButton
+              action="suggest_chapters"
+              label="Suggest chapters"
+              scrollId={meta.id}
+              getContext={buildAiContext}
+              onAccept={(p) => p.kind === "chapters" && applyChapterAssignments(p.assignments)}
+            />
+          )}
         </div>
 
         <div className="space-y-3">
@@ -426,6 +496,16 @@ const ScrollEditor = () => {
                     </a>
                   )}
                   <div className="flex gap-1 justify-end pt-2">
+                    {it.item_type === "interlude" && (
+                      <ScrollAiButton
+                        action="polish_interlude"
+                        label="Polish"
+                        scrollId={meta.id}
+                        getContext={buildAiContext}
+                        interludeText={it.content ?? ""}
+                        onAccept={(p) => p.kind === "interlude" && applyPolishedInterlude(it.item_id, p.polished)}
+                      />
+                    )}
                     <Button variant="ghost" size="icon" onClick={() => move(idx, -1)} disabled={idx === 0}>
                       <ArrowUp className="h-4 w-4" />
                     </Button>

@@ -1738,6 +1738,30 @@ export type Database = {
           },
         ]
       }
+      scroll_ai_usage: {
+        Row: {
+          action: string
+          count: number
+          day: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          count?: number
+          day: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          count?: number
+          day?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scroll_items: {
         Row: {
           chapter_label: string | null

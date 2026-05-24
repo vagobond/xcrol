@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.export-scroll]
 verify_jwt = true
+
+[functions.scroll-ai]
+verify_jwt = true

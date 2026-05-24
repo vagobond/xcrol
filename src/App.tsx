@@ -80,6 +80,7 @@ const Map = lazy(() => import("./pages/Map"));
 const Scrolls = lazy(() => import("./pages/Scrolls"));
 const ScrollEditor = lazy(() => import("./pages/ScrollEditor"));
 const ScrollReader = lazy(() => import("./pages/ScrollReader"));
+const ScrollAiTutorial = lazy(() => import("./pages/ScrollAiTutorial"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -148,6 +149,7 @@ const App = () => (
                 <Route path="/install-app" element={<ProtectedRoute><InstallApp /></ProtectedRoute>} />
                 <Route path="/map" element={<ProtectedRoute><Map /></ProtectedRoute>} />
                 <Route path="/scrolls" element={<ProtectedRoute><Scrolls /></ProtectedRoute>} />
+                <Route path="/scrolls/ai-setup" element={<ProtectedRoute><ScrollAiTutorial /></ProtectedRoute>} />
                 <Route path="/scrolls/:scrollId" element={<ProtectedRoute><ScrollEditor /></ProtectedRoute>} />
                 <Route path="/scrolls/:scrollId/read" element={<ProtectedRoute><ScrollReader /></ProtectedRoute>} />
                 <Route path="/:username" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
