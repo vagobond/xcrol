@@ -496,6 +496,16 @@ const ScrollEditor = () => {
                     </a>
                   )}
                   <div className="flex gap-1 justify-end pt-2">
+                    {it.item_type === "interlude" && (
+                      <ScrollAiButton
+                        action="polish_interlude"
+                        label="Polish"
+                        scrollId={meta.id}
+                        getContext={buildAiContext}
+                        interludeText={it.content ?? ""}
+                        onAccept={(p) => p.kind === "interlude" && applyPolishedInterlude(it.item_id, p.polished)}
+                      />
+                    )}
                     <Button variant="ghost" size="icon" onClick={() => move(idx, -1)} disabled={idx === 0}>
                       <ArrowUp className="h-4 w-4" />
                     </Button>
