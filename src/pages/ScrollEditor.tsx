@@ -447,6 +447,16 @@ const ScrollEditor = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {items.length > 0 && (
+            <ScrollAiButton
+              action="suggest_chapters"
+              label="Suggest chapters"
+              scrollId={meta.id}
+              getContext={buildAiContext}
+              onAccept={(p) => p.kind === "chapters" && applyChapterAssignments(p.assignments)}
+            />
+          )}
         </div>
 
         <div className="space-y-3">
