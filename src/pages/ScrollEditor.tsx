@@ -236,6 +236,46 @@ const ScrollEditor = () => {
     }
   };
 
+  const buildAiContext = (): ScrollContextForAi => ({
+    title: meta?.title ?? "",
+    subtitle: meta?.subtitle ?? null,
+    blurb: meta?.blurb ?? null,
+    items: toAiItems(items),
+  });
+
+  const applyChapterAssignments = async (
+    assignments: { item_id: string; chapter_label: string }[],
+  ) => {
+    const map = new Map(assignments.map((a) => [a.item_id, a.chapter_label]));
+    setItems((prev) => prev.map((p) => map.has(p.item_id) ? { ...p, chapter_label: map.get(p.item_id)! } : p));
+    const results = await Promise.all(
+      assignments.map((a) =>
+        supabase.from("scroll_items").update({ chapter_label: a.chapter_label }).eq("id", a.item_id),
+      ),
+    );
+    if (results.some((r) => r.error)) {
+      toast({ title: "Some chapter labels didn't save", variant: "destructive" });
+      load();
+    } else {
+      toast({ title: "Chapter labels applied" });
+    }
+  };
+
+  const applyPolishedInterlude = async (itemId: string, polished: string) => {
+    setItems((prev) => prev.map((p) => p.item_id === itemId ? { ...p, content: polished, custom_body: polished } : p));
+    const { error } = await supabase
+      .from("scroll_items")
+      .update({ custom_body: polished })
+      .eq("id", itemId);
+    if (error) {
+      toast({ title: "Couldn't save", description: error.message, variant: "destructive" });
+      load();
+    } else {
+      toast({ title: "Interlude updated" });
+    }
+  };
+
+
   if (authLoading || loading || !meta) {
     return (
       <div className="min-h-screen flex items-center justify-center">
