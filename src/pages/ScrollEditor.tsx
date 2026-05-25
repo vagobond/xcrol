@@ -24,6 +24,8 @@ import { format } from "date-fns";
 import { downloadScrollExport } from "@/lib/scroll-export";
 import { ScrollAiButton, toAiItems } from "@/components/ScrollAiButton";
 import type { ScrollContextForAi } from "@/lib/scroll-ai-prompts";
+import { PublishScrollDialog } from "@/components/scrolls/PublishScrollDialog";
+import { PublicationsList } from "@/components/scrolls/PublicationsList";
 
 interface ScrollMeta {
   id: string;
@@ -58,6 +60,7 @@ const ScrollEditor = () => {
   const [meta, setMeta] = useState<ScrollMeta | null>(null);
   const [items, setItems] = useState<ScrollItem[]>([]);
   const [saving, setSaving] = useState(false);
+  const [pubRefresh, setPubRefresh] = useState(0);
   const [compileOpen, setCompileOpen] = useState(false);
   const [interludeOpen, setInterludeOpen] = useState(false);
   const [interludeText, setInterludeText] = useState("");
@@ -300,6 +303,11 @@ const ScrollEditor = () => {
             <Button variant="outline" size="sm" onClick={() => navigate(`/scrolls/${scrollId}/read`)}>
               <Eye className="h-4 w-4 mr-2" /> Preview
             </Button>
+            <PublishScrollDialog
+              scrollId={meta.id}
+              meta={{ title: meta.title, subtitle: meta.subtitle, blurb: meta.blurb, cover_image_url: meta.cover_image_url }}
+              onPublished={() => setPubRefresh((n) => n + 1)}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" disabled={!!exporting}>
@@ -527,6 +535,10 @@ const ScrollEditor = () => {
             Tip: export to Markdown, then ask ChatGPT or Claude to polish it into a publishable book.
           </p>
         )}
+
+        <div className="pt-4">
+          <PublicationsList scrollId={meta.id} refreshKey={pubRefresh} />
+        </div>
       </div>
     </div>
   );
