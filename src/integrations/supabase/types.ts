@@ -1806,6 +1806,100 @@ export type Database = {
           },
         ]
       }
+      scroll_publication_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          publication_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          publication_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          publication_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scroll_publication_reactions_publication_id_fkey"
+            columns: ["publication_id"]
+            isOneToOne: false
+            referencedRelation: "scroll_publications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scroll_publications: {
+        Row: {
+          blurb: string | null
+          content_json: Json
+          cover_image_url: string | null
+          created_at: string
+          id: string
+          published_at: string
+          scroll_id: string
+          slug: string
+          subtitle: string | null
+          title: string
+          unpublished_at: string | null
+          updated_at: string
+          user_id: string
+          view_count: number
+          visibility: string
+        }
+        Insert: {
+          blurb?: string | null
+          content_json: Json
+          cover_image_url?: string | null
+          created_at?: string
+          id?: string
+          published_at?: string
+          scroll_id: string
+          slug: string
+          subtitle?: string | null
+          title: string
+          unpublished_at?: string | null
+          updated_at?: string
+          user_id: string
+          view_count?: number
+          visibility?: string
+        }
+        Update: {
+          blurb?: string | null
+          content_json?: Json
+          cover_image_url?: string | null
+          created_at?: string
+          id?: string
+          published_at?: string
+          scroll_id?: string
+          slug?: string
+          subtitle?: string | null
+          title?: string
+          unpublished_at?: string | null
+          updated_at?: string
+          user_id?: string
+          view_count?: number
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scroll_publications_scroll_id_fkey"
+            columns: ["scroll_id"]
+            isOneToOne: false
+            referencedRelation: "scrolls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scrolls: {
         Row: {
           blurb: string | null
@@ -2692,6 +2786,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_publication_view: {
+        Args: { p_publication_id: string }
+        Returns: undefined
+      }
       is_blocked: {
         Args: { blocked_id: string; blocker_id: string }
         Returns: boolean
@@ -2712,10 +2810,40 @@ export type Database = {
         Args: { p_group_id: string; p_user_id: string }
         Returns: boolean
       }
+      publish_scroll: {
+        Args: { p_scroll_id: string; p_visibility?: string }
+        Returns: {
+          blurb: string | null
+          content_json: Json
+          cover_image_url: string | null
+          created_at: string
+          id: string
+          published_at: string
+          scroll_id: string
+          slug: string
+          subtitle: string | null
+          title: string
+          unpublished_at: string | null
+          updated_at: string
+          user_id: string
+          view_count: number
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "scroll_publications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       refresh_layer_stats: { Args: never; Returns: undefined }
       resolve_username_to_id: {
         Args: { target_username: string }
         Returns: string
+      }
+      unpublish_publication: {
+        Args: { p_publication_id: string }
+        Returns: undefined
       }
       use_invite_code: {
         Args: { p_email: string; p_invite_code: string; p_user_id: string }
