@@ -81,6 +81,8 @@ const Scrolls = lazy(() => import("./pages/Scrolls"));
 const ScrollEditor = lazy(() => import("./pages/ScrollEditor"));
 const ScrollReader = lazy(() => import("./pages/ScrollReader"));
 const ScrollAiTutorial = lazy(() => import("./pages/ScrollAiTutorial"));
+const CastleLibrary = lazy(() => import("./pages/CastleLibrary"));
+const PublicationReader = lazy(() => import("./pages/PublicationReader"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -152,6 +154,8 @@ const App = () => (
                 <Route path="/scrolls/ai-setup" element={<ProtectedRoute><ScrollAiTutorial /></ProtectedRoute>} />
                 <Route path="/scrolls/:scrollId" element={<ProtectedRoute><ScrollEditor /></ProtectedRoute>} />
                 <Route path="/scrolls/:scrollId/read" element={<ProtectedRoute><ScrollReader /></ProtectedRoute>} />
+                <Route path="/the-castle/library" element={<CastleLibrary />} />
+                <Route path="/library/:slug" element={<PublicationReader />} />
                 <Route path="/:username" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

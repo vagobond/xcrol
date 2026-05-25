@@ -119,6 +119,21 @@ const TheCastle = () => {
           </p>
         </div>
 
+        <Card className="mb-8 border-primary/30 bg-gradient-to-br from-primary/10 to-card hover:border-primary/50 transition-colors">
+          <CardContent className="p-5">
+            <a href="/the-castle/library" className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded bg-primary/20 flex items-center justify-center shrink-0">
+                <Sparkles className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold">The Castle Library</div>
+                <div className="text-xs text-muted-foreground italic">Open to all — discover published Scrolls from across the realm.</div>
+              </div>
+              <span className="text-primary text-sm">Enter →</span>
+            </a>
+          </CardContent>
+        </Card>
+
         <Card className="mb-8 border-primary/20 bg-gradient-to-br from-card to-primary/5">
           <CardContent className="p-6 space-y-6">
             <div className="flex items-center justify-between">

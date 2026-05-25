@@ -1,109 +1,156 @@
-# Scrolls v2 — Phase 1 Build Plan (revised)
 
-Ship real publishable artefacts (ePub + proper PDF) and a typeset book reader. **No image hosting on Xcrol** — cover art is a user-supplied external URL.
+# Scrolls v2 — Phase 3: Publication & The Castle Library
 
-## 1. Cover art — external URL only
+Phase 1 shipped private export (ePub/PDF) and Phase 2 shipped optional AI assistance. Phase 3 turns Scrolls from **personal artefact** into **shareable work**: authors can *publish* an immutable snapshot to a public **Castle Library**, and readers can discover, read, and react.
 
-No storage bucket. No file upload. No AI generation on our side.
+No payments, no NOSTR/ActivityPub bridge, no reviews-with-stars yet — those stay deferred. Focus is the publication primitive everything else builds on.
 
-### UI (`ScrollEditor`)
-- New "Cover image" field in the meta card:
-  - Single `Input` for an external image URL (writes to existing `scrolls.cover_image_url` column).
-  - Live thumbnail preview rendered from the URL (with onError fallback to "Couldn't load image").
-  - Helper text: *"Paste a link to an image you've hosted elsewhere (e.g. your own site, Imgur, NOSTR image host, IPFS gateway). Xcrol doesn't host images."*
-  - Optional small list of suggested generators (text links only): "Try Nano Banana, DALL·E, Midjourney, Leonardo — then host the image yourself and paste the URL here."
-- Cover thumbnail shown on `Scrolls` list cards and at the top of `ScrollReader`.
+## 1. Publication primitive
 
-### Safety
-- Client-side: validate it parses as a URL and uses `https:`.
-- Render cover via `<img referrerPolicy="no-referrer" loading="lazy">`.
-- No fetching, no proxying, no storage. The browser/reader/exporter just uses the URL the user pasted.
+A "publication" is an **immutable snapshot** of a Scroll at a moment in time. The author keeps editing the live Scroll freely; the published copy doesn't change.
 
-## 2. Real export — ePub + PDF
+### New tables
 
-New edge function `export-scroll`.
+- `scroll_publications`
+  - `id`, `scroll_id` (FK), `user_id` (author, FK auth.users)
+  - `slug` (unique, derived from title + short hash)
+  - `title`, `subtitle`, `blurb`, `cover_image_url` (snapshot)
+  - `content_json` — full snapshot of items (id, kind, body, link, item_date, chapter_label, group name) so reads never touch live data
+  - `visibility` — `public` | `unlisted` (no `private`; that's just "don't publish")
+  - `published_at`, `unpublished_at` (nullable, soft hide)
+  - `view_count`, `reader_count` (denormalised, updated by triggers/RPC)
+- `scroll_publication_reactions`
+  - `id`, `publication_id`, `user_id`, `emoji` (one of a small allow-list), `created_at`
+  - Unique `(publication_id, user_id, emoji)`
 
-- Input: `{ scroll_id, format: 'epub' | 'pdf' }`.
-- Auth: JWT verify, owner check via service role on `scrolls.user_id`.
-- Pulls content via existing `get_scroll_contents` RPC + scroll meta.
-- Returns the binary with proper `Content-Type` + `Content-Disposition` (filename = slugified title).
-- Frontend `ScrollEditor` "Export" dropdown:
-  - Replaces "Print / Save as PDF" with "Download PDF" (function call → blob download).
-  - Adds "Download ePub".
-  - Keeps "Markdown" as-is.
+### RLS
 
-### Cover handling inside exports
-- If `cover_image_url` is set, the edge function fetches it once at export time (server-side `fetch`, 5s timeout, max ~5 MB, must respond with an `image/*` content type).
-- On success: embed bytes into the ePub (`OEBPS/cover.jpg`) and into the PDF cover page.
-- On any failure: skip silently and render a typographic title page instead. The URL itself is never re-stored anywhere.
+- `scroll_publications`:
+  - SELECT: anyone (incl. anon) when `visibility = 'public' AND unpublished_at IS NULL`; owner can always see own; `unlisted` is fetchable only by slug (enforced by always querying with slug).
+  - INSERT/UPDATE/DELETE: owner only. UPDATE is restricted to `visibility`, `unpublished_at`, denorm counters — no body edits (enforced by trigger that blocks changes to snapshot columns).
+- `scroll_publication_reactions`: SELECT public; INSERT/DELETE by authenticated user on own rows.
 
-### ePub (`application/epub+zip`)
-- Hand-assembled OPF 3.0 in Deno:
-  - `mimetype` (stored, uncompressed first entry per spec).
-  - `META-INF/container.xml`.
-  - `OEBPS/content.opf` (metadata, manifest, spine).
-  - `OEBPS/nav.xhtml` + `toc.ncx` (chapters grouped by `chapter_label`; items without a label fall under an implicit "Prologue").
-  - `OEBPS/style.css` shared with the on-site reader (see §3).
-  - One XHTML file per chapter.
-  - Optional embedded cover if §2 fetch succeeded.
-- Zip via `jsr:@zip-js/zip-js` (Deno-compatible). `mimetype` entry stored uncompressed.
+### RPC
 
-### PDF (`application/pdf`)
-- `npm:@react-pdf/renderer` server-side in Deno (no headless browser).
-- Cover page (embedded image if available, else typeset title page), title page, chapter headings with small caps, body paragraphs with drop caps on chapter starts, page numbers.
-- Fonts: bundle two open-licensed fonts in `supabase/functions/export-scroll/fonts/` (one serif body, one display) so output is consistent across OSes.
+- `publish_scroll(scroll_id, visibility)` — server-side snapshot using existing `get_scroll_contents`; returns publication row.
+- `unpublish_publication(publication_id)` — sets `unpublished_at`.
+- `increment_publication_view(publication_id)` — rate-limited per session.
 
-### Shared content rules
-- Original Xcrol / River / group / interlude text rendered verbatim (hard rule, no AI rewriting).
-- Each item shows date (using existing `item_date` string from RPC) and group name when present.
-- `item.link` rendered as footnote-style URL in PDF, inline `<a>` in ePub.
+## 2. The Castle Library (public discovery)
 
-## 3. Reader polish (`ScrollReader`)
+New route `/castle/library` (and a card on existing `/castle`). Public — no auth needed to browse or read.
 
-- New "book" stylesheet: serif body (Lora or Cormorant), display headings, ~65ch measure, drop cap on first letter of each chapter, small caps on chapter labels.
-- Same CSS file is the source of truth for the ePub `style.css`.
-- Cover image (if URL present) shown above the title, with onError fallback.
-- Existing print stylesheet kept as a no-cost fallback but not the primary PDF path.
+- Grid of recent public publications: cover thumbnail, title, author display name + `@username`, blurb, reaction count.
+- Filters: **Newest**, **Most read**, **Most reacted**, **By friend** (auth only).
+- Search box (title + author, simple `ilike` on snapshot columns).
+- Pagination (20/page).
 
-## 4. Database
+The existing `/castle` page becomes the gated "membership"/progress page **plus** a prominent link into the Library (Library itself is open, the gated bit stays as-is).
 
-**No migration needed.** `scrolls.cover_image_url` already exists. No bucket, no AI usage table (no AI in Phase 1 anymore).
+## 3. Public reader
 
-## 5. Out of scope for Phase 1 (deferred)
+New route `/library/:slug` (also accept legacy `/scrolls/p/:slug` redirect-friendly).
 
-- Castle library, publication snapshots, reviews, downloads tracking.
-- AI title/blurb/chapter/polish/cover generation.
-- Stripe / payments / payouts.
-- NOSTR `kind 30023` bridge and ActivityPub publish event.
-- "Republish" / immutable versioning.
+- Server-side OG meta via new `og-publication` edge function (mirrors `og-post`): title, blurb, cover, author. Meta-refresh to the SPA route for human visitors.
+- Reuses `ScrollReader`'s book-view typography (already built in Phase 1) but pulls from `content_json` snapshot, not live items.
+- Header: cover, title, subtitle, author chip → links to `/u/:username`, published date, view count.
+- Reactions row (emoji allow-list: ✨📜🔥💛🌊🏰). Auth required to react; unauth see counts only with a "Sign in to react" hint.
+- Share buttons: copy link, NOSTR share (uses existing NOSTR identity if connected — publishes `kind 1` note linking back; full `kind 30023` bridge stays deferred).
+- "Read more from {author}" strip: other public publications by same author.
 
-## File layout
+## 4. Author flow in `ScrollEditor`
+
+- New **Publish** button in the editor toolbar (next to Export).
+- Opens `PublishScrollDialog`:
+  - Visibility radio: Public (Castle Library) / Unlisted (link only).
+  - Preview of cover/title/blurb as it will appear in the Library.
+  - Disclosure: "Publishing creates an immutable snapshot. Edits to this Scroll won't change the published copy. You can publish again to update."
+  - Confirm → calls `publish_scroll` RPC, toasts success, shows public URL + copy button.
+- New **Publications** subsection at the bottom of the editor listing this Scroll's publications (date, visibility, view count, "Unpublish" and "Copy link" actions).
+- On `Scrolls` list cards, badge showing "Published" + count of live publications.
+
+## 5. Author profile integration
+
+- On `PublicProfile.tsx` (route `/u/:username`), new tab/section **Scrolls** listing the user's public publications (cover, title, blurb, published date). Only renders when count ≥ 1.
+- No changes for users who never publish.
+
+## 6. Sitemap & SEO
+
+- `og-publication` edge function: full OpenGraph/Twitter card with cover image.
+- `public/sitemap.xml` regeneration extended (or dynamic edge function) — out of scope as a code change if current sitemap is hand-maintained; instead add `og-publication`-style meta tags to ensure crawlability and rely on inbound links for now. (Sitemap automation = deferred.)
+
+## 7. Out of scope for Phase 3 (still deferred)
+
+- Payments / paid scrolls / payouts / Stripe.
+- Reviews with star ratings (only emoji reactions ship).
+- NOSTR `kind 30023` long-form bridge (only optional `kind 1` share link).
+- ActivityPub `Article` publish event.
+- Comments / threaded discussion on publications.
+- Versioning UI showing diff between snapshots.
+- AI cover generation.
+- Editorial curation / featured / staff picks.
+
+## Technical details
+
+### File layout (new)
 
 ```text
 supabase/functions/
-  export-scroll/
-    index.ts              # router: format → epub | pdf, auth + owner check
-    epub.ts               # OPF/NCX/XHTML assembly + zip
-    pdf.tsx               # @react-pdf/renderer document
-    shared.ts             # fetch scroll meta + contents, fetch+validate cover
-    fonts/                # bundled .ttf files for the PDF
+  og-publication/
+    index.ts                # OG meta for /library/:slug
 
 src/pages/
-  ScrollEditor.tsx        # + cover URL input & preview, + new Export menu items
-  ScrollReader.tsx        # + book view stylesheet, + cover render
-  Scrolls.tsx             # + cover thumbnail on cards
+  CastleLibrary.tsx         # /castle/library — public grid
+  PublicationReader.tsx     # /library/:slug — public reader
+
+src/components/scrolls/
+  PublishScrollDialog.tsx
+  PublicationsList.tsx      # used inside ScrollEditor
+  PublicationReactions.tsx  # used inside PublicationReader
+  LibraryCard.tsx           # grid card
 
 src/lib/
-  scroll-export.ts        # client wrapper: invoke export-scroll, save blob
+  scroll-publish.ts         # client wrappers for publish/unpublish/list
 ```
+
+### Files edited
+
+- `src/App.tsx` — three new routes (`/castle/library`, `/library/:slug`, legacy redirect).
+- `src/pages/ScrollEditor.tsx` — Publish button, dialog, publications list.
+- `src/pages/Scrolls.tsx` — "Published" badge on cards.
+- `src/pages/TheCastle.tsx` — Library entry card.
+- `src/pages/PublicProfile.tsx` — Scrolls section when author has publications.
+- `supabase/config.toml` — register `og-publication` (`verify_jwt = false`).
+
+### Snapshot integrity
+
+- The publish RPC takes a **fresh** call to `get_scroll_contents(scroll_id)`, serialises to JSON, stores in `content_json`. Original posts remain in their source tables; the snapshot is a read-only copy used only by the public reader/export.
+- Trigger on `scroll_publications` blocks any UPDATE that touches `title`, `subtitle`, `blurb`, `cover_image_url`, or `content_json` — guaranteeing immutability.
+
+### Reactions
+
+- Allow-list enforced via DB CHECK on `emoji IN ('✨','📜','🔥','💛','🌊','🏰')`.
+- One row per `(publication, user, emoji)` so toggling is idempotent.
+- Counts computed via cheap aggregate; cache nothing in Phase 3.
+
+### Privacy
+
+- `unlisted` publications are excluded from the Library grid and any sitemap; only retrievable when the caller supplies the slug (RLS policy intentionally allows anon SELECT by slug since the slug is the access token).
+- Authors can unpublish at any time → `unpublished_at` set → the row stops being served by the public reader and disappears from author profile + library.
 
 ## Order of execution once approved
 
-1. `export-scroll` edge function (ePub first, then PDF) + bundled fonts + client wiring.
-2. Cover URL input + previews in editor, reader, and list cards.
-3. Reader book view typography pass.
-4. QA: create a real Scroll, paste a cover URL, export both formats, open ePub in a reader, open PDF, verify on-site reader matches.
+1. Migration: tables, RLS, immutability trigger, RPCs.
+2. `scroll-publish.ts` client wrappers.
+3. `PublishScrollDialog` + editor wiring + publications list.
+4. `CastleLibrary` page + `LibraryCard`.
+5. `PublicationReader` page + reactions.
+6. `og-publication` edge function + config.
+7. PublicProfile Scrolls section + Scrolls list "Published" badge + Castle library entry.
+8. QA: publish a Scroll, view in Library (anon), react (auth), unpublish, verify removal, edit live Scroll and confirm snapshot unchanged, re-publish to create v2.
 
-## Open question
+## Open questions
 
-OK to bundle two open-licensed font `.ttf` files (~400 KB total) inside the `export-scroll` function so PDFs render identically for everyone? Alternative is to use built-in PDF fonts (Helvetica/Times) which look generic.
+1. **Slug collisions**: title + 6-char hash (e.g. `wandering-years-a1b2c3`) — OK, or prefer `@username/scroll-title` style?
+2. **Reaction emoji set** (`✨📜🔥💛🌊🏰`) — keep these six, or pick a different set that fits XCROL vibe better?
+3. **NOSTR share button** in the public reader — ship in Phase 3 as `kind 1` link, or defer entirely until full `kind 30023` bridge?
