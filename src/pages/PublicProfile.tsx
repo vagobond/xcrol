@@ -13,6 +13,7 @@ import { UserReferences } from "@/components/UserReferences";
 import { LeaveReferenceDialog } from "@/components/LeaveReferenceDialog";
 import { PublicXcrolEntries } from "@/components/PublicXcrolEntries";
 import { ProfileWidgetsDisplay } from "@/components/ProfileWidgetsDisplay";
+import { AuthorPublications } from "@/components/scrolls/AuthorPublications";
 
 const PublicProfile = () => {
   const navigate = useNavigate();
@@ -129,6 +130,9 @@ const PublicProfile = () => {
           {resolvedUserId && (
             <PublicXcrolEntries userId={resolvedUserId} username={displayName} />
           )}
+
+          {/* Published Scrolls */}
+          {resolvedUserId && <AuthorPublications userId={resolvedUserId} />}
 
           {/* Meetup & Hosting Section */}
           {resolvedUserId && (
