@@ -43,9 +43,10 @@ export const RssFeedManager = () => {
   const loadFeeds = async () => {
     const { data, error } = await supabase
       .from("user_rss_feeds")
-      .select("*")
+      .select("id, feed_url, feed_name, feed_icon, max_items, created_at")
       .eq("user_id", user!.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(50);
 
     if (!error && data) setFeeds(data as RssFeed[]);
     setLoading(false);
