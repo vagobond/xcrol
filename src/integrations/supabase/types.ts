@@ -1263,7 +1263,6 @@ export type Database = {
       oauth_clients: {
         Row: {
           client_id: string
-          client_secret: string
           client_secret_hash: string | null
           created_at: string
           description: string | null
@@ -1278,7 +1277,6 @@ export type Database = {
         }
         Insert: {
           client_id?: string
-          client_secret?: string
           client_secret_hash?: string | null
           created_at?: string
           description?: string | null
@@ -1293,7 +1291,6 @@ export type Database = {
         }
         Update: {
           client_id?: string
-          client_secret?: string
           client_secret_hash?: string | null
           created_at?: string
           description?: string | null
@@ -2542,6 +2539,27 @@ export type Database = {
           p_start_date: string
         }
         Returns: number
+      }
+      create_oauth_app: {
+        Args: {
+          p_description: string
+          p_homepage_url: string
+          p_logo_url: string
+          p_name: string
+          p_redirect_uris: string[]
+        }
+        Returns: {
+          client_id: string
+          created_at: string
+          description: string
+          homepage_url: string
+          id: string
+          is_verified: boolean
+          logo_url: string
+          name: string
+          plain_secret: string
+          redirect_uris: string[]
+        }[]
       }
       get_admin_profiles: {
         Args: never

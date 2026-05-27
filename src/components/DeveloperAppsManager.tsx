@@ -34,13 +34,13 @@ interface OAuthApp {
   name: string;
   description: string | null;
   client_id: string;
-  client_secret: string;
   redirect_uris: string[];
   logo_url: string | null;
   homepage_url: string | null;
   is_verified: boolean;
   created_at: string;
 }
+
 
 // Generate a cryptographically random hex string
 function generateSecret(bytes = 32): string {
@@ -88,9 +88,10 @@ const DeveloperAppsManager = () => {
     try {
       const { data, error } = await supabase
         .from("oauth_clients")
-        .select("id, name, description, client_id, client_secret, redirect_uris, logo_url, homepage_url, is_verified, created_at")
+        .select("id, name, description, client_id, redirect_uris, logo_url, homepage_url, is_verified, created_at")
         .eq("owner_id", user.id)
         .order("created_at", { ascending: false });
+
 
       if (error) throw error;
       setApps(data || []);
@@ -132,30 +133,38 @@ const DeveloperAppsManager = () => {
     try {
       if (!user) throw new Error("Not authenticated");
 
-      // Generate secret client-side so we can show it once
-      const plainSecret = generateSecret();
-
-      const { data, error } = await supabase
-        .from("oauth_clients")
-        .insert({
-          name: newApp.name.trim(),
-          description: newApp.description.trim() || null,
-          homepage_url: newApp.homepage_url.trim() || null,
-          redirect_uris: redirectUris,
-          logo_url: newApp.logo_url.trim() || null,
-          owner_id: user.id,
-          client_secret: plainSecret, // trigger will hash this and clear the column
-        })
-        .select()
-        .single();
+      // Server-side RPC generates the secret, stores only the hash,
+      // and returns the plaintext exactly once for display.
+      const { data, error } = await supabase.rpc("create_oauth_app", {
+        p_name: newApp.name.trim(),
+        p_description: newApp.description.trim() || null,
+        p_homepage_url: newApp.homepage_url.trim() || null,
+        p_redirect_uris: redirectUris,
+        p_logo_url: newApp.logo_url.trim() || null,
+      });
 
       if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) throw new Error("App creation returned no data");
 
-      setApps(prev => [data, ...prev]);
+      const created: OAuthApp = {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        client_id: row.client_id,
+        redirect_uris: row.redirect_uris,
+        logo_url: row.logo_url,
+        homepage_url: row.homepage_url,
+        is_verified: row.is_verified,
+        created_at: row.created_at,
+      };
+
+      setApps(prev => [created, ...prev]);
       setShowCreateDialog(false);
-      setShowCredentialsDialog({ app: data, plainSecret });
+      setShowCredentialsDialog({ app: created, plainSecret: row.plain_secret });
       setNewApp({ name: "", description: "", homepage_url: "", redirect_uris: "", logo_url: "" });
       toast.success("App created successfully!");
+
     } catch (error) {
       console.error("Error creating app:", error);
       toast.error("Failed to create app");
@@ -250,7 +259,7 @@ const DeveloperAppsManager = () => {
 
       if (error) throw error;
 
-      setApps(prev => prev.map(a => a.id === data.id ? data : a));
+      setApps(prev => prev.map(a => a.id === data.id ? { ...a, ...data } as OAuthApp : a));
       setShowEditDialog(null);
       toast.success("App updated successfully!");
     } catch (error) {
