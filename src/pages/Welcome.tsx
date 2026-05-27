@@ -102,7 +102,7 @@ const Welcome = () => {
               alt="XCROL"
               width={600}
               height={200}
-              fetchPriority="high"
+              {...{ fetchpriority: "high" }}
               className="w-[400px] md:w-[500px] lg:w-[600px] mx-auto drop-shadow-[0_0_40px_rgba(139,92,246,0.4)] animate-pulse-slow"
             />
             <div className="space-y-3 max-w-2xl mx-auto">

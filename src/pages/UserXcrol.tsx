@@ -106,7 +106,8 @@ const UserXcrol = () => {
         .from("xcrol_entries")
         .select("id, content, link, entry_date, created_at, privacy_level")
         .eq("user_id", targetUserId)
-        .order("entry_date", { ascending: false });
+        .order("entry_date", { ascending: false })
+        .limit(500);
 
       if (error) throw error;
       setEntries(entriesData || []);
