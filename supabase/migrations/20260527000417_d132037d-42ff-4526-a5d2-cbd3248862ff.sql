@@ -1,0 +1,2 @@
+ALTER FUNCTION public.publish_scroll(uuid, text) SET search_path = public, extensions;
+ALTER FUNCTION public.compile_scroll_draft(uuid, date, date, boolean, boolean) SET search_path = public, extensions;
