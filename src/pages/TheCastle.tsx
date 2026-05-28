@@ -44,18 +44,14 @@ const TheCastle = () => {
           .select("id", { count: "exact", head: true })
           .eq("user_id", user.id),
         supabase.rpc("get_user_invite_stats", { p_user_id: user.id }),
-        supabase
-          .from("profiles")
-          .select("display_name, username, avatar_url, bio, hometown_city, link, birthday_month")
-          .eq("id", user.id)
-          .maybeSingle(),
+        supabase.rpc("get_own_profile"),
       ]);
 
       const points = (pointsRes.data as number) ?? 0;
       const friends = friendsRes.count ?? 0;
       const inviteStats = invitesRes.data as { accepted_count?: number } | null;
       const acceptedInvites = inviteStats?.accepted_count ?? 0;
-      const p = profileRes.data;
+      const p = profileRes.data?.[0] ?? null;
       const profileComplete = !!(
         p?.display_name && p?.username && p?.avatar_url && p?.bio &&
         p?.link && p?.hometown_city && p?.birthday_month
