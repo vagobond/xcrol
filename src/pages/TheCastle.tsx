@@ -44,11 +44,7 @@ const TheCastle = () => {
           .select("id", { count: "exact", head: true })
           .eq("user_id", user.id),
         supabase.rpc("get_user_invite_stats", { p_user_id: user.id }),
-        supabase
-          .from("profiles")
-          .select("display_name, username, avatar_url, bio, hometown_city, link, birthday_month")
-          .eq("id", user.id)
-          .maybeSingle(),
+        supabase.rpc("get_own_profile"),
       ]);
 
       const points = (pointsRes.data as number) ?? 0;

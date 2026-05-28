@@ -89,12 +89,9 @@ const InviteFriends = () => {
 
     setSending(true);
 
-    // Get user's display name for the email
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name, email")
-      .eq("id", user.id)
-      .single();
+    // Get user's display name for the email (own profile via secure RPC)
+    const { data: ownRows } = await supabase.rpc("get_own_profile");
+    const profile = ownRows?.[0] ?? null;
 
     const inviterName = profile?.display_name || profile?.email?.split("@")[0] || "A Xcrol user";
 
