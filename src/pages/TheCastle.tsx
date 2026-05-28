@@ -51,7 +51,7 @@ const TheCastle = () => {
       const friends = friendsRes.count ?? 0;
       const inviteStats = invitesRes.data as { accepted_count?: number } | null;
       const acceptedInvites = inviteStats?.accepted_count ?? 0;
-      const p = profileRes.data;
+      const p = profileRes.data?.[0] ?? null;
       const profileComplete = !!(
         p?.display_name && p?.username && p?.avatar_url && p?.bio &&
         p?.link && p?.hometown_city && p?.birthday_month
