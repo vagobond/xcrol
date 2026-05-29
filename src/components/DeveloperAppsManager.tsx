@@ -1,20 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,29 +13,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Plus, Trash2, Eye, EyeOff, Copy, ExternalLink, Code, Pencil } from "lucide-react";
+import { Loader2, Plus, Code } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import AppCard from "./developer-apps/AppCard";
+import AppFormDialog from "./developer-apps/AppFormDialog";
+import CredentialsDialog from "./developer-apps/CredentialsDialog";
+import { emptyForm, type OAuthApp, type OAuthAppFormState } from "./developer-apps/types";
 
-interface OAuthApp {
-  id: string;
-  name: string;
-  description: string | null;
-  client_id: string;
-  redirect_uris: string[];
-  logo_url: string | null;
-  homepage_url: string | null;
-  is_verified: boolean;
-  created_at: string;
-}
-
-
-// Generate a cryptographically random hex string
-function generateSecret(bytes = 32): string {
-  const array = new Uint8Array(bytes);
-  crypto.getRandomValues(array);
-  return Array.from(array, b => b.toString(16).padStart(2, "0")).join("");
-}
+const parseRedirectUris = (raw: string): string[] | null => {
+  const uris = raw.split("\n").map((u) => u.trim()).filter(Boolean);
+  if (uris.length === 0) {
+    toast.error("At least one redirect URI is required");
+    return null;
+  }
+  for (const uri of uris) {
+    try {
+      new URL(uri);
+    } catch {
+      toast.error(`Invalid redirect URI: ${uri}`);
+      return null;
+    }
+  }
+  return uris;
+};
 
 const DeveloperAppsManager = () => {
   const { user } = useAuth();
@@ -57,30 +45,17 @@ const DeveloperAppsManager = () => {
   const [showCredentialsDialog, setShowCredentialsDialog] = useState<{ app: OAuthApp; plainSecret: string } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<OAuthApp | null>(null);
   const [showEditDialog, setShowEditDialog] = useState<OAuthApp | null>(null);
-  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  const [newApp, setNewApp] = useState({
-    name: "",
-    description: "",
-    homepage_url: "",
-    redirect_uris: "",
-    logo_url: "",
-  });
-
-  const [editApp, setEditApp] = useState({
-    name: "",
-    description: "",
-    homepage_url: "",
-    redirect_uris: "",
-    logo_url: "",
-  });
+  const [newApp, setNewApp] = useState<OAuthAppFormState>(emptyForm);
+  const [editApp, setEditApp] = useState<OAuthAppFormState>(emptyForm);
 
   useEffect(() => {
     if (user?.id) loadApps();
     else setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const loadApps = async () => {
@@ -91,7 +66,6 @@ const DeveloperAppsManager = () => {
         .select("id, name, description, client_id, redirect_uris, logo_url, homepage_url, is_verified, created_at")
         .eq("owner_id", user.id)
         .order("created_at", { ascending: false });
-
 
       if (error) throw error;
       setApps(data || []);
@@ -108,26 +82,8 @@ const DeveloperAppsManager = () => {
       toast.error("App name is required");
       return;
     }
-
-    const redirectUris = newApp.redirect_uris
-      .split("\n")
-      .map(uri => uri.trim())
-      .filter(Boolean);
-
-    if (redirectUris.length === 0) {
-      toast.error("At least one redirect URI is required");
-      return;
-    }
-
-    // Validate URIs
-    for (const uri of redirectUris) {
-      try {
-        new URL(uri);
-      } catch {
-        toast.error(`Invalid redirect URI: ${uri}`);
-        return;
-      }
-    }
+    const redirectUris = parseRedirectUris(newApp.redirect_uris);
+    if (!redirectUris) return;
 
     setCreating(true);
     try {
@@ -159,12 +115,11 @@ const DeveloperAppsManager = () => {
         created_at: row.created_at,
       };
 
-      setApps(prev => [created, ...prev]);
+      setApps((prev) => [created, ...prev]);
       setShowCreateDialog(false);
       setShowCredentialsDialog({ app: created, plainSecret: row.plain_secret });
-      setNewApp({ name: "", description: "", homepage_url: "", redirect_uris: "", logo_url: "" });
+      setNewApp(emptyForm);
       toast.success("App created successfully!");
-
     } catch (error) {
       console.error("Error creating app:", error);
       toast.error("Failed to create app");
@@ -176,14 +131,9 @@ const DeveloperAppsManager = () => {
   const handleDeleteApp = async (app: OAuthApp) => {
     setDeleting(true);
     try {
-      const { error } = await supabase
-        .from("oauth_clients")
-        .delete()
-        .eq("id", app.id);
-
+      const { error } = await supabase.from("oauth_clients").delete().eq("id", app.id);
       if (error) throw error;
-
-      setApps(prev => prev.filter(a => a.id !== app.id));
+      setApps((prev) => prev.filter((a) => a.id !== app.id));
       toast.success(`Deleted ${app.name}`);
     } catch (error) {
       console.error("Error deleting app:", error);
@@ -192,15 +142,6 @@ const DeveloperAppsManager = () => {
       setDeleting(false);
       setShowDeleteConfirm(null);
     }
-  };
-
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard`);
-  };
-
-  const toggleShowSecret = (appId: string) => {
-    setShowSecrets(prev => ({ ...prev, [appId]: !prev[appId] }));
   };
 
   const openEditDialog = (app: OAuthApp) => {
@@ -216,31 +157,12 @@ const DeveloperAppsManager = () => {
 
   const handleUpdateApp = async () => {
     if (!showEditDialog) return;
-    
     if (!editApp.name.trim()) {
       toast.error("App name is required");
       return;
     }
-
-    const redirectUris = editApp.redirect_uris
-      .split("\n")
-      .map(uri => uri.trim())
-      .filter(Boolean);
-
-    if (redirectUris.length === 0) {
-      toast.error("At least one redirect URI is required");
-      return;
-    }
-
-    // Validate URIs
-    for (const uri of redirectUris) {
-      try {
-        new URL(uri);
-      } catch {
-        toast.error(`Invalid redirect URI: ${uri}`);
-        return;
-      }
-    }
+    const redirectUris = parseRedirectUris(editApp.redirect_uris);
+    if (!redirectUris) return;
 
     setUpdating(true);
     try {
@@ -259,7 +181,7 @@ const DeveloperAppsManager = () => {
 
       if (error) throw error;
 
-      setApps(prev => prev.map(a => a.id === data.id ? { ...a, ...data } as OAuthApp : a));
+      setApps((prev) => prev.map((a) => (a.id === data.id ? ({ ...a, ...data } as OAuthApp) : a)));
       setShowEditDialog(null);
       toast.success("App updated successfully!");
     } catch (error) {
@@ -309,308 +231,41 @@ const DeveloperAppsManager = () => {
         </Card>
       ) : (
         apps.map((app) => (
-          <Card key={app.id}>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold">{app.name}</h3>
-                    {app.is_verified && (
-                      <Badge variant="secondary" className="text-xs">Verified</Badge>
-                    )}
-                  </div>
-
-                  {app.description && (
-                    <p className="text-sm text-muted-foreground mt-1">{app.description}</p>
-                  )}
-
-                  <div className="mt-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground w-20">Client ID:</span>
-                      <code className="text-xs bg-muted px-2 py-1 rounded flex-1 truncate">
-                        {app.client_id}
-                      </code>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(app.client_id, "Client ID")}
-                      >
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                    </div>
-
-                     <div className="flex items-center gap-2">
-                       <span className="text-xs text-muted-foreground w-20">Secret:</span>
-                       <code className="text-xs bg-muted px-2 py-1 rounded flex-1 truncate">
-                         ••••••••••••••••
-                       </code>
-                       <span className="text-xs text-muted-foreground italic">hashed</span>
-                     </div>
-
-                    <div className="flex items-start gap-2">
-                      <span className="text-xs text-muted-foreground w-20">Redirects:</span>
-                      <div className="flex-1">
-                        {app.redirect_uris.map((uri, i) => (
-                          <code key={i} className="text-xs bg-muted px-2 py-1 rounded block mb-1 truncate">
-                            {uri}
-                          </code>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground mt-3">
-                    Created {format(new Date(app.created_at), "MMM d, yyyy")}
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditDialog(app)}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => setShowDeleteConfirm(app)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <AppCard key={app.id} app={app} onEdit={openEditDialog} onDelete={setShowDeleteConfirm} />
         ))
       )}
 
-      {/* Create App Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create OAuth App</DialogTitle>
-            <DialogDescription>
-              Create an app to enable "Login with XCROL" on your website.
-            </DialogDescription>
-          </DialogHeader>
+      <AppFormDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        mode="create"
+        form={newApp}
+        onChange={setNewApp}
+        onSubmit={handleCreateApp}
+        submitting={creating}
+      />
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">App Name *</Label>
-              <Input
-                id="name"
-                placeholder="My Awesome App"
-                value={newApp.name}
-                onChange={(e) => setNewApp(prev => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
+      <CredentialsDialog
+        data={showCredentialsDialog}
+        onClose={() => setShowCredentialsDialog(null)}
+      />
 
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="What does your app do?"
-                value={newApp.description}
-                onChange={(e) => setNewApp(prev => ({ ...prev, description: e.target.value }))}
-              />
-            </div>
+      <AppFormDialog
+        open={!!showEditDialog}
+        onOpenChange={(open) => !open && setShowEditDialog(null)}
+        mode="edit"
+        form={editApp}
+        onChange={setEditApp}
+        onSubmit={handleUpdateApp}
+        submitting={updating}
+      />
 
-            <div>
-              <Label htmlFor="homepage_url">Homepage URL</Label>
-              <Input
-                id="homepage_url"
-                type="url"
-                placeholder="https://myapp.com"
-                value={newApp.homepage_url}
-                onChange={(e) => setNewApp(prev => ({ ...prev, homepage_url: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="redirect_uris">Redirect URIs * (one per line)</Label>
-              <Textarea
-                id="redirect_uris"
-                placeholder="https://myapp.com/auth/callback&#10;http://localhost:3000/auth/callback"
-                value={newApp.redirect_uris}
-                onChange={(e) => setNewApp(prev => ({ ...prev, redirect_uris: e.target.value }))}
-                rows={3}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Users will be redirected here after authorization
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="logo_url">Logo URL</Label>
-              <Input
-                id="logo_url"
-                type="url"
-                placeholder="https://myapp.com/logo.png"
-                value={newApp.logo_url}
-                onChange={(e) => setNewApp(prev => ({ ...prev, logo_url: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateApp} disabled={creating}>
-              {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Create App
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Credentials Dialog */}
-      <Dialog open={!!showCredentialsDialog} onOpenChange={() => setShowCredentialsDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>App Created Successfully!</DialogTitle>
-            <DialogDescription>
-              Save your client secret now - you won't be able to see it again.
-            </DialogDescription>
-          </DialogHeader>
-
-          {showCredentialsDialog && (
-            <div className="space-y-4">
-              <div>
-                <Label>Client ID</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="flex-1 text-sm bg-muted px-3 py-2 rounded">
-                    {showCredentialsDialog.app.client_id}
-                  </code>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(showCredentialsDialog.app.client_id, "Client ID")}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label>Client Secret</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="flex-1 text-sm bg-muted px-3 py-2 rounded break-all">
-                    {showCredentialsDialog.plainSecret}
-                  </code>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(showCredentialsDialog.plainSecret, "Client Secret")}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-destructive mt-1">
-                  ⚠️ This secret will not be shown again. Save it securely!
-                </p>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button onClick={() => setShowCredentialsDialog(null)}>
-              I've Saved My Credentials
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit App Dialog */}
-      <Dialog open={!!showEditDialog} onOpenChange={() => setShowEditDialog(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit App</DialogTitle>
-            <DialogDescription>
-              Update your OAuth app settings.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-name">App Name *</Label>
-              <Input
-                id="edit-name"
-                placeholder="My Awesome App"
-                value={editApp.name}
-                onChange={(e) => setEditApp(prev => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="edit-description">Description</Label>
-              <Textarea
-                id="edit-description"
-                placeholder="What does your app do?"
-                value={editApp.description}
-                onChange={(e) => setEditApp(prev => ({ ...prev, description: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="edit-homepage_url">Homepage URL</Label>
-              <Input
-                id="edit-homepage_url"
-                type="url"
-                placeholder="https://myapp.com"
-                value={editApp.homepage_url}
-                onChange={(e) => setEditApp(prev => ({ ...prev, homepage_url: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="edit-redirect_uris">Redirect URIs * (one per line)</Label>
-              <Textarea
-                id="edit-redirect_uris"
-                placeholder="https://myapp.com/auth/callback&#10;http://localhost:3000/auth/callback"
-                value={editApp.redirect_uris}
-                onChange={(e) => setEditApp(prev => ({ ...prev, redirect_uris: e.target.value }))}
-                rows={3}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Users will be redirected here after authorization
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="edit-logo_url">Logo URL</Label>
-              <Input
-                id="edit-logo_url"
-                type="url"
-                placeholder="https://myapp.com/logo.png"
-                value={editApp.logo_url}
-                onChange={(e) => setEditApp(prev => ({ ...prev, logo_url: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateApp} disabled={updating}>
-              {updating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation */}
       <AlertDialog open={!!showDeleteConfirm} onOpenChange={() => setShowDeleteConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete App</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{showDeleteConfirm?.name}</strong>? 
+              Are you sure you want to delete <strong>{showDeleteConfirm?.name}</strong>?
               All users who authorized this app will be disconnected. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
