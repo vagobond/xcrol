@@ -104,6 +104,51 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_runs: {
+        Row: {
+          bytes_uploaded: number
+          created_at: string
+          error: string | null
+          files_uploaded: number
+          finished_at: string | null
+          id: string
+          kind: string
+          manifest_key: string | null
+          notes: Json | null
+          started_at: string
+          status: string
+          tables_dumped: number
+        }
+        Insert: {
+          bytes_uploaded?: number
+          created_at?: string
+          error?: string | null
+          files_uploaded?: number
+          finished_at?: string | null
+          id?: string
+          kind: string
+          manifest_key?: string | null
+          notes?: Json | null
+          started_at?: string
+          status: string
+          tables_dumped?: number
+        }
+        Update: {
+          bytes_uploaded?: number
+          created_at?: string
+          error?: string | null
+          files_uploaded?: number
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          manifest_key?: string | null
+          notes?: Json | null
+          started_at?: string
+          status?: string
+          tables_dumped?: number
+        }
+        Relationships: []
+      }
       brook_comments: {
         Row: {
           content: string
