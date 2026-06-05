@@ -1,156 +1,111 @@
 
-# Scrolls v2 — Phase 3: Publication & The Castle Library
+# Xcrol Survivability — Tier 1 Plan + Tier 2 Costs
 
-Phase 1 shipped private export (ePub/PDF) and Phase 2 shipped optional AI assistance. Phase 3 turns Scrolls from **personal artefact** into **shareable work**: authors can *publish* an immutable snapshot to a public **Castle Library**, and readers can discover, read, and react.
+## Tier 2 — Estimated monthly costs (USD)
 
-No payments, no NOSTR/ActivityPub bridge, no reviews-with-stars yet — those stay deferred. Focus is the publication primitive everything else builds on.
+These are the realistic numbers if you replaced Lovable-managed pieces with neutral, portable equivalents. Ranges reflect "small Xcrol" vs "Xcrol with a few thousand active users".
 
-## 1. Publication primitive
+| Item | Provider options | Cost / month |
+|---|---|---|
+| Frontend hosting (static + edge) | Cloudflare Pages (free tier), Vercel Hobby (free) / Pro ($20) | **$0–$20** |
+| Database + Auth + Storage + Edge Functions | Self-hosted Supabase on Hetzner CX22 ($4) or CPX21 ($8); or Supabase Pro ($25) | **$4–$25** |
+| Object storage (avatars, exports, backups) | Backblaze B2 (~$6/TB), Cloudflare R2 (free egress, $15/TB stored) | **$1–$15** |
+| Transactional email (Resend replacement option) | Resend ($20 for 50k), Postmark ($15 for 10k), AWS SES (~$0.10/1k) | **$0–$20** |
+| Map tiles (Mapbox replacement option) | MapTiler ($0 up to 100k loads), Protomaps self-hosted (~$1) | **$0–$25** |
+| AI for Scrolls | Already BYOK — $0 platform cost; users pay their own OpenAI/Anthropic/Google bill | **$0** |
+| Domain registration (xcrol.com) | Cloudflare / Porkbun, pre-paid up to 10 yrs | **~$1/mo amortized** |
+| DNS | Cloudflare free | **$0** |
+| Off-site backup storage | Backblaze B2 / S3 Glacier (~10 GB) | **$0.05–$1** |
+| **Total realistic floor** | minimal self-hosted | **~$6–$10/mo** |
+| **Total comfortable** | managed everything | **~$60–$90/mo** |
 
-A "publication" is an **immutable snapshot** of a Scroll at a moment in time. The author keeps editing the live Scroll freely; the published copy doesn't change.
+Notes:
+- AI Gateway is the only piece with no drop-in equivalent — but BYOK already exists in `src/lib/scroll-ai-byok.ts`, so users self-fund AI and Xcrol owes nothing.
+- "If you die" scenario: a trustee paying ~$10/mo + domain renewal keeps Xcrol alive indefinitely on Hetzner + self-hosted Supabase.
 
-### New tables
+---
 
-- `scroll_publications`
-  - `id`, `scroll_id` (FK), `user_id` (author, FK auth.users)
-  - `slug` (unique, derived from title + short hash)
-  - `title`, `subtitle`, `blurb`, `cover_image_url` (snapshot)
-  - `content_json` — full snapshot of items (id, kind, body, link, item_date, chapter_label, group name) so reads never touch live data
-  - `visibility` — `public` | `unlisted` (no `private`; that's just "don't publish")
-  - `published_at`, `unpublished_at` (nullable, soft hide)
-  - `view_count`, `reader_count` (denormalised, updated by triggers/RPC)
-- `scroll_publication_reactions`
-  - `id`, `publication_id`, `user_id`, `emoji` (one of a small allow-list), `created_at`
-  - Unique `(publication_id, user_id, emoji)`
+## Tier 1 Plan — Cold Backup + Revival Runbook
 
-### RLS
+Goal: if Lovable disappears tomorrow (or you do), a technically competent person with the backup bundle can have Xcrol running again on a fresh stack within a day, with no data loss beyond the last backup window.
 
-- `scroll_publications`:
-  - SELECT: anyone (incl. anon) when `visibility = 'public' AND unpublished_at IS NULL`; owner can always see own; `unlisted` is fetchable only by slug (enforced by always querying with slug).
-  - INSERT/UPDATE/DELETE: owner only. UPDATE is restricted to `visibility`, `unpublished_at`, denorm counters — no body edits (enforced by trigger that blocks changes to snapshot columns).
-- `scroll_publication_reactions`: SELECT public; INSERT/DELETE by authenticated user on own rows.
+### What gets backed up
 
-### RPC
+1. **Database** — full `pg_dump` of the Supabase Postgres (schema + data + RLS policies + functions + triggers).
+2. **Storage buckets** — every object in every bucket (avatars, scroll exports, etc.).
+3. **Source code** — the repo is already mirrored to GitHub via Lovable's GitHub sync; we'll document how to verify it and add a weekly tarball as belt-and-suspenders.
+4. **Edge function source** — included with the repo, but we'll also snapshot deployed versions.
+5. **Secrets inventory** — names only (never values), so the trustee knows what to re-provision.
+6. **Auth users export** — `auth.users` rows so accounts survive (passwords are hashed and re-importable into any Supabase/GoTrue).
 
-- `publish_scroll(scroll_id, visibility)` — server-side snapshot using existing `get_scroll_contents`; returns publication row.
-- `unpublish_publication(publication_id)` — sets `unpublished_at`.
-- `increment_publication_view(publication_id)` — rate-limited per session.
+### Where backups go
 
-## 2. The Castle Library (public discovery)
+Two destinations for redundancy, neither owned by Lovable:
 
-New route `/castle/library` (and a card on existing `/castle`). Public — no auth needed to browse or read.
+- **Primary:** Backblaze B2 bucket `xcrol-backups` (cheap, ~$0.005/GB/mo). User-owned account.
+- **Secondary:** A private GitHub repo `xcrol-backups` (last 30 days of metadata + small dumps; storage objects skipped here because of size).
 
-- Grid of recent public publications: cover thumbnail, title, author display name + `@username`, blurb, reaction count.
-- Filters: **Newest**, **Most read**, **Most reacted**, **By friend** (auth only).
-- Search box (title + author, simple `ilike` on snapshot columns).
-- Pagination (20/page).
+You'll need to create the Backblaze account and provide:
+- `B2_KEY_ID`
+- `B2_APPLICATION_KEY`
+- `B2_BUCKET_NAME`
 
-The existing `/castle` page becomes the gated "membership"/progress page **plus** a prominent link into the Library (Library itself is open, the gated bit stays as-is).
+### How backups run
 
-## 3. Public reader
+A scheduled Supabase Edge Function `nightly-backup` runs daily at 04:00 UTC and:
 
-New route `/library/:slug` (also accept legacy `/scrolls/p/:slug` redirect-friendly).
+1. Calls `pg_dump` via Supabase's pooler → uploads `db-YYYY-MM-DD.sql.gz` to B2.
+2. Lists every storage bucket, streams each object to B2 under `storage/<bucket>/<path>`.
+3. Writes a `manifest-YYYY-MM-DD.json` (counts, sizes, checksums, secret-name inventory).
+4. Posts a one-line success/failure to a webhook (your email via Resend, or a Slack/Discord webhook).
+5. Retention: keeps daily backups for 14 days, weekly for 12 weeks, monthly forever.
 
-- Server-side OG meta via new `og-publication` edge function (mirrors `og-post`): title, blurb, cover, author. Meta-refresh to the SPA route for human visitors.
-- Reuses `ScrollReader`'s book-view typography (already built in Phase 1) but pulls from `content_json` snapshot, not live items.
-- Header: cover, title, subtitle, author chip → links to `/u/:username`, published date, view count.
-- Reactions row (emoji allow-list: ✨📜🔥💛🌊🏰). Auth required to react; unauth see counts only with a "Sign in to react" hint.
-- Share buttons: copy link, NOSTR share (uses existing NOSTR identity if connected — publishes `kind 1` note linking back; full `kind 30023` bridge stays deferred).
-- "Read more from {author}" strip: other public publications by same author.
+A second function `weekly-source-snapshot` (Sundays) tarballs the deployed edge function source and pushes the manifest to the GitHub backup repo.
 
-## 4. Author flow in `ScrollEditor`
+### Dead-man's switch (optional add-on you mentioned)
 
-- New **Publish** button in the editor toolbar (next to Export).
-- Opens `PublishScrollDialog`:
-  - Visibility radio: Public (Castle Library) / Unlisted (link only).
-  - Preview of cover/title/blurb as it will appear in the Library.
-  - Disclosure: "Publishing creates an immutable snapshot. Edits to this Scroll won't change the published copy. You can publish again to update."
-  - Confirm → calls `publish_scroll` RPC, toasts success, shows public URL + copy button.
-- New **Publications** subsection at the bottom of the editor listing this Scroll's publications (date, visibility, view count, "Unpublish" and "Copy link" actions).
-- On `Scrolls` list cards, badge showing "Published" + count of live publications.
+A third function `heartbeat-check` runs weekly. If you haven't logged in or pinged a `/alive` endpoint for **90 days**, it emails a pre-designated trustee with:
+- Link to the backup bucket
+- Link to `RUNBOOK.md`
+- Link to the GitHub mirror
+- A short letter you write once and store encrypted
 
-## 5. Author profile integration
+Configurable threshold and trustee email; off by default until you turn it on.
 
-- On `PublicProfile.tsx` (route `/u/:username`), new tab/section **Scrolls** listing the user's public publications (cover, title, blurb, published date). Only renders when count ≥ 1.
-- No changes for users who never publish.
+### The RUNBOOK.md (committed to the repo at `/docs/RUNBOOK.md`)
 
-## 6. Sitemap & SEO
+A step-by-step revival guide written for a stranger:
 
-- `og-publication` edge function: full OpenGraph/Twitter card with cover image.
-- `public/sitemap.xml` regeneration extended (or dynamic edge function) — out of scope as a code change if current sitemap is hand-maintained; instead add `og-publication`-style meta tags to ensure crawlability and rely on inbound links for now. (Sitemap automation = deferred.)
+1. Provision a fresh Supabase project (or self-hosted Supabase on Hetzner — both paths documented).
+2. `psql < db-latest.sql.gz` to restore schema + data + auth users.
+3. `b2 sync` storage objects back into the new project's buckets.
+4. Re-provision secrets from the inventory (list of names + where to get each value).
+5. Point DNS (`xcrol.com`) at the new frontend host.
+6. Deploy the repo to Cloudflare Pages / Vercel (one-command instructions for each).
+7. Smoke-test checklist (login, post to River, send message, view profile).
 
-## 7. Out of scope for Phase 3 (still deferred)
+### What this plan will create
 
-- Payments / paid scrolls / payouts / Stripe.
-- Reviews with star ratings (only emoji reactions ship).
-- NOSTR `kind 30023` long-form bridge (only optional `kind 1` share link).
-- ActivityPub `Article` publish event.
-- Comments / threaded discussion on publications.
-- Versioning UI showing diff between snapshots.
-- AI cover generation.
-- Editorial curation / featured / staff picks.
+- `supabase/functions/nightly-backup/index.ts` — the backup job
+- `supabase/functions/weekly-source-snapshot/index.ts` — source/manifest snapshot
+- `supabase/functions/heartbeat-check/index.ts` — dead-man's switch (disabled by default)
+- A `pg_cron` migration that schedules the three functions
+- `docs/RUNBOOK.md` — full revival guide
+- `docs/BACKUP-ARCHITECTURE.md` — what's backed up, where, retention, how to test a restore
+- A one-time admin page `/admin/backups` showing last run, size, status, and a "Run now" button
+- Secrets to be added (by you, after approval): `B2_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`, optional `BACKUP_ALERT_WEBHOOK`, optional `TRUSTEE_EMAIL`
 
-## Technical details
+### What this plan does NOT change
 
-### File layout (new)
+- No changes to existing tables, RLS, auth, or any user-facing feature.
+- No changes to the hosting setup — still Lovable Cloud as the live system.
+- AI / BYOK code untouched.
 
-```text
-supabase/functions/
-  og-publication/
-    index.ts                # OG meta for /library/:slug
+### Open questions before I build
 
-src/pages/
-  CastleLibrary.tsx         # /castle/library — public grid
-  PublicationReader.tsx     # /library/:slug — public reader
+1. Are you OK with **Backblaze B2** as the primary off-site (cheapest, S3-compatible), or do you prefer AWS S3 / Cloudflare R2?
+2. Do you want the **dead-man's switch** scaffolded now (off by default) or skipped entirely for Tier 1?
+3. For backup alert notifications, prefer **email via Resend** (already wired) or a **Discord/Slack webhook**?
+4. Should restored backups also include **`auth.users` password hashes** (yes = users keep their passwords; no = everyone must reset)? Default: yes.
 
-src/components/scrolls/
-  PublishScrollDialog.tsx
-  PublicationsList.tsx      # used inside ScrollEditor
-  PublicationReactions.tsx  # used inside PublicationReader
-  LibraryCard.tsx           # grid card
-
-src/lib/
-  scroll-publish.ts         # client wrappers for publish/unpublish/list
-```
-
-### Files edited
-
-- `src/App.tsx` — three new routes (`/castle/library`, `/library/:slug`, legacy redirect).
-- `src/pages/ScrollEditor.tsx` — Publish button, dialog, publications list.
-- `src/pages/Scrolls.tsx` — "Published" badge on cards.
-- `src/pages/TheCastle.tsx` — Library entry card.
-- `src/pages/PublicProfile.tsx` — Scrolls section when author has publications.
-- `supabase/config.toml` — register `og-publication` (`verify_jwt = false`).
-
-### Snapshot integrity
-
-- The publish RPC takes a **fresh** call to `get_scroll_contents(scroll_id)`, serialises to JSON, stores in `content_json`. Original posts remain in their source tables; the snapshot is a read-only copy used only by the public reader/export.
-- Trigger on `scroll_publications` blocks any UPDATE that touches `title`, `subtitle`, `blurb`, `cover_image_url`, or `content_json` — guaranteeing immutability.
-
-### Reactions
-
-- Allow-list enforced via DB CHECK on `emoji IN ('✨','📜','🔥','💛','🌊','🏰')`.
-- One row per `(publication, user, emoji)` so toggling is idempotent.
-- Counts computed via cheap aggregate; cache nothing in Phase 3.
-
-### Privacy
-
-- `unlisted` publications are excluded from the Library grid and any sitemap; only retrievable when the caller supplies the slug (RLS policy intentionally allows anon SELECT by slug since the slug is the access token).
-- Authors can unpublish at any time → `unpublished_at` set → the row stops being served by the public reader and disappears from author profile + library.
-
-## Order of execution once approved
-
-1. Migration: tables, RLS, immutability trigger, RPCs.
-2. `scroll-publish.ts` client wrappers.
-3. `PublishScrollDialog` + editor wiring + publications list.
-4. `CastleLibrary` page + `LibraryCard`.
-5. `PublicationReader` page + reactions.
-6. `og-publication` edge function + config.
-7. PublicProfile Scrolls section + Scrolls list "Published" badge + Castle library entry.
-8. QA: publish a Scroll, view in Library (anon), react (auth), unpublish, verify removal, edit live Scroll and confirm snapshot unchanged, re-publish to create v2.
-
-## Open questions
-
-1. **Slug collisions**: title + 6-char hash (e.g. `wandering-years-a1b2c3`) — OK, or prefer `@username/scroll-title` style?
-2. **Reaction emoji set** (`✨📜🔥💛🌊🏰`) — keep these six, or pick a different set that fits XCROL vibe better?
-3. **NOSTR share button** in the public reader — ship in Phase 3 as `kind 1` link, or defer entirely until full `kind 30023` bridge?
+Answer those four and I'll implement Tier 1 end-to-end in the next turn.
