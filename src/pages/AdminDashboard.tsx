@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, Shield, RefreshCw, Flag, UserX, Clock, ScrollText } from "lucide-react";
+import { ArrowLeft, Users, Shield, RefreshCw, Flag, UserX, Clock, ScrollText, ShieldCheck } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +22,7 @@ import { ReferencesTab } from "@/components/admin/ReferencesTab";
 import { BroadcastTab } from "@/components/admin/BroadcastTab";
 import { WaitlistTab } from "@/components/admin/WaitlistTab";
 import { AuditLogTab } from "@/components/admin/AuditLogTab";
+import { BackupsTab } from "@/components/admin/BackupsTab";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -126,6 +127,9 @@ export default function AdminDashboard() {
             <TabsTrigger value="audit" className="flex items-center gap-1">
               <ScrollText className="w-3 h-3" /> Audit Log
             </TabsTrigger>
+            <TabsTrigger value="backups" className="flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3" /> Backups
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -151,6 +155,9 @@ export default function AdminDashboard() {
           </TabsContent>
           <TabsContent value="audit">
             <AuditLogTab />
+          </TabsContent>
+          <TabsContent value="backups">
+            <BackupsTab />
           </TabsContent>
         </Tabs>
 
