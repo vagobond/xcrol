@@ -16,6 +16,22 @@ const corsHeaders = {
 
 const PAGE = 1000;
 
+// Serialize unknown error values into a readable string. Supabase PostgrestError
+// objects are plain objects, so String(e) yields "[object Object]" — handle them.
+function errMsg(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object") {
+    // deno-lint-ignore no-explicit-any
+    const o = e as any;
+    const parts = [o.message, o.details, o.hint, o.code]
+      .filter((v) => v !== undefined && v !== null && v !== "")
+      .map(String);
+    if (parts.length) return parts.join(" | ");
+    try { return JSON.stringify(e); } catch { return String(e); }
+  }
+  return String(e);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -129,7 +145,7 @@ Deno.serve(async (req) => {
         tablesDumped += 1;
         tableSummary[t] = { rows: lines.length, bytes: res.size };
       } catch (e) {
-        errors.push(`table ${t}: ${e instanceof Error ? e.message : String(e)}`);
+        errors.push(`table ${t}: ${errMsg(e)}`);
       }
     }
 
@@ -153,7 +169,7 @@ Deno.serve(async (req) => {
       filesUploaded += 1;
       tableSummary["auth.users"] = { rows: users.length, bytes: res.size };
     } catch (e) {
-      errors.push(`auth.users: ${e instanceof Error ? e.message : String(e)}`);
+      errors.push(`auth.users: ${errMsg(e)}`);
     }
 
     // 4) Storage object catalog (paths + metadata, not bytes — v1)
@@ -172,7 +188,7 @@ Deno.serve(async (req) => {
       bytesUploaded += res.size;
       filesUploaded += 1;
     } catch (e) {
-      errors.push(`storage catalog: ${e instanceof Error ? e.message : String(e)}`);
+      errors.push(`storage catalog: ${errMsg(e)}`);
     }
 
     // 5) Secret-name inventory (NAMES ONLY — never values)
@@ -245,7 +261,7 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
+    const msg = errMsg(e);
     await admin
       .from("backup_runs")
       .update({ status: "failed", finished_at: new Date().toISOString(), error: msg.slice(0, 4000) })
@@ -308,50 +324,70 @@ async function listPublicTables(admin: any): Promise<string[]> {
 // Missing tables here only means they won't be backed up by this fallback path;
 // the runbook explains the canonical list comes from the schema migrations.
 const KNOWN_TABLES = [
+  "account_deletion_requests",
+  "art_i_fucked_state",
+  "audit_log",
   "backup_runs",
-  "profiles",
-  "user_roles",
-  "user_settings",
-  "user_invites",
-  "xcrol_entries",
-  "xcrol_reactions",
-  "friendships",
-  "friendship_requests",
-  "custom_friendship_types",
-  "blocked_users",
-  "introduction_requests",
-  "references",
-  "messages",
-  "brooks",
-  "brook_posts",
   "brook_comments",
+  "brook_posts",
   "brook_reactions",
-  "groups",
+  "brooks",
+  "country_invites",
+  "custom_friendship_types",
+  "dismissed_reference_notifications",
+  "dream_trips",
+  "flagged_references",
+  "friend_requests",
+  "friendships",
+  "game_deaths",
+  "game_sessions",
+  "group_comment_reactions",
   "group_members",
-  "group_join_requests",
-  "group_posts",
   "group_post_comments",
   "group_post_reactions",
-  "group_visits",
+  "group_posts",
+  "groups",
+  "hosting_preferences",
+  "hosting_requests",
+  "introduction_requests",
+  "invite_notification_seen",
+  "layer_relationships",
+  "layers",
+  "meetup_preferences",
+  "meetup_requests",
+  "meetups",
+  "messages",
+  "notifications",
+  "oauth_authorization_codes",
+  "oauth_clients",
+  "oauth_scopes",
+  "oauth_tokens",
+  "oauth_user_authorizations",
+  "pending_invite_codes",
+  "profile_widgets",
+  "profiles",
+  "resolution_game_state",
   "river_replies",
   "river_reply_reactions",
-  "scrolls",
+  "rss_feed_items",
+  "scroll_ai_usage",
   "scroll_items",
-  "scroll_publications",
   "scroll_publication_reactions",
+  "scroll_publications",
+  "scrolls",
+  "sly_doubt_game_state",
   "social_links",
-  "personal_info",
-  "profile_widgets",
-  "hosting_preferences",
-  "meetup_preferences",
-  "hosting_requests",
-  "meetup_requests",
   "town_listings",
-  "developer_apps",
-  "oauth_authorizations",
-  "rss_feeds",
+  "tutorial_completion",
+  "user_blocks",
+  "user_invites",
+  "user_references",
+  "user_roles",
+  "user_rss_feeds",
+  "user_settings",
   "waitlist",
-  "deletion_requests",
-  "audit_log",
-  "user_points",
+  "weekly_digest_log",
+  "wolfemon_game_state",
+  "xcrol_entries",
+  "xcrol_reactions",
 ];
