@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
         tablesDumped += 1;
         tableSummary[t] = { rows: lines.length, bytes: res.size };
       } catch (e) {
-        errors.push(`table ${t}: ${e instanceof Error ? e.message : String(e)}`);
+        errors.push(`table ${t}: ${errMsg(e)}`);
       }
     }
 
@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
       filesUploaded += 1;
       tableSummary["auth.users"] = { rows: users.length, bytes: res.size };
     } catch (e) {
-      errors.push(`auth.users: ${e instanceof Error ? e.message : String(e)}`);
+      errors.push(`auth.users: ${errMsg(e)}`);
     }
 
     // 4) Storage object catalog (paths + metadata, not bytes — v1)
@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
       bytesUploaded += res.size;
       filesUploaded += 1;
     } catch (e) {
-      errors.push(`storage catalog: ${e instanceof Error ? e.message : String(e)}`);
+      errors.push(`storage catalog: ${errMsg(e)}`);
     }
 
     // 5) Secret-name inventory (NAMES ONLY — never values)
@@ -261,7 +261,7 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
+    const msg = errMsg(e);
     await admin
       .from("backup_runs")
       .update({ status: "failed", finished_at: new Date().toISOString(), error: msg.slice(0, 4000) })
