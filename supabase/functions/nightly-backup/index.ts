@@ -16,6 +16,22 @@ const corsHeaders = {
 
 const PAGE = 1000;
 
+// Serialize unknown error values into a readable string. Supabase PostgrestError
+// objects are plain objects, so String(e) yields "[object Object]" — handle them.
+function errMsg(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object") {
+    // deno-lint-ignore no-explicit-any
+    const o = e as any;
+    const parts = [o.message, o.details, o.hint, o.code]
+      .filter((v) => v !== undefined && v !== null && v !== "")
+      .map(String);
+    if (parts.length) return parts.join(" | ");
+    try { return JSON.stringify(e); } catch { return String(e); }
+  }
+  return String(e);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
