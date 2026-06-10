@@ -56,6 +56,3 @@ verify_jwt = true
 
 [functions.og-publication]
 verify_jwt = false
-
-[functions.health]
-verify_jwt = false
