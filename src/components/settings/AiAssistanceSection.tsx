@@ -23,8 +23,8 @@ import {
 import { testByokKey } from "@/lib/scroll-ai-byok";
 
 export function AiAssistanceSection() {
-  const [provider, setProvider] = useState<ByokProvider>("openai");
-  const [model, setModel] = useState(PROVIDER_DEFAULT_MODELS.openai);
+  const [provider, setProvider] = useState<ByokProvider>("openrouter");
+  const [model, setModel] = useState(PROVIDER_DEFAULT_MODELS.openrouter);
   const [apiKey, setApiKey] = useState("");
   const [hasKey, setHasKey] = useState(false);
   const [testing, setTesting] = useState(false);
