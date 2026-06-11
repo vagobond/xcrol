@@ -332,6 +332,18 @@ const ScrollEditor = () => {
           </div>
         </div>
 
+        <div className="flex items-center justify-end">
+          {byokActive ? (
+            <Badge variant="secondary" className="gap-1 text-[10px]">
+              <Sparkles className="h-3 w-3" /> BYOK active
+            </Badge>
+          ) : (
+            <Link to="/settings#ai-assistance" className="text-[10px] text-muted-foreground hover:text-primary inline-flex items-center gap-1">
+              <Sparkles className="h-3 w-3" /> Add an AI key to enable Suggest
+            </Link>
+          )}
+        </div>
+
         <Card>
           <CardContent className="p-4 space-y-3">
             <div>
