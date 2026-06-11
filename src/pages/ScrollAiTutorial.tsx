@@ -66,6 +66,17 @@ const ScrollAiTutorial = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ProviderCard
+            name="OpenRouter (recommended)"
+            url="https://openrouter.ai/keys"
+            steps={[
+              "Sign in at openrouter.ai",
+              "Open Keys → Create Key",
+              "Add a few dollars of credit (pay-as-you-go)",
+              "Paste it into Settings → AI Assistance",
+            ]}
+            modelHint="One key, hundreds of models. Default: openai/gpt-4o-mini"
+          />
+          <ProviderCard
             name="OpenAI"
             url="https://platform.openai.com/api-keys"
             steps={[
@@ -75,17 +86,6 @@ const ScrollAiTutorial = () => {
               "Paste it into Settings → AI Assistance",
             ]}
             modelHint="Default model: gpt-4o-mini"
-          />
-          <ProviderCard
-            name="Google Gemini"
-            url="https://aistudio.google.com/apikey"
-            steps={[
-              "Open Google AI Studio",
-              "Click 'Get API key' → 'Create API key'",
-              "Copy the key",
-              "Paste it into Settings → AI Assistance",
-            ]}
-            modelHint="Default model: gemini-2.0-flash"
           />
           <ProviderCard
             name="Anthropic Claude"
@@ -99,17 +99,50 @@ const ScrollAiTutorial = () => {
             modelHint="Default model: claude-3-5-haiku-latest"
           />
           <ProviderCard
-            name="OpenRouter"
-            url="https://openrouter.ai/keys"
+            name="Google Gemini"
+            url="https://aistudio.google.com/apikey"
             steps={[
-              "Sign in at openrouter.ai",
-              "Open Keys → Create Key",
-              "Pick any model you like (cheap or strong)",
+              "Open Google AI Studio",
+              "Click 'Get API key' → 'Create API key'",
+              "Copy the key",
               "Paste it into Settings → AI Assistance",
             ]}
-            modelHint="Pick any model from openrouter.ai/models"
+            modelHint="Default model: gemini-2.0-flash"
           />
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">What does it cost?</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm space-y-2">
+            <p className="text-muted-foreground">
+              A typical Scroll suggestion (title, blurb, chapter labels, or a polished interlude)
+              uses a few thousand tokens. With the cheap default models below, that's typically
+              <strong> a fraction of a cent</strong> per click.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-1 pr-3">Provider</th>
+                    <th className="text-left py-1 pr-3">Cheap default</th>
+                    <th className="text-left py-1">Rough cost / suggestion</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground">
+                  <tr className="border-b"><td className="py-1 pr-3">OpenRouter</td><td className="py-1 pr-3">openai/gpt-4o-mini</td><td className="py-1">~$0.001–$0.005</td></tr>
+                  <tr className="border-b"><td className="py-1 pr-3">OpenAI</td><td className="py-1 pr-3">gpt-4o-mini</td><td className="py-1">~$0.001–$0.005</td></tr>
+                  <tr className="border-b"><td className="py-1 pr-3">Anthropic</td><td className="py-1 pr-3">claude-3-5-haiku-latest</td><td className="py-1">~$0.002–$0.01</td></tr>
+                  <tr><td className="py-1 pr-3">Google</td><td className="py-1 pr-3">gemini-2.0-flash</td><td className="py-1">often free tier, then ~$0.001</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Most providers let you cap your monthly spend — do that on day one.
+            </p>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

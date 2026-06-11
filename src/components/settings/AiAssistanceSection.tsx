@@ -23,8 +23,8 @@ import {
 import { testByokKey } from "@/lib/scroll-ai-byok";
 
 export function AiAssistanceSection() {
-  const [provider, setProvider] = useState<ByokProvider>("openai");
-  const [model, setModel] = useState(PROVIDER_DEFAULT_MODELS.openai);
+  const [provider, setProvider] = useState<ByokProvider>("openrouter");
+  const [model, setModel] = useState(PROVIDER_DEFAULT_MODELS.openrouter);
   const [apiKey, setApiKey] = useState("");
   const [hasKey, setHasKey] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -81,7 +81,7 @@ export function AiAssistanceSection() {
   };
 
   return (
-    <Card>
+    <Card id="ai-assistance" className="scroll-mt-24">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="w-5 h-5" />
@@ -104,6 +104,21 @@ export function AiAssistanceSection() {
             Clearing browser data removes the key.
           </AlertDescription>
         </Alert>
+
+        {!hasKey && (
+          <div className="rounded-md border border-dashed p-3 text-xs space-y-2 bg-muted/30">
+            <p>
+              <strong>New to this?</strong> OpenRouter is the easiest start — one key works with
+              hundreds of models (OpenAI, Anthropic, Google, open-source), pay-as-you-go,
+              typically a fraction of a cent per suggestion.
+            </p>
+            <Button variant="outline" size="sm" asChild>
+              <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer">
+                <ExternalLink className="w-3 h-3 mr-1" /> Get an OpenRouter key
+              </a>
+            </Button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">

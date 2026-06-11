@@ -24,6 +24,9 @@ import { format } from "date-fns";
 import { downloadScrollExport } from "@/lib/scroll-export";
 import { ScrollAiButton, toAiItems } from "@/components/ScrollAiButton";
 import type { ScrollContextForAi } from "@/lib/scroll-ai-prompts";
+import { hasByokKey } from "@/lib/scroll-ai-keystore";
+import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 import { PublishScrollDialog } from "@/components/scrolls/PublishScrollDialog";
 import { PublicationsList } from "@/components/scrolls/PublicationsList";
 
@@ -75,6 +78,11 @@ const ScrollEditor = () => {
   const [compiling, setCompiling] = useState(false);
   const [exporting, setExporting] = useState<"epub" | "pdf" | null>(null);
   const [coverOk, setCoverOk] = useState(true);
+  const [byokActive, setByokActive] = useState(false);
+
+  useEffect(() => {
+    hasByokKey().then(setByokActive);
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user || !scrollId) return;
@@ -322,6 +330,18 @@ const ScrollEditor = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+        </div>
+
+        <div className="flex items-center justify-end">
+          {byokActive ? (
+            <Badge variant="secondary" className="gap-1 text-[10px]">
+              <Sparkles className="h-3 w-3" /> BYOK active
+            </Badge>
+          ) : (
+            <Link to="/settings#ai-assistance" className="text-[10px] text-muted-foreground hover:text-primary inline-flex items-center gap-1">
+              <Sparkles className="h-3 w-3" /> Add an AI key to enable Suggest
+            </Link>
+          )}
         </div>
 
         <Card>

@@ -122,15 +122,15 @@ export async function deleteByokKey(): Promise<void> {
 }
 
 export const PROVIDER_LABELS: Record<ByokProvider, string> = {
+  openrouter: "OpenRouter (recommended)",
   openai: "OpenAI",
-  google: "Google Gemini",
   anthropic: "Anthropic Claude",
-  openrouter: "OpenRouter",
+  google: "Google Gemini",
 };
 
 export const PROVIDER_DEFAULT_MODELS: Record<ByokProvider, string> = {
-  openai: "gpt-4o-mini",
-  google: "gemini-2.0-flash",
-  anthropic: "claude-3-5-haiku-latest",
   openrouter: "openai/gpt-4o-mini",
+  openai: "gpt-4o-mini",
+  anthropic: "claude-3-5-haiku-latest",
+  google: "gemini-2.0-flash",
 };
