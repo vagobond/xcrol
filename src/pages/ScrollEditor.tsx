@@ -24,6 +24,9 @@ import { format } from "date-fns";
 import { downloadScrollExport } from "@/lib/scroll-export";
 import { ScrollAiButton, toAiItems } from "@/components/ScrollAiButton";
 import type { ScrollContextForAi } from "@/lib/scroll-ai-prompts";
+import { hasByokKey } from "@/lib/scroll-ai-keystore";
+import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 import { PublishScrollDialog } from "@/components/scrolls/PublishScrollDialog";
 import { PublicationsList } from "@/components/scrolls/PublicationsList";
 
