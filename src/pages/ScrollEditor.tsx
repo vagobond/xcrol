@@ -78,6 +78,11 @@ const ScrollEditor = () => {
   const [compiling, setCompiling] = useState(false);
   const [exporting, setExporting] = useState<"epub" | "pdf" | null>(null);
   const [coverOk, setCoverOk] = useState(true);
+  const [byokActive, setByokActive] = useState(false);
+
+  useEffect(() => {
+    hasByokKey().then(setByokActive);
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user || !scrollId) return;
