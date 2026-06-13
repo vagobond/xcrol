@@ -6,12 +6,14 @@ const corsHeaders = {
 };
 
 interface LinkPreviewResult {
-  type: 'pixelfed' | 'peertube' | 'unknown';
+  type: 'pixelfed' | 'peertube' | 'generic' | 'unknown';
   title?: string;
   description?: string;
   image_url?: string;
   video_embed_url?: string;
   duration?: number;
+  site_name?: string;
+  favicon_url?: string;
   original_url: string;
 }
 
