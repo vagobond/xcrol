@@ -295,9 +295,9 @@ Deno.serve(async (req) => {
     else if (hasPixelFedPath(url)) {
       result = await probePixelFed(url);
     }
-    // 5. Neither -> unknown
+    // 5. Generic OG preview
     else {
-      result = { type: 'unknown', original_url: url };
+      result = await fetchOgPreview(url, 'generic');
     }
 
     return new Response(JSON.stringify(result), {
