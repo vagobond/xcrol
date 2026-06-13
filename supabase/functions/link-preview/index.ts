@@ -6,12 +6,14 @@ const corsHeaders = {
 };
 
 interface LinkPreviewResult {
-  type: 'pixelfed' | 'peertube' | 'unknown';
+  type: 'pixelfed' | 'peertube' | 'generic' | 'unknown';
   title?: string;
   description?: string;
   image_url?: string;
   video_embed_url?: string;
   duration?: number;
+  site_name?: string;
+  favicon_url?: string;
   original_url: string;
 }
 
@@ -142,7 +144,7 @@ async function probePixelFed(url: string): Promise<LinkPreviewResult> {
 }
 
 // OG fallback with 50KB limit
-async function fetchOgPreview(url: string, type: 'pixelfed' | 'peertube'): Promise<LinkPreviewResult> {
+async function fetchOgPreview(url: string, type: 'pixelfed' | 'peertube' | 'generic'): Promise<LinkPreviewResult> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
@@ -154,7 +156,6 @@ async function fetchOgPreview(url: string, type: 'pixelfed' | 'peertube'): Promi
     });
     clearTimeout(timeout);
 
-    // Read only first 50KB to prevent abuse
     const reader = res.body?.getReader();
     if (!reader) return { type: 'unknown', original_url: url };
 
@@ -183,14 +184,35 @@ async function fetchOgPreview(url: string, type: 'pixelfed' | 'peertube'): Promi
       return match?.[1];
     };
 
+    const getTitle = (): string | undefined => {
+      const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+      return m?.[1]?.trim();
+    };
+
+    const getFavicon = (): string | undefined => {
+      const m = html.match(/<link[^>]*rel=["'](?:shortcut icon|icon|apple-touch-icon)["'][^>]*href=["']([^"']+)["']/i)
+        || html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["'](?:shortcut icon|icon|apple-touch-icon)["']/i);
+      const href = m?.[1];
+      if (!href) {
+        try { return `${new URL(url).origin}/favicon.ico`; } catch { return undefined; }
+      }
+      try { return new URL(href, url).toString(); } catch { return undefined; }
+    };
+
     const ogImage = getOg('image');
-    const ogTitle = getOg('title');
+    const ogTitle = getOg('title') || getTitle();
     const ogDescription = getOg('description') || getMeta('description');
     const ogVideo = getOg('video:url') || getOg('video');
     const ogDuration = getOg('video:duration');
+    const ogSiteName = getOg('site_name');
 
-    if (!ogImage && !ogTitle && !ogVideo) {
+    if (!ogImage && !ogTitle && !ogVideo && !ogDescription) {
       return { type: 'unknown', original_url: url };
+    }
+
+    let siteName = ogSiteName;
+    if (!siteName) {
+      try { siteName = new URL(url).hostname.replace(/^www\./, ''); } catch { /* ignore */ }
     }
 
     return {
@@ -200,6 +222,8 @@ async function fetchOgPreview(url: string, type: 'pixelfed' | 'peertube'): Promi
       image_url: ogImage,
       video_embed_url: type === 'peertube' ? ogVideo : undefined,
       duration: ogDuration ? parseInt(ogDuration) : undefined,
+      site_name: type === 'generic' ? siteName : undefined,
+      favicon_url: type === 'generic' ? getFavicon() : undefined,
       original_url: url,
     };
   } catch (e) {
@@ -271,9 +295,9 @@ Deno.serve(async (req) => {
     else if (hasPixelFedPath(url)) {
       result = await probePixelFed(url);
     }
-    // 5. Neither -> unknown
+    // 5. Generic OG preview
     else {
-      result = { type: 'unknown', original_url: url };
+      result = await fetchOgPreview(url, 'generic');
     }
 
     return new Response(JSON.stringify(result), {

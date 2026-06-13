@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ExternalLink, Play } from "lucide-react";
+import { Play, Globe } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface LinkPreviewData {
-  type: "pixelfed" | "peertube" | "unknown";
+  type: "pixelfed" | "peertube" | "generic" | "unknown";
   title?: string;
   description?: string;
   image_url?: string;
   video_embed_url?: string;
   duration?: number;
+  site_name?: string;
+  favicon_url?: string;
   original_url: string;
 }
 
@@ -35,20 +37,12 @@ const BIG_TECH_DOMAINS = [
 function isPreviewableUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
     const hostname = parsed.hostname.toLowerCase();
-
-    // Block Big Tech
     if (BIG_TECH_DOMAINS.some((d) => hostname === d || hostname.endsWith("." + d))) {
       return false;
     }
-
-    // PeerTube path patterns
-    if (/^\/(w|videos\/watch)\//.test(parsed.pathname)) return true;
-
-    // PixelFed path pattern
-    if (/^\/p\/[^/]+\/\d+/.test(parsed.pathname)) return true;
-
-    return false;
+    return true;
   } catch {
     return false;
   }
@@ -150,27 +144,74 @@ export const LinkPreview = ({ url }: LinkPreviewProps) => {
           </div>
         )}
 
-        {/* Play overlay */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
           <div className="w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
             <Play className="h-7 w-7 text-primary-foreground ml-1" fill="currentColor" />
           </div>
         </div>
 
-        {/* Duration badge */}
         {data.duration != null && data.duration > 0 && (
           <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded font-mono">
             {formatDuration(data.duration)}
           </div>
         )}
 
-        {/* Title bar */}
         {data.title && (
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-3 py-2">
             <p className="text-white text-sm truncate">{data.title}</p>
           </div>
         )}
       </div>
+    );
+  }
+
+  // Generic OG card
+  if (data.type === "generic") {
+    const hasImage = !!data.image_url;
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-2 flex rounded-lg overflow-hidden border border-border bg-muted/30 hover:bg-muted/50 transition-colors no-underline"
+      >
+        {hasImage && (
+          <div className="flex-shrink-0 w-24 sm:w-32 bg-muted">
+            <img
+              src={data.image_url}
+              alt=""
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-0 p-3">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+            {data.favicon_url ? (
+              <img
+                src={data.favicon_url}
+                alt=""
+                className="h-3.5 w-3.5 rounded-sm"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            ) : (
+              <Globe className="h-3.5 w-3.5" />
+            )}
+            <span className="truncate">{data.site_name}</span>
+          </div>
+          {data.title && (
+            <p className="text-sm font-semibold text-foreground line-clamp-2 leading-tight">
+              {data.title}
+            </p>
+          )}
+          {data.description && (
+            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+              {data.description}
+            </p>
+          )}
+        </div>
+      </a>
     );
   }
 
