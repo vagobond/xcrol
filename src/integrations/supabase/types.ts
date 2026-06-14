@@ -1491,6 +1491,41 @@ export type Database = {
         }
         Relationships: []
       }
+      private_stay_feedback: {
+        Row: {
+          content: string
+          created_at: string
+          from_user_id: string
+          hosting_request_id: string
+          id: string
+          to_user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          from_user_id: string
+          hosting_request_id: string
+          id?: string
+          to_user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          from_user_id?: string
+          hosting_request_id?: string
+          id?: string
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_stay_feedback_hosting_request_id_fkey"
+            columns: ["hosting_request_id"]
+            isOneToOne: false
+            referencedRelation: "hosting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_widgets: {
         Row: {
           config: Json | null
@@ -2193,9 +2228,11 @@ export type Database = {
           content: string
           created_at: string
           from_user_id: string
+          hosting_request_id: string | null
           id: string
           rating: number | null
           reference_type: Database["public"]["Enums"]["reference_type"]
+          revealed_at: string | null
           to_user_id: string
           updated_at: string
         }
@@ -2203,9 +2240,11 @@ export type Database = {
           content: string
           created_at?: string
           from_user_id: string
+          hosting_request_id?: string | null
           id?: string
           rating?: number | null
           reference_type: Database["public"]["Enums"]["reference_type"]
+          revealed_at?: string | null
           to_user_id: string
           updated_at?: string
         }
@@ -2213,13 +2252,23 @@ export type Database = {
           content?: string
           created_at?: string
           from_user_id?: string
+          hosting_request_id?: string | null
           id?: string
           rating?: number | null
           reference_type?: Database["public"]["Enums"]["reference_type"]
+          revealed_at?: string | null
           to_user_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_references_hosting_request_id_fkey"
+            columns: ["hosting_request_id"]
+            isOneToOne: false
+            referencedRelation: "hosting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
