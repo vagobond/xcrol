@@ -1,45 +1,93 @@
-# Generic link previews in The River
 
-Today `LinkPreview` only renders when a URL matches a PixelFed or PeerTube path pattern. Every other link (blogs, news, indie sites, Fediverse posts that don't match the two known shapes, etc.) silently returns `unknown` and shows nothing. We'll extend the pipeline to render a generic OpenGraph card for any link that isn't on the Big Tech blocklist.
+# Brainstorm: Making Hearth Surf Better
 
-We keep two existing rules per project memory:
-- Big Tech domains (YouTube, FB, Instagram, X/Twitter, TikTok, Reddit, LinkedIn, Threads, Snapchat, Pinterest) stay blocked — no preview, no outbound fetch.
-- SSRF protections (localhost / private IPs / metadata endpoints) stay in place.
+Below are ideas inspired by three competitors — picked to fit Xcrol's existing systems (friendship tiers, references, hometown privacy, Wayfarer+ gating, Forest/Village social layer). Nothing here is committed yet — this is for you to react to.
 
-## What changes
+## Current Hearth Surf in a sentence
 
-### 1. Edge function: `supabase/functions/link-preview/index.ts`
-- Add a new result type `'generic'` alongside `pixelfed | peertube | unknown`, with fields: `title`, `description`, `image_url`, `site_name`, `favicon_url`, `original_url`.
-- Refactor `fetchOgPreview` so it can be called for any URL (not only as a PixelFed/PeerTube fallback). Promote it to the main path:
-  1. SSRF check → unknown
-  2. Big Tech check → unknown
-  3. PeerTube path → existing API probe (unchanged)
-  4. PixelFed path → existing oEmbed probe (unchanged)
-  5. **Otherwise** → call OG scraper with `type: 'generic'` (today this branch returns `unknown`)
-- The OG scraper already reads only the first 50 KB and respects a 3 s timeout — reuse as-is.
-- Pull `og:site_name` and a favicon (`<link rel="icon">` first match, fallback to `/favicon.ico`) in addition to current OG fields.
-- If neither title, description, nor image is found, still return `unknown` so the UI hides the card.
+Today: open-to-hosting toggle, accommodation type, max guests, min friendship level, compensation preferences, a hosting request dialog with arrival/departure/guests/message, and a 3-tab UI (Search / Requests / My Space). References exist platform-wide but are not specifically tied to stays.
 
-### 2. Client: `src/components/LinkPreview.tsx`
-- Loosen `isPreviewableUrl` so any non-Big-Tech, non-blocked `http(s)` URL is sent to the edge function. Keep the Big Tech short-circuit so we don't waste a function invocation.
-- Extend `LinkPreviewData` with the `generic` type plus `site_name` and `favicon_url`.
-- Add a third render branch for `type === 'generic'`: a compact card (favicon + site name on top, title bold, 2-line description, optional thumbnail on the right) that links to the URL. Use existing semantic tokens (`bg-muted/50`, `border-border`, `text-muted-foreground`), no custom colors.
-- Loading state stays silent (return `null`) so the card just appears when data is ready — matches today's behavior.
+---
 
-### 3. Scope guardrails
-- Only `LinkPreview.tsx` and the edge function change. `RiverEntryCard` already mounts `<LinkPreview url={entry.link} />`, so River, SharedPost, and anywhere else that renders `RiverEntryCard` pick this up automatically.
-- Brook / Group post cards are out of scope unless you want them included — say the word and I'll extend.
-- No DB changes, no new tables, no schema migration.
+## Tier 1 — High impact, fits Xcrol naturally
 
-## Technical notes
+1. **Stay-tied references (host + guest pair)**
+   When a hosting request status flips to `accepted` and the stay date passes, prompt both sides for a "Stay Reference" (a new `reference_type`). Show stay-references separately on the profile under Hearth Surf so a traveler can see "hosted 12 people, all positive" at a glance. *(Borrowed from CouchSurfing's stay vs personal split.)*
 
-- Edge function response shape stays backward-compatible; the client just learns one new `type`.
-- Favicon resolution: prefer `<link rel="icon" href="...">` (resolve relative URLs against the page origin), else `${origin}/favicon.ico`. Don't fetch the favicon server-side — let the browser load it.
-- We keep the existing auth requirement on the edge function (Bearer token check) so unauthenticated scraping isn't possible.
-- Per-URL cost: one extra `fetch` of up to 50 KB per non-PixelFed/PeerTube link the first time it appears in a viewer's River. No caching layer added now — if River feeds get heavy we can add an in-memory or table-backed cache in a follow-up.
+2. **Simultaneous reference reveal**
+   For stay references, hide both sides until both submit, or auto-reveal after 14 days. Kills retaliation reviews. *(Workaway.)*
 
-## Out of scope
+3. **Private safety feedback channel**
+   On the same post-stay prompt, an optional "Something felt off — only admins should see this" field. Routes to the existing admin Flagged tab, never public. *(Couchers + CouchSurfing.)*
 
-- Big Tech oEmbed integrations (YouTube/Twitter embed cards) — explicit project rule.
-- Caching layer for OG results.
-- Previews in Brook, Group posts, Messages, Scrolls — easy follow-ups if you want them.
+4. **Host availability calendar**
+   Replace the binary "open to hosting" with date-range blocks: blackout dates, recurring weekly unavailability (e.g. "never Mondays"), and an auto-block when a request is accepted for those dates. Search filters by dates available. *(CouchSurfing day-of-week + Couchers roadmap.)*
+
+5. **Activeness probe**
+   If a host hasn't logged in for 60 days, auto-email "Still hosting?" — one click confirms or pauses. Paused hosts are hidden from search until they return. Keeps search results trustworthy. *(Couchers.)*
+
+6. **Trip / Visit context**
+   Before sending a hosting request, the traveler creates (or picks) a "Trip" — destination, dates, who's traveling, why. Trips are reusable across multiple hosting requests in the same city and surface in the Forest (friends can see "Alex is heading to Lisbon in March") and optionally trigger introductions. Aligns with Xcrol's social-first ethos. *(CouchSurfing, deepened by the Forest.)*
+
+## Tier 2 — Nice unlocks that match the existing personality
+
+7. **Host map pin jitter**
+   Right now hometown coords are already rounded to 1 decimal — for *active hosts* shown in Hearth search, jitter by an additional 2–10 km randomized per session, and only reveal precise address inside an accepted request thread. *(Couchers privacy model.)*
+
+8. **Companion / Buddy finder**
+   Lightweight "I'm going to X around date Y, anyone want to travel together?" board — friend-of-friend visible by default, public optional. Reuses Town's URL-param classifieds pattern. *(Workaway travel buddy.)*
+
+9. **Couple / group traveler profiles on the request**
+   Extend the request dialog with companion names (free text or @mentions), ages, relationship — hosts often want to know if it's 2 partners vs 4 strangers. Already have `num_guests`; add structured companion data.
+
+10. **Host stay history + stats block**
+    On a host's profile show: "Hosted 23 stays · 21 positive · last guest Mar 2026 · responds in ~6h". A computed `community_standing` style aggregate, but per Hearth-Surf so the global score isn't polluted. *(Couchers community standing, scoped.)*
+
+11. **Pre-message gating already exists via friendship tiers** — but make it visible to the requester: show "This host accepts requests from Wayfarer or above" *before* opening the dialog, so people aren't surprised.
+
+12. **Same-day / last-minute toggle**
+    A single switch — "Open to last-minute requests (<48h)" — surfaces a "Last-minute hosts near me" view. Great for the Brook/messages cross-promo.
+
+## Tier 3 — Bigger swings, more thinking required
+
+13. **Work-exchange compensation type ("Skill swap")**
+    You already have `monetary / food / hangout / friendship / fwb` in compensation types. Add `skills_exchange` with a tag list (cooking, gardening, language tutoring, code, photography). Lets Xcrol cover the Workaway use case without becoming Workaway. Hosts can require it; travelers list their offered skills on the request.
+
+14. **Emergency tools block in the request thread**
+    Once a stay is accepted, the message thread shows a small fixed footer: "Need help? · Find nearby accommodation · Contact host's emergency reference · Report safety issue". Cheap to build, huge trust signal. *(CouchSurfing safety tools.)*
+
+15. **Private emergency contact field**
+    Optional field in Settings → never visible to anyone except admins on a flagged stay. Used only if a stay goes sideways and admins need to reach next-of-kin.
+
+16. **Stay-completion → Forest/River prompt**
+    After a successful stay, prompt both parties: "Share a moment from your stay?" → composes a River entry tagging the other person (with the existing mentions system). Turns Hearth Surf into a content engine for the Forest and amplifies the social-trust loop unique to Xcrol.
+
+17. **Public host pages with OG previews**
+    `xcrol.com/@host/hearth` — a shareable, OG-rich, partially-public host card (no exact location, no contact). Helps travelers send a single link to friends and helps SEO surface real hosts. Reuses the existing `og-profile` edge function pattern.
+
+---
+
+## What I'd cut from the inspiration list
+
+- **Manual staff review of every reference** (Workaway) — doesn't scale and conflicts with Xcrol's lean-admin posture.
+- **Paid premium tier for search filters** (Workaway Plus) — Wayfarer+ already covers gating; better to ship filters for everyone.
+- **Trip creation as a hard prerequisite** (CouchSurfing) — make it optional context, not a gate, or it becomes friction.
+
+---
+
+## Suggested first slice (if you want one)
+
+A coherent v1.1 of Hearth Surf:
+- Stay-tied references with simultaneous reveal + private channel (#1, #2, #3)
+- Host availability calendar with auto-block on acceptance (#4)
+- Activeness probe (#5)
+- Stay-completion → River prompt (#16)
+
+These four together would make Hearth Surf measurably more trustworthy, accurate, and social — without inventing new domains.
+
+---
+
+**Want me to**
+(a) turn one of these tiers into an implementation plan,
+(b) prototype the "stay reference + simultaneous reveal" flow specifically, or
+(c) something else?
