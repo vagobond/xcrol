@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, Check, X } from "lucide-react";
 import { HostingRequest } from "./types";
+import { StayReferenceDialog } from "@/components/StayReferenceDialog";
 
 interface Props {
   loading: boolean;
@@ -14,6 +15,13 @@ interface Props {
 
 const statusVariant = (s: string) =>
   s === "pending" ? "outline" : s === "accepted" ? "default" : "destructive";
+
+const stayIsOver = (departure: string | null): boolean => {
+  if (!departure) return false;
+  const dep = new Date(departure);
+  if (Number.isNaN(dep.getTime())) return false;
+  return dep.getTime() < Date.now();
+};
 
 export default function RequestsTab({ loading, incoming, outgoing, onRespond }: Props) {
   if (loading) {
@@ -68,6 +76,14 @@ export default function RequestsTab({ loading, incoming, outgoing, onRespond }: 
                       </Button>
                     </div>
                   )}
+                  {request.status === "accepted" && stayIsOver(request.departure_date) && (
+                    <StayReferenceDialog
+                      hostingRequestId={request.id}
+                      recipientId={request.from_user_id}
+                      recipientName={request.from_profile?.display_name || "your guest"}
+                      role="guest"
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -109,6 +125,14 @@ export default function RequestsTab({ loading, incoming, outgoing, onRespond }: 
                       </p>
                     )}
                   </div>
+                  {request.status === "accepted" && stayIsOver(request.departure_date) && (
+                    <StayReferenceDialog
+                      hostingRequestId={request.id}
+                      recipientId={request.to_user_id}
+                      recipientName={request.to_profile?.display_name || "your host"}
+                      role="host"
+                    />
+                  )}
                 </div>
               ))}
             </div>
