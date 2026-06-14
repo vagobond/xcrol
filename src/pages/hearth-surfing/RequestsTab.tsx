@@ -125,6 +125,14 @@ export default function RequestsTab({ loading, incoming, outgoing, onRespond }: 
                       </p>
                     )}
                   </div>
+                  {request.status === "accepted" && stayIsOver(request.departure_date) && (
+                    <StayReferenceDialog
+                      hostingRequestId={request.id}
+                      recipientId={request.to_user_id}
+                      recipientName={request.to_profile?.display_name || "your host"}
+                      role="host"
+                    />
+                  )}
                 </div>
               ))}
             </div>
