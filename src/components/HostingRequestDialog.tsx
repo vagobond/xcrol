@@ -29,6 +29,53 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
   const [departureDate, setDepartureDate] = useState("");
   const [numGuests, setNumGuests] = useState(1);
   const [sending, setSending] = useState(false);
+  const [conflict, setConflict] = useState<null | { kind: string; start: string; end: string }>(null);
+  const [recurringDows, setRecurringDows] = useState<number[]>([]);
+  const [recurringHit, setRecurringHit] = useState<number[]>([]);
+
+  // Load recurring unavailability once dialog opens
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase
+        .from("host_recurring_unavailability")
+        .select("day_of_week")
+        .eq("user_id", recipientId);
+      setRecurringDows((data || []).map((r: any) => r.day_of_week));
+    })();
+  }, [open, recipientId]);
+
+  // Check date-range conflicts whenever dates change
+  useEffect(() => {
+    setConflict(null);
+    setRecurringHit([]);
+    if (!arrivalDate || !departureDate) return;
+    if (arrivalDate > departureDate) return;
+
+    (async () => {
+      const { data } = await supabase
+        .from("host_blackout_periods")
+        .select("kind, start_date, end_date")
+        .eq("user_id", recipientId)
+        .lte("start_date", departureDate)
+        .gte("end_date", arrivalDate)
+        .limit(1);
+      if (data && data.length > 0) {
+        setConflict({ kind: data[0].kind, start: data[0].start_date, end: data[0].end_date });
+      }
+
+      // recurring DOW check
+      if (recurringDows.length > 0) {
+        const hits: Set<number> = new Set();
+        const start = new Date(arrivalDate);
+        const end = new Date(departureDate);
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          if (recurringDows.includes(d.getDay())) hits.add(d.getDay());
+        }
+        setRecurringHit([...hits]);
+      }
+    })();
+  }, [arrivalDate, departureDate, recipientId, recurringDows]);
 
   const handleSubmit = async () => {
     if (!message.trim()) {
