@@ -149,7 +149,8 @@ const HearthSurfing = () => {
         .select(
           "*, profiles!hosting_preferences_user_id_fkey(id, display_name, avatar_url, hometown_city, hometown_country)"
         )
-        .eq("is_open_to_hosting", true);
+        .eq("is_open_to_hosting", true)
+        .eq("is_hosting_paused", false);
 
       if (error) throw error;
 
