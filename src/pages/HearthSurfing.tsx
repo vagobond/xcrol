@@ -77,6 +77,7 @@ const HearthSurfing = () => {
           max_guests: data.max_guests || 1,
           min_friendship_level: data.min_friendship_level,
           compensation_type_preferred: compensationTypes,
+          is_hosting_paused: data.is_hosting_paused ?? false,
         });
       } else {
         setPreferences((prev) => ({ ...prev, user_id: user.id }));
