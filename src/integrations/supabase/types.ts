@@ -913,7 +913,10 @@ export type Database = {
           created_at: string
           hosting_description: string | null
           id: string
+          is_hosting_paused: boolean
           is_open_to_hosting: boolean
+          last_activeness_probe_at: string | null
+          last_probe_token: string | null
           max_guests: number | null
           min_friendship_level: string
           updated_at: string
@@ -925,7 +928,10 @@ export type Database = {
           created_at?: string
           hosting_description?: string | null
           id?: string
+          is_hosting_paused?: boolean
           is_open_to_hosting?: boolean
+          last_activeness_probe_at?: string | null
+          last_probe_token?: string | null
           max_guests?: number | null
           min_friendship_level?: string
           updated_at?: string
@@ -937,7 +943,10 @@ export type Database = {
           created_at?: string
           hosting_description?: string | null
           id?: string
+          is_hosting_paused?: boolean
           is_open_to_hosting?: boolean
+          last_activeness_probe_at?: string | null
+          last_probe_token?: string | null
           max_guests?: number | null
           min_friendship_level?: string
           updated_at?: string

@@ -55,7 +55,7 @@ const HearthSurfing = () => {
       const { data, error } = await supabase
         .from("hosting_preferences")
         .select(
-          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred"
+          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused"
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -77,6 +77,7 @@ const HearthSurfing = () => {
           max_guests: data.max_guests || 1,
           min_friendship_level: data.min_friendship_level,
           compensation_type_preferred: compensationTypes,
+          is_hosting_paused: data.is_hosting_paused ?? false,
         });
       } else {
         setPreferences((prev) => ({ ...prev, user_id: user.id }));
@@ -148,7 +149,8 @@ const HearthSurfing = () => {
         .select(
           "*, profiles!hosting_preferences_user_id_fkey(id, display_name, avatar_url, hometown_city, hometown_country)"
         )
-        .eq("is_open_to_hosting", true);
+        .eq("is_open_to_hosting", true)
+        .eq("is_hosting_paused", false);
 
       if (error) throw error;
 
@@ -205,6 +207,7 @@ const HearthSurfing = () => {
         max_guests: preferences.max_guests,
         min_friendship_level: preferences.min_friendship_level,
         compensation_type_preferred: JSON.stringify(preferences.compensation_type_preferred),
+        is_hosting_paused: preferences.is_hosting_paused ?? false,
       };
 
       if (preferences.id) {

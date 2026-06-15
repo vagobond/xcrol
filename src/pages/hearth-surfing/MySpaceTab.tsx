@@ -49,6 +49,22 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
 
         {preferences.is_open_to_hosting && (
           <>
+            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+              <div>
+                <Label htmlFor="pause-toggle">Pause my listing</Label>
+                <p className="text-sm text-muted-foreground">
+                  Temporarily hide from search without losing your settings.
+                </p>
+              </div>
+              <Switch
+                id="pause-toggle"
+                checked={preferences.is_hosting_paused ?? false}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, is_hosting_paused: checked })
+                }
+              />
+            </div>
+
             <div className="space-y-2">
               <Label>Who can request hosting?</Label>
               <Select
