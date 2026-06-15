@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Home, Loader2, Save } from "lucide-react";
 import { HostingPreferences, ACCOMMODATION_TYPES, COMPENSATION_TYPES } from "./types";
+import HostAvailabilityCalendar from "@/components/HostAvailabilityCalendar";
 
 interface Props {
   preferences: HostingPreferences;
