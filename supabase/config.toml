@@ -59,3 +59,9 @@ verify_jwt = false
 
 [functions.health]
 verify_jwt = false
+
+[functions.host-activeness-probe]
+verify_jwt = false
+
+[functions.host-activeness-response]
+verify_jwt = false
