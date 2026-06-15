@@ -207,6 +207,7 @@ const HearthSurfing = () => {
         max_guests: preferences.max_guests,
         min_friendship_level: preferences.min_friendship_level,
         compensation_type_preferred: JSON.stringify(preferences.compensation_type_preferred),
+        is_hosting_paused: preferences.is_hosting_paused ?? false,
       };
 
       if (preferences.id) {
