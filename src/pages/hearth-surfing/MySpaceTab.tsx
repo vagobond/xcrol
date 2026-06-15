@@ -25,6 +25,7 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
   };
 
   return (
+    <div className="space-y-6">
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
