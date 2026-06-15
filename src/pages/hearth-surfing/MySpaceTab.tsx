@@ -143,5 +143,7 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
         </Button>
       </CardContent>
     </Card>
+    {preferences.is_open_to_hosting && preferences.id && <HostAvailabilityCalendar />}
+    </div>
   );
 }
