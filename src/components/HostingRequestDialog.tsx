@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Home, Loader2 } from "lucide-react";
+import { Home, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 interface HostingRequestDialogProps {
@@ -29,6 +29,53 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
   const [departureDate, setDepartureDate] = useState("");
   const [numGuests, setNumGuests] = useState(1);
   const [sending, setSending] = useState(false);
+  const [conflict, setConflict] = useState<null | { kind: string; start: string; end: string }>(null);
+  const [recurringDows, setRecurringDows] = useState<number[]>([]);
+  const [recurringHit, setRecurringHit] = useState<number[]>([]);
+
+  // Load recurring unavailability once dialog opens
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase
+        .from("host_recurring_unavailability")
+        .select("day_of_week")
+        .eq("user_id", recipientId);
+      setRecurringDows((data || []).map((r: any) => r.day_of_week));
+    })();
+  }, [open, recipientId]);
+
+  // Check date-range conflicts whenever dates change
+  useEffect(() => {
+    setConflict(null);
+    setRecurringHit([]);
+    if (!arrivalDate || !departureDate) return;
+    if (arrivalDate > departureDate) return;
+
+    (async () => {
+      const { data } = await supabase
+        .from("host_blackout_periods")
+        .select("kind, start_date, end_date")
+        .eq("user_id", recipientId)
+        .lte("start_date", departureDate)
+        .gte("end_date", arrivalDate)
+        .limit(1);
+      if (data && data.length > 0) {
+        setConflict({ kind: data[0].kind, start: data[0].start_date, end: data[0].end_date });
+      }
+
+      // recurring DOW check
+      if (recurringDows.length > 0) {
+        const hits: Set<number> = new Set();
+        const start = new Date(arrivalDate);
+        const end = new Date(departureDate);
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          if (recurringDows.includes(d.getDay())) hits.add(d.getDay());
+        }
+        setRecurringHit([...hits]);
+      }
+    })();
+  }, [arrivalDate, departureDate, recipientId, recurringDows]);
 
   const handleSubmit = async () => {
     if (!message.trim()) {
@@ -124,6 +171,32 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
               />
             </div>
           </div>
+
+          {(conflict || recurringHit.length > 0) && (
+            <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+              <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600" />
+              <div className="space-y-1">
+                {conflict && (
+                  <p>
+                    Host is unavailable {new Date(conflict.start).toLocaleDateString()} –{" "}
+                    {new Date(conflict.end).toLocaleDateString()}
+                    {conflict.kind === "booked" ? " (already booked)" : ""}.
+                  </p>
+                )}
+                {recurringHit.length > 0 && (
+                  <p>
+                    Host doesn't usually host on{" "}
+                    {recurringHit
+                      .map((d) => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d])
+                      .join(", ")}
+                    .
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">You can still send the request.</p>
+              </div>
+            </div>
+          )}
+
 
           <div className="space-y-2">
             <Label htmlFor="guests">Number of Guests</Label>

@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Home, Loader2, Save } from "lucide-react";
 import { HostingPreferences, ACCOMMODATION_TYPES, COMPENSATION_TYPES } from "./types";
+import HostAvailabilityCalendar from "@/components/HostAvailabilityCalendar";
 
 interface Props {
   preferences: HostingPreferences;
@@ -24,6 +25,7 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
   };
 
   return (
+    <div className="space-y-6">
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -141,5 +143,7 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
         </Button>
       </CardContent>
     </Card>
+    {preferences.is_open_to_hosting && preferences.id && <HostAvailabilityCalendar />}
+    </div>
   );
 }

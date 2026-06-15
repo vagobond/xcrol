@@ -841,6 +841,71 @@ export type Database = {
         }
         Relationships: []
       }
+      host_blackout_periods: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          kind: string
+          note: string | null
+          source_hosting_request_id: string | null
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          kind?: string
+          note?: string | null
+          source_hosting_request_id?: string | null
+          start_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          source_hosting_request_id?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_blackout_periods_source_hosting_request_id_fkey"
+            columns: ["source_hosting_request_id"]
+            isOneToOne: false
+            referencedRelation: "hosting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      host_recurring_unavailability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hosting_preferences: {
         Row: {
           accommodation_type: string | null
