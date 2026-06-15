@@ -7,6 +7,7 @@ export interface HostingPreferences {
   max_guests: number;
   min_friendship_level: string;
   compensation_type_preferred: string[];
+  is_hosting_paused?: boolean;
 }
 
 export interface HostProfile {
