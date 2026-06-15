@@ -172,6 +172,32 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
             </div>
           </div>
 
+          {(conflict || recurringHit.length > 0) && (
+            <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+              <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600" />
+              <div className="space-y-1">
+                {conflict && (
+                  <p>
+                    Host is unavailable {new Date(conflict.start).toLocaleDateString()} –{" "}
+                    {new Date(conflict.end).toLocaleDateString()}
+                    {conflict.kind === "booked" ? " (already booked)" : ""}.
+                  </p>
+                )}
+                {recurringHit.length > 0 && (
+                  <p>
+                    Host doesn't usually host on{" "}
+                    {recurringHit
+                      .map((d) => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d])
+                      .join(", ")}
+                    .
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">You can still send the request.</p>
+              </div>
+            </div>
+          )}
+
+
           <div className="space-y-2">
             <Label htmlFor="guests">Number of Guests</Label>
             <Input
