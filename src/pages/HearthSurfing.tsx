@@ -55,7 +55,7 @@ const HearthSurfing = () => {
       const { data, error } = await supabase
         .from("hosting_preferences")
         .select(
-          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred"
+          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused"
         )
         .eq("user_id", user.id)
         .maybeSingle();
