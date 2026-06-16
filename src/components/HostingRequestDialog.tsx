@@ -33,6 +33,8 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
   const [conflict, setConflict] = useState<null | { kind: string; start: string; end: string }>(null);
   const [recurringDows, setRecurringDows] = useState<number[]>([]);
   const [recurringHit, setRecurringHit] = useState<number[]>([]);
+  const [trips, setTrips] = useState<Array<{ id: string; destination_city: string | null; destination_country: string | null; start_date: string; end_date: string }>>([]);
+  const [tripId, setTripId] = useState<string>("none");
 
   // Load recurring unavailability once dialog opens
   useEffect(() => {
