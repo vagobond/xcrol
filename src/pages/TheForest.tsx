@@ -350,6 +350,7 @@ const TheForest = () => {
           </TabsList>
 
           <TabsContent value="friends" className="mt-4">
+            <FriendsTripsCard />
             <Card>
               <CardHeader>
                 <CardTitle>Your Friends</CardTitle>
