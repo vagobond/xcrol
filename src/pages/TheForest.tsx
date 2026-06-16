@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import FriendsList from "@/components/FriendsList";
 import IntroductionRequestsManager from "@/components/IntroductionRequestsManager";
 import { BrookList } from "@/components/BrookList";
+import FriendsTripsCard from "@/components/FriendsTripsCard";
 
 interface FriendRequest {
   id: string;
