@@ -36,7 +36,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
   const [trips, setTrips] = useState<Array<{ id: string; destination_city: string | null; destination_country: string | null; start_date: string; end_date: string }>>([]);
   const [tripId, setTripId] = useState<string>("none");
 
-  // Load recurring unavailability once dialog opens
+  // Load recurring unavailability + my upcoming trips once dialog opens
   useEffect(() => {
     if (!open) return;
     (async () => {
@@ -46,7 +46,30 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
         .eq("user_id", recipientId);
       setRecurringDows((data || []).map((r: any) => r.day_of_week));
     })();
-  }, [open, recipientId]);
+    if (user) {
+      (async () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data } = await supabase
+          .from("trips")
+          .select("id,destination_city,destination_country,start_date,end_date")
+          .eq("user_id", user.id)
+          .gte("end_date", today)
+          .order("start_date", { ascending: true });
+        setTrips(data || []);
+      })();
+    }
+  }, [open, recipientId, user]);
+
+  // When a trip is selected, prefill dates if empty
+  useEffect(() => {
+    if (tripId === "none") return;
+    const t = trips.find((x) => x.id === tripId);
+    if (!t) return;
+    if (!arrivalDate) setArrivalDate(t.start_date);
+    if (!departureDate) setDepartureDate(t.end_date);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripId]);
+
 
   // Check date-range conflicts whenever dates change
   useEffect(() => {
