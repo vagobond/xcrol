@@ -154,6 +154,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
       setArrivalDate("");
       setDepartureDate("");
       setNumGuests(1);
+      setTripId("none");
     } catch (error) {
       console.error("Error sending hosting request:", error);
       toast.error("Failed to send hosting request");
