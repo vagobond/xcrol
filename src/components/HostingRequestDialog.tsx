@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Home, Loader2, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Home, Loader2, AlertTriangle, Plane } from "lucide-react";
 import { toast } from "sonner";
 
 interface HostingRequestDialogProps {
@@ -32,8 +33,10 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
   const [conflict, setConflict] = useState<null | { kind: string; start: string; end: string }>(null);
   const [recurringDows, setRecurringDows] = useState<number[]>([]);
   const [recurringHit, setRecurringHit] = useState<number[]>([]);
+  const [trips, setTrips] = useState<Array<{ id: string; destination_city: string | null; destination_country: string | null; start_date: string; end_date: string }>>([]);
+  const [tripId, setTripId] = useState<string>("none");
 
-  // Load recurring unavailability once dialog opens
+  // Load recurring unavailability + my upcoming trips once dialog opens
   useEffect(() => {
     if (!open) return;
     (async () => {
@@ -43,7 +46,30 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
         .eq("user_id", recipientId);
       setRecurringDows((data || []).map((r: any) => r.day_of_week));
     })();
-  }, [open, recipientId]);
+    if (user) {
+      (async () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data } = await supabase
+          .from("trips")
+          .select("id,destination_city,destination_country,start_date,end_date")
+          .eq("user_id", user.id)
+          .gte("end_date", today)
+          .order("start_date", { ascending: true });
+        setTrips(data || []);
+      })();
+    }
+  }, [open, recipientId, user]);
+
+  // When a trip is selected, prefill dates if empty
+  useEffect(() => {
+    if (tripId === "none") return;
+    const t = trips.find((x) => x.id === tripId);
+    if (!t) return;
+    if (!arrivalDate) setArrivalDate(t.start_date);
+    if (!departureDate) setDepartureDate(t.end_date);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripId]);
+
 
   // Check date-range conflicts whenever dates change
   useEffect(() => {
@@ -99,6 +125,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
           arrival_date: arrivalDate || null,
           departure_date: departureDate || null,
           num_guests: numGuests,
+          trip_id: tripId !== "none" ? tripId : null,
         });
 
       if (requestError) throw requestError;
@@ -127,6 +154,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
       setArrivalDate("");
       setDepartureDate("");
       setNumGuests(1);
+      setTripId("none");
     } catch (error) {
       console.error("Error sending hosting request:", error);
       toast.error("Failed to send hosting request");
@@ -151,6 +179,32 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          {trips.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="trip" className="flex items-center gap-1">
+                <Plane className="w-3.5 h-3.5" /> Link to a trip (optional)
+              </Label>
+              <Select value={tripId} onValueChange={setTripId}>
+                <SelectTrigger id="trip">
+                  <SelectValue placeholder="No trip" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No trip</SelectItem>
+                  {trips.map((t) => {
+                    const place = [t.destination_city, t.destination_country].filter(Boolean).join(", ") || "Trip";
+                    return (
+                      <SelectItem key={t.id} value={t.id}>
+                        {place} · {new Date(t.start_date).toLocaleDateString()}–{new Date(t.end_date).toLocaleDateString()}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Hosts see your trip context. Manage trips in Hearth Surf → My Space.
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="arrival">Arrival Date</Label>
