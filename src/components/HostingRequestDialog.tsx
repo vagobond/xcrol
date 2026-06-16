@@ -178,6 +178,32 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          {trips.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="trip" className="flex items-center gap-1">
+                <Plane className="w-3.5 h-3.5" /> Link to a trip (optional)
+              </Label>
+              <Select value={tripId} onValueChange={setTripId}>
+                <SelectTrigger id="trip">
+                  <SelectValue placeholder="No trip" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No trip</SelectItem>
+                  {trips.map((t) => {
+                    const place = [t.destination_city, t.destination_country].filter(Boolean).join(", ") || "Trip";
+                    return (
+                      <SelectItem key={t.id} value={t.id}>
+                        {place} · {new Date(t.start_date).toLocaleDateString()}–{new Date(t.end_date).toLocaleDateString()}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Hosts see your trip context. Manage trips in Hearth Surf → My Space.
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="arrival">Arrival Date</Label>
