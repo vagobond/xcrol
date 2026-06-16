@@ -966,6 +966,7 @@ export type Database = {
           response_message: string | null
           status: Database["public"]["Enums"]["request_status"]
           to_user_id: string
+          trip_id: string | null
           updated_at: string
         }
         Insert: {
@@ -979,6 +980,7 @@ export type Database = {
           response_message?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           to_user_id: string
+          trip_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -992,9 +994,18 @@ export type Database = {
           response_message?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           to_user_id?: string
+          trip_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hosting_requests_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       introduction_requests: {
         Row: {
@@ -2201,6 +2212,48 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      trips: {
+        Row: {
+          companions: string | null
+          created_at: string
+          destination_city: string | null
+          destination_country: string | null
+          end_date: string
+          id: string
+          purpose: string | null
+          start_date: string
+          updated_at: string
+          user_id: string
+          visibility: string
+        }
+        Insert: {
+          companions?: string | null
+          created_at?: string
+          destination_city?: string | null
+          destination_country?: string | null
+          end_date: string
+          id?: string
+          purpose?: string | null
+          start_date: string
+          updated_at?: string
+          user_id: string
+          visibility?: string
+        }
+        Update: {
+          companions?: string | null
+          created_at?: string
+          destination_city?: string | null
+          destination_country?: string | null
+          end_date?: string
+          id?: string
+          purpose?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+          visibility?: string
         }
         Relationships: []
       }
