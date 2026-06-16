@@ -125,6 +125,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
           arrival_date: arrivalDate || null,
           departure_date: departureDate || null,
           num_guests: numGuests,
+          trip_id: tripId !== "none" ? tripId : null,
         });
 
       if (requestError) throw requestError;
