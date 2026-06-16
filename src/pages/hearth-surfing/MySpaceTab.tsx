@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Home, Loader2, Save } from "lucide-react";
 import { HostingPreferences, ACCOMMODATION_TYPES, COMPENSATION_TYPES } from "./types";
 import HostAvailabilityCalendar from "@/components/HostAvailabilityCalendar";
+import TripsManager from "@/components/TripsManager";
 
 interface Props {
   preferences: HostingPreferences;
