@@ -21,6 +21,7 @@ interface XcrolEntryFormProps {
   onEntrySaved?: () => void;
   compact?: boolean;
   prefillLink?: string;
+  prefillContent?: string;
 }
 
 const PRIVACY_LEVELS = [
@@ -32,7 +33,7 @@ const PRIVACY_LEVELS = [
   { value: "public", label: "Public - everyone on the internet" },
 ];
 
-export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillLink = "" }: XcrolEntryFormProps) => {
+export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillLink = "", prefillContent = "" }: XcrolEntryFormProps) => {
   const navigate = useNavigate();
   const { privateKey: nostrPrivateKey } = useNostrKey();
   const { todayDate, loading: dateLoading, timezone, hasHometown } = useHometownDate(userId);
