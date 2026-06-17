@@ -145,7 +145,7 @@ const MyXcrol = () => {
         </div>
 
         {/* Daily Entry Form */}
-        <XcrolEntryForm userId={user.id} onEntrySaved={loadEntries} prefillLink={prefillLink} />
+        <XcrolEntryForm userId={user.id} onEntrySaved={loadEntries} prefillLink={prefillLink} prefillContent={prefillContent} />
 
         {/* Past Entries */}
         <Card>
