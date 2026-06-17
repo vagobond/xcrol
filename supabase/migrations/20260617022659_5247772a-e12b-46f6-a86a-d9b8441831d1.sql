@@ -1,0 +1,1 @@
+ALTER TABLE public.hosting_preferences ADD COLUMN IF NOT EXISTS precise_address text;
