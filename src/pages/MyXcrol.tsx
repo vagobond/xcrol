@@ -51,6 +51,7 @@ const MyXcrol = () => {
   const [searchParams] = useSearchParams();
   // Support both "link" and "optional_link" query params for external integrations
   const prefillLink = searchParams.get("link") || searchParams.get("optional_link") || "";
+  const prefillContent = searchParams.get("content") || "";
   const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = useState<XcrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +145,7 @@ const MyXcrol = () => {
         </div>
 
         {/* Daily Entry Form */}
-        <XcrolEntryForm userId={user.id} onEntrySaved={loadEntries} prefillLink={prefillLink} />
+        <XcrolEntryForm userId={user.id} onEntrySaved={loadEntries} prefillLink={prefillLink} prefillContent={prefillContent} />
 
         {/* Past Entries */}
         <Card>

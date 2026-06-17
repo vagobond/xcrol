@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, Check, X } from "lucide-react";
 import { HostingRequest } from "./types";
 import { StayReferenceDialog } from "@/components/StayReferenceDialog";
+import { ShareStayMomentButton } from "@/components/ShareStayMomentButton";
 
 interface Props {
   loading: boolean;
@@ -77,12 +78,19 @@ export default function RequestsTab({ loading, incoming, outgoing, onRespond }: 
                     </div>
                   )}
                   {request.status === "accepted" && stayIsOver(request.departure_date) && (
-                    <StayReferenceDialog
-                      hostingRequestId={request.id}
-                      recipientId={request.from_user_id}
-                      recipientName={request.from_profile?.display_name || "your guest"}
-                      role="guest"
-                    />
+                    <div className="flex flex-col gap-1">
+                      <StayReferenceDialog
+                        hostingRequestId={request.id}
+                        recipientId={request.from_user_id}
+                        recipientName={request.from_profile?.display_name || "your guest"}
+                        role="guest"
+                      />
+                      <ShareStayMomentButton
+                        otherUserId={request.from_user_id}
+                        otherUserName={request.from_profile?.display_name || "your guest"}
+                        role="host"
+                      />
+                    </div>
                   )}
                 </div>
               ))}
@@ -126,12 +134,19 @@ export default function RequestsTab({ loading, incoming, outgoing, onRespond }: 
                     )}
                   </div>
                   {request.status === "accepted" && stayIsOver(request.departure_date) && (
-                    <StayReferenceDialog
-                      hostingRequestId={request.id}
-                      recipientId={request.to_user_id}
-                      recipientName={request.to_profile?.display_name || "your host"}
-                      role="host"
-                    />
+                    <div className="flex flex-col gap-1">
+                      <StayReferenceDialog
+                        hostingRequestId={request.id}
+                        recipientId={request.to_user_id}
+                        recipientName={request.to_profile?.display_name || "your host"}
+                        role="host"
+                      />
+                      <ShareStayMomentButton
+                        otherUserId={request.to_user_id}
+                        otherUserName={request.to_profile?.display_name || "your host"}
+                        role="guest"
+                      />
+                    </div>
                   )}
                 </div>
               ))}
