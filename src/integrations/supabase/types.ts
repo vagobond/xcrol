@@ -919,6 +919,7 @@ export type Database = {
           last_probe_token: string | null
           max_guests: number | null
           min_friendship_level: string
+          precise_address: string | null
           updated_at: string
           user_id: string
         }
@@ -934,6 +935,7 @@ export type Database = {
           last_probe_token?: string | null
           max_guests?: number | null
           min_friendship_level?: string
+          precise_address?: string | null
           updated_at?: string
           user_id: string
         }
@@ -949,6 +951,7 @@ export type Database = {
           last_probe_token?: string | null
           max_guests?: number | null
           min_friendship_level?: string
+          precise_address?: string | null
           updated_at?: string
           user_id?: string
         }

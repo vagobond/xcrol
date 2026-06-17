@@ -132,6 +132,14 @@ export default function RequestsTab({ loading, incoming, outgoing, onRespond }: 
                         Response: {request.response_message}
                       </p>
                     )}
+                    {request.status === "accepted" && request.host_precise_address && (
+                      <div className="mt-2 rounded-md border border-border bg-muted/40 p-2 text-sm">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          Host's address (private to you)
+                        </p>
+                        <p className="whitespace-pre-line">{request.host_precise_address}</p>
+                      </div>
+                    )}
                   </div>
                   {request.status === "accepted" && stayIsOver(request.departure_date) && (
                     <div className="flex flex-col gap-1">
