@@ -8,6 +8,7 @@ export interface HostingPreferences {
   min_friendship_level: string;
   compensation_type_preferred: string[];
   is_hosting_paused?: boolean;
+  precise_address?: string | null;
 }
 
 export interface HostProfile {
@@ -30,6 +31,7 @@ export interface HostingRequest {
   num_guests: number | null;
   response_message: string | null;
   created_at: string;
+  host_precise_address?: string | null;
   from_profile?: {
     display_name: string | null;
     avatar_url: string | null;
