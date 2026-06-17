@@ -78,12 +78,19 @@ export default function RequestsTab({ loading, incoming, outgoing, onRespond }: 
                     </div>
                   )}
                   {request.status === "accepted" && stayIsOver(request.departure_date) && (
-                    <StayReferenceDialog
-                      hostingRequestId={request.id}
-                      recipientId={request.from_user_id}
-                      recipientName={request.from_profile?.display_name || "your guest"}
-                      role="guest"
-                    />
+                    <div className="flex flex-col gap-1">
+                      <StayReferenceDialog
+                        hostingRequestId={request.id}
+                        recipientId={request.from_user_id}
+                        recipientName={request.from_profile?.display_name || "your guest"}
+                        role="guest"
+                      />
+                      <ShareStayMomentButton
+                        otherUserId={request.from_user_id}
+                        otherUserName={request.from_profile?.display_name || "your guest"}
+                        role="host"
+                      />
+                    </div>
                   )}
                 </div>
               ))}
