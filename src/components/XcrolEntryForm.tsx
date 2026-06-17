@@ -74,7 +74,7 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
         setPrivacyLevel(data.privacy_level);
       } else {
         setTodayEntry(null);
-        setContent("");
+        setContent(prefillContent.slice(0, 240));
         // Use prefillLink for new entries
         setLink(prefillLink);
         setPrivacyLevel("private");
