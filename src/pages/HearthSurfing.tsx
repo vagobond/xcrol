@@ -55,7 +55,7 @@ const HearthSurfing = () => {
       const { data, error } = await supabase
         .from("hosting_preferences")
         .select(
-          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused"
+          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused, precise_address"
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -78,6 +78,7 @@ const HearthSurfing = () => {
           min_friendship_level: data.min_friendship_level,
           compensation_type_preferred: compensationTypes,
           is_hosting_paused: data.is_hosting_paused ?? false,
+          precise_address: data.precise_address ?? null,
         });
       } else {
         setPreferences((prev) => ({ ...prev, user_id: user.id }));
@@ -124,11 +125,35 @@ const HearthSurfing = () => {
 
         const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
 
+        // Fetch precise_address only for hosts of accepted outgoing requests
+        const acceptedHostIds = [
+          ...new Set(
+            (outgoing || [])
+              .filter((r) => r.status === "accepted")
+              .map((r) => r.to_user_id)
+          ),
+        ];
+        const addressMap = new Map<string, string | null>();
+        if (acceptedHostIds.length > 0) {
+          const { data: addresses } = await supabase
+            .from("hosting_preferences")
+            .select("user_id, precise_address")
+            .in("user_id", acceptedHostIds);
+          (addresses || []).forEach((a: any) =>
+            addressMap.set(a.user_id, a.precise_address ?? null)
+          );
+        }
+
         setIncomingRequests(
           (incoming || []).map((r) => ({ ...r, from_profile: profileMap.get(r.from_user_id) }))
         );
         setOutgoingRequests(
-          (outgoing || []).map((r) => ({ ...r, to_profile: profileMap.get(r.to_user_id) }))
+          (outgoing || []).map((r) => ({
+            ...r,
+            to_profile: profileMap.get(r.to_user_id),
+            host_precise_address:
+              r.status === "accepted" ? addressMap.get(r.to_user_id) ?? null : null,
+          }))
         );
       } else {
         setIncomingRequests(incoming || []);
@@ -208,6 +233,7 @@ const HearthSurfing = () => {
         min_friendship_level: preferences.min_friendship_level,
         compensation_type_preferred: JSON.stringify(preferences.compensation_type_preferred),
         is_hosting_paused: preferences.is_hosting_paused ?? false,
+        precise_address: preferences.precise_address ?? null,
       };
 
       if (preferences.id) {

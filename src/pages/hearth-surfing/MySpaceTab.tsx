@@ -151,6 +151,24 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
                 rows={4}
               />
             </div>
+
+            <div className="space-y-2 rounded-lg border border-dashed border-border bg-muted/20 p-3">
+              <Label htmlFor="precise-address">Precise address (private)</Label>
+              <p className="text-xs text-muted-foreground">
+                Only shared with a guest after you accept their request. Your map pin is
+                always jittered by a few km and city is rounded — your street is never
+                exposed in search.
+              </p>
+              <Textarea
+                id="precise-address"
+                placeholder="Street, building, apartment, entry code, etc."
+                value={preferences.precise_address || ""}
+                onChange={(e) =>
+                  setPreferences({ ...preferences, precise_address: e.target.value })
+                }
+                rows={3}
+              />
+            </div>
           </>
         )}
 
