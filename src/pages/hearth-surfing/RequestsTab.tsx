@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, Check, X } from "lucide-react";
 import { HostingRequest } from "./types";
 import { StayReferenceDialog } from "@/components/StayReferenceDialog";
+import { ShareStayMomentButton } from "@/components/ShareStayMomentButton";
 
 interface Props {
   loading: boolean;
