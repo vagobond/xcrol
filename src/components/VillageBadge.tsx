@@ -5,7 +5,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useVillageActivityCount } from "@/hooks/use-village-activity";
 import { useNotifications } from "@/hooks/use-notifications";
 import InteractionNotificationItem from "@/components/notifications/InteractionNotificationItem";
 import NotificationViewToggle from "@/components/notifications/NotificationViewToggle";
@@ -13,7 +12,6 @@ import villageIconSrc from "@/assets/village-icon.png";
 
 const VillageBadge = () => {
   const navigate = useNavigate();
-  const villageActivityCount = useVillageActivityCount();
   const {
     user,
     villageInteractions,
@@ -24,8 +22,10 @@ const VillageBadge = () => {
     markAllRead,
   } = useNotifications();
 
-  // Combine: server-side notification count plus the per-group "new since last visit" client count
-  const totalCount = Math.max(villageBadgeCount, villageActivityCount);
+  // Badge mirrors the dropdown contents (notification-table rows) so the number
+  // never disagrees with what the user sees. Per-group "new since last visit"
+  // dots still appear on each group card inside The Village.
+  const totalCount = villageBadgeCount;
 
   if (!user) {
     return (
