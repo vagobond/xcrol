@@ -885,6 +885,27 @@ export type Database = {
           },
         ]
       }
+      host_precise_addresses: {
+        Row: {
+          address: string
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       host_recurring_unavailability: {
         Row: {
           created_at: string
@@ -919,7 +940,6 @@ export type Database = {
           last_probe_token: string | null
           max_guests: number | null
           min_friendship_level: string
-          precise_address: string | null
           updated_at: string
           user_id: string
         }
@@ -935,7 +955,6 @@ export type Database = {
           last_probe_token?: string | null
           max_guests?: number | null
           min_friendship_level?: string
-          precise_address?: string | null
           updated_at?: string
           user_id: string
         }
@@ -951,7 +970,6 @@ export type Database = {
           last_probe_token?: string | null
           max_guests?: number | null
           min_friendship_level?: string
-          precise_address?: string | null
           updated_at?: string
           user_id?: string
         }

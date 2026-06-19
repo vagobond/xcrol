@@ -55,12 +55,19 @@ const HearthSurfing = () => {
       const { data, error } = await supabase
         .from("hosting_preferences")
         .select(
-          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused, precise_address"
+          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused"
         )
         .eq("user_id", user.id)
         .maybeSingle();
 
       if (error) throw error;
+
+      // Precise address now lives in its own gated table
+      const { data: addrRow } = await supabase
+        .from("host_precise_addresses")
+        .select("address")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
       if (data) {
         let compensationTypes: string[] = [];
@@ -78,10 +85,14 @@ const HearthSurfing = () => {
           min_friendship_level: data.min_friendship_level,
           compensation_type_preferred: compensationTypes,
           is_hosting_paused: data.is_hosting_paused ?? false,
-          precise_address: data.precise_address ?? null,
+          precise_address: addrRow?.address ?? null,
         });
       } else {
-        setPreferences((prev) => ({ ...prev, user_id: user.id }));
+        setPreferences((prev) => ({
+          ...prev,
+          user_id: user.id,
+          precise_address: addrRow?.address ?? null,
+        }));
       }
     } catch (error) {
       console.error("Error loading hosting preferences:", error);
@@ -89,6 +100,7 @@ const HearthSurfing = () => {
       setPrefsLoading(false);
     }
   };
+
 
   const loadRequests = async () => {
     if (!user) return;
@@ -136,11 +148,11 @@ const HearthSurfing = () => {
         const addressMap = new Map<string, string | null>();
         if (acceptedHostIds.length > 0) {
           const { data: addresses } = await supabase
-            .from("hosting_preferences")
-            .select("user_id, precise_address")
+            .from("host_precise_addresses")
+            .select("user_id, address")
             .in("user_id", acceptedHostIds);
           (addresses || []).forEach((a: any) =>
-            addressMap.set(a.user_id, a.precise_address ?? null)
+            addressMap.set(a.user_id, a.address ?? null)
           );
         }
 
@@ -233,7 +245,6 @@ const HearthSurfing = () => {
         min_friendship_level: preferences.min_friendship_level,
         compensation_type_preferred: JSON.stringify(preferences.compensation_type_preferred),
         is_hosting_paused: preferences.is_hosting_paused ?? false,
-        precise_address: preferences.precise_address ?? null,
       };
 
       if (preferences.id) {
@@ -252,7 +263,19 @@ const HearthSurfing = () => {
         setPreferences((prev) => ({ ...prev, id: data.id }));
       }
 
+      // Persist precise address separately in gated table
+      const addr = (preferences.precise_address ?? "").trim();
+      if (addr.length > 0) {
+        const { error: addrErr } = await supabase
+          .from("host_precise_addresses")
+          .upsert({ user_id: user.id, address: addr }, { onConflict: "user_id" });
+        if (addrErr) throw addrErr;
+      } else {
+        await supabase.from("host_precise_addresses").delete().eq("user_id", user.id);
+      }
+
       toast.success("Hosting preferences saved!");
+
     } catch (error) {
       console.error("Error saving preferences:", error);
       toast.error("Failed to save preferences");
