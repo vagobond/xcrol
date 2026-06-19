@@ -127,6 +127,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
           arrival_date: arrivalDate || null,
           departure_date: departureDate || null,
           num_guests: numGuests,
+          companions_note: companionsNote.trim() || null,
           trip_id: tripId !== "none" ? tripId : null,
         });
 
@@ -138,13 +139,16 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
       } else if (arrivalDate) {
         dateInfo = `\n\nArrival: ${new Date(arrivalDate).toLocaleDateString()}`;
       }
+      const companionInfo = companionsNote.trim()
+        ? `\n\nTraveling with: ${companionsNote.trim()}`
+        : "";
 
       const { error: messageError } = await supabase
         .from("messages")
         .insert({
           from_user_id: user.id,
           to_user_id: recipientId,
-          content: `[Hosting Request - ${numGuests} guest${numGuests > 1 ? "s" : ""}]\n\n${message.trim()}${dateInfo}`,
+          content: `[Hosting Request - ${numGuests} guest${numGuests > 1 ? "s" : ""}]\n\n${message.trim()}${dateInfo}${companionInfo}`,
           platform_suggestion: "hosting",
         });
 
@@ -156,7 +160,9 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
       setArrivalDate("");
       setDepartureDate("");
       setNumGuests(1);
+      setCompanionsNote("");
       setTripId("none");
+
     } catch (error) {
       console.error("Error sending hosting request:", error);
       toast.error("Failed to send hosting request");
