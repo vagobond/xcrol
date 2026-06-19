@@ -411,6 +411,12 @@ const HearthSurfing = () => {
             />
           </TabsContent>
 
+          <TabsContent value="buddies" className="space-y-4">
+            <BuddiesTab />
+          </TabsContent>
+
+
+
           <TabsContent value="requests" className="space-y-6">
             <RequestsTab
               loading={requestsLoading}
