@@ -60,9 +60,10 @@ export default function TripsManager() {
     setLoading(true);
     const { data, error } = await supabase
       .from("trips")
-      .select("id,user_id,destination_city,destination_country,start_date,end_date,purpose,companions,visibility")
+      .select("id,user_id,destination_city,destination_country,start_date,end_date,purpose,companions,visibility,seeking_companions,buddy_note")
       .eq("user_id", user.id)
       .order("start_date", { ascending: true });
+
     if (error) {
       console.error(error);
     } else {
