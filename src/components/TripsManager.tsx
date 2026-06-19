@@ -14,8 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plane, Plus, Pencil, Trash2, Loader2, MapPin, Calendar } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plane, Plus, Pencil, Trash2, Loader2, MapPin, Calendar, Users } from "lucide-react";
 import { toast } from "sonner";
+
 
 export interface Trip {
   id: string;
