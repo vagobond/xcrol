@@ -62,11 +62,17 @@ export default function RequestsTab({ loading, incoming, outgoing, onRespond }: 
                       {request.num_guests &&
                         ` • ${request.num_guests} guest${request.num_guests !== 1 ? "s" : ""}`}
                     </p>
+                    {request.companions_note && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Traveling with: {request.companions_note}
+                      </p>
+                    )}
                     <p className="text-sm mt-1">{request.message}</p>
                     <Badge variant={statusVariant(request.status) as any} className="mt-2">
                       {request.status}
                     </Badge>
                   </div>
+
                   {request.status === "pending" && (
                     <div className="flex gap-2">
                       <Button size="sm" variant="default" onClick={() => onRespond(request.id, "accepted")}>
