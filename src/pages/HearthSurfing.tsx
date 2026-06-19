@@ -245,7 +245,6 @@ const HearthSurfing = () => {
         min_friendship_level: preferences.min_friendship_level,
         compensation_type_preferred: JSON.stringify(preferences.compensation_type_preferred),
         is_hosting_paused: preferences.is_hosting_paused ?? false,
-        precise_address: preferences.precise_address ?? null,
       };
 
       if (preferences.id) {
@@ -264,7 +263,19 @@ const HearthSurfing = () => {
         setPreferences((prev) => ({ ...prev, id: data.id }));
       }
 
+      // Persist precise address separately in gated table
+      const addr = (preferences.precise_address ?? "").trim();
+      if (addr.length > 0) {
+        const { error: addrErr } = await supabase
+          .from("host_precise_addresses")
+          .upsert({ user_id: user.id, address: addr }, { onConflict: "user_id" });
+        if (addrErr) throw addrErr;
+      } else {
+        await supabase.from("host_precise_addresses").delete().eq("user_id", user.id);
+      }
+
       toast.success("Hosting preferences saved!");
+
     } catch (error) {
       console.error("Error saving preferences:", error);
       toast.error("Failed to save preferences");
