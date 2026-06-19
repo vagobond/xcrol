@@ -134,11 +134,12 @@ export default function BuddiesTab() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => navigate(`/messages?to=${t.user_id}`)}
+                  onClick={() => navigate(href)}
                 >
                   <MessageCircle className="w-4 h-4 mr-1" />
-                  Message
+                  View profile
                 </Button>
+
               </div>
             </CardContent>
           </Card>
