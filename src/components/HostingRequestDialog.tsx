@@ -272,6 +272,24 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
             />
           </div>
 
+          {numGuests > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="companions">Who are the other travelers?</Label>
+              <Textarea
+                id="companions"
+                placeholder="e.g. my partner Sam, two friends from college, @alex…"
+                value={companionsNote}
+                onChange={(e) => setCompanionsNote(e.target.value)}
+                rows={2}
+              />
+              <p className="text-xs text-muted-foreground">
+                Hosts often want to know if it's partners, family, or strangers.
+              </p>
+            </div>
+          )}
+
+
+
           <div className="space-y-2">
             <Label htmlFor="message">Your message *</Label>
             <Textarea
