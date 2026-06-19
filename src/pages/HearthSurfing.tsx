@@ -5,12 +5,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Search, Home, Clock, Loader2, Heart } from "lucide-react";
+import { ArrowLeft, Search, Home, Clock, Loader2, Heart, Users } from "lucide-react";
 import { toast } from "sonner";
 import SearchTab from "./hearth-surfing/SearchTab";
 import RequestsTab from "./hearth-surfing/RequestsTab";
 import MySpaceTab from "./hearth-surfing/MySpaceTab";
+import BuddiesTab from "./hearth-surfing/BuddiesTab";
 import { HostingPreferences, HostProfile, HostingRequest } from "./hearth-surfing/types";
+
 
 const HearthSurfing = () => {
   const navigate = useNavigate();
