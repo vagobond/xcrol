@@ -134,15 +134,14 @@ export default function SearchTab({
                     {host.stay_stats && host.stay_stats.hosted_count > 0 && (
                       <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                         <Star className="w-3 h-3 text-amber-500" />
-                        Hosted {host.stay_stats.hosted_count} stay
+                        {host.stay_stats.hosted_count} stay reference
                         {host.stay_stats.hosted_count !== 1 ? "s" : ""}
                         {host.stay_stats.positive_refs > 0
-                          ? ` · ${host.stay_stats.positive_refs} positive reference${
-                              host.stay_stats.positive_refs !== 1 ? "s" : ""
-                            }`
+                          ? ` · ${host.stay_stats.positive_refs} positive`
                           : ""}
                       </p>
                     )}
+
                     {host.hosting_preferences.hosting_description && (
                       <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                         {host.hosting_preferences.hosting_description}
