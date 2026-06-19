@@ -236,16 +236,17 @@ const HearthSurfing = () => {
         });
         const { data: refs } = await supabase
           .from("user_references")
-          .select("to_user_id, sentiment")
+          .select("to_user_id, rating")
           .in("to_user_id", hostIds)
           .not("hosting_request_id", "is", null);
         (refs || []).forEach((r: any) => {
-          if (r.sentiment === "positive") {
+          if ((r.rating ?? 0) >= 4) {
             const e = statsMap.get(r.to_user_id) || { hosted_count: 0, positive_refs: 0 };
             e.positive_refs += 1;
             statsMap.set(r.to_user_id, e);
           }
         });
+
       }
 
       const hostProfiles = baseProfiles.map((h) => ({
