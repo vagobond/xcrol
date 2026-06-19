@@ -285,7 +285,9 @@ const HearthSurfing = () => {
         min_friendship_level: preferences.min_friendship_level,
         compensation_type_preferred: JSON.stringify(preferences.compensation_type_preferred),
         is_hosting_paused: preferences.is_hosting_paused ?? false,
+        accepts_last_minute: preferences.accepts_last_minute ?? false,
       };
+
 
       if (preferences.id) {
         const { error } = await supabase
