@@ -5,12 +5,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Search, Home, Clock, Loader2, Heart } from "lucide-react";
+import { ArrowLeft, Search, Home, Clock, Loader2, Heart, Users } from "lucide-react";
 import { toast } from "sonner";
 import SearchTab from "./hearth-surfing/SearchTab";
 import RequestsTab from "./hearth-surfing/RequestsTab";
 import MySpaceTab from "./hearth-surfing/MySpaceTab";
+import BuddiesTab from "./hearth-surfing/BuddiesTab";
 import { HostingPreferences, HostProfile, HostingRequest } from "./hearth-surfing/types";
+
 
 const HearthSurfing = () => {
   const navigate = useNavigate();
@@ -55,7 +57,7 @@ const HearthSurfing = () => {
       const { data, error } = await supabase
         .from("hosting_preferences")
         .select(
-          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused"
+          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused, accepts_last_minute"
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -85,6 +87,7 @@ const HearthSurfing = () => {
           min_friendship_level: data.min_friendship_level,
           compensation_type_preferred: compensationTypes,
           is_hosting_paused: data.is_hosting_paused ?? false,
+          accepts_last_minute: (data as any).accepts_last_minute ?? false,
           precise_address: addrRow?.address ?? null,
         });
       } else {
@@ -94,6 +97,7 @@ const HearthSurfing = () => {
           precise_address: addrRow?.address ?? null,
         }));
       }
+
     } catch (error) {
       console.error("Error loading hosting preferences:", error);
     } finally {
@@ -106,7 +110,7 @@ const HearthSurfing = () => {
     if (!user) return;
     try {
       const cols =
-        "id, from_user_id, to_user_id, message, status, arrival_date, departure_date, num_guests, response_message, created_at";
+        "id, from_user_id, to_user_id, message, status, arrival_date, departure_date, num_guests, companions_note, response_message, created_at";
 
       const { data: incoming, error: inError } = await supabase
         .from("hosting_requests")
@@ -137,7 +141,6 @@ const HearthSurfing = () => {
 
         const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
 
-        // Fetch precise_address only for hosts of accepted outgoing requests
         const acceptedHostIds = [
           ...new Set(
             (outgoing || [])
@@ -157,10 +160,10 @@ const HearthSurfing = () => {
         }
 
         setIncomingRequests(
-          (incoming || []).map((r) => ({ ...r, from_profile: profileMap.get(r.from_user_id) }))
+          (incoming || []).map((r: any) => ({ ...r, from_profile: profileMap.get(r.from_user_id) }))
         );
         setOutgoingRequests(
-          (outgoing || []).map((r) => ({
+          (outgoing || []).map((r: any) => ({
             ...r,
             to_profile: profileMap.get(r.to_user_id),
             host_precise_address:
@@ -168,8 +171,8 @@ const HearthSurfing = () => {
           }))
         );
       } else {
-        setIncomingRequests(incoming || []);
-        setOutgoingRequests(outgoing || []);
+        setIncomingRequests((incoming as any) || []);
+        setOutgoingRequests((outgoing as any) || []);
       }
     } catch (error) {
       console.error("Error loading requests:", error);
@@ -178,20 +181,21 @@ const HearthSurfing = () => {
     }
   };
 
+
   const searchHosts = async () => {
     setSearchLoading(true);
     try {
       const { data, error } = await supabase
         .from("hosting_preferences")
         .select(
-          "*, profiles!hosting_preferences_user_id_fkey(id, display_name, avatar_url, hometown_city, hometown_country)"
+          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, accepts_last_minute, profiles!hosting_preferences_user_id_fkey(id, display_name, avatar_url, hometown_city, hometown_country)"
         )
         .eq("is_open_to_hosting", true)
         .eq("is_hosting_paused", false);
 
       if (error) throw error;
 
-      const hostProfiles: HostProfile[] = (data || [])
+      const baseProfiles: HostProfile[] = (data || [])
         .filter((d: any) => d.profiles && d.user_id !== user?.id)
         .map((d: any) => ({
           id: d.profiles.id,
@@ -207,6 +211,7 @@ const HearthSurfing = () => {
             accommodation_type: d.accommodation_type,
             max_guests: d.max_guests,
             min_friendship_level: d.min_friendship_level,
+            accepts_last_minute: d.accepts_last_minute ?? false,
             compensation_type_preferred: Array.isArray(d.compensation_type_preferred)
               ? d.compensation_type_preferred
               : d.compensation_type_preferred && d.compensation_type_preferred !== "none"
@@ -214,6 +219,30 @@ const HearthSurfing = () => {
               : [],
           },
         }));
+
+      // Stay stats: derived from public references (RLS-readable). We don't
+      // try to aggregate other users' hosting_requests rows — they're RLS-gated.
+      const hostIds = baseProfiles.map((h) => h.id);
+      const statsMap = new Map<string, { hosted_count: number; positive_refs: number }>();
+      if (hostIds.length > 0) {
+        const { data: refs } = await supabase
+          .from("user_references")
+          .select("to_user_id, rating, hosting_request_id")
+          .in("to_user_id", hostIds)
+          .not("hosting_request_id", "is", null);
+        (refs || []).forEach((r: any) => {
+          const e = statsMap.get(r.to_user_id) || { hosted_count: 0, positive_refs: 0 };
+          e.hosted_count += 1;
+          if ((r.rating ?? 0) >= 4) e.positive_refs += 1;
+          statsMap.set(r.to_user_id, e);
+        });
+      }
+
+
+      const hostProfiles = baseProfiles.map((h) => ({
+        ...h,
+        stay_stats: statsMap.get(h.id),
+      }));
 
       const filtered = searchQuery
         ? hostProfiles.filter(
@@ -232,6 +261,7 @@ const HearthSurfing = () => {
     }
   };
 
+
   const handleSavePreferences = async () => {
     if (!user) return;
     setSaving(true);
@@ -245,7 +275,9 @@ const HearthSurfing = () => {
         min_friendship_level: preferences.min_friendship_level,
         compensation_type_preferred: JSON.stringify(preferences.compensation_type_preferred),
         is_hosting_paused: preferences.is_hosting_paused ?? false,
+        accepts_last_minute: preferences.accepts_last_minute ?? false,
       };
+
 
       if (preferences.id) {
         const { error } = await supabase
@@ -329,10 +361,14 @@ const HearthSurfing = () => {
         </div>
 
         <Tabs defaultValue="search" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="search" className="flex items-center gap-2">
               <Search className="w-4 h-4" />
               Find Hosts
+            </TabsTrigger>
+            <TabsTrigger value="buddies" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Buddies
             </TabsTrigger>
             <TabsTrigger value="requests" className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
@@ -352,6 +388,7 @@ const HearthSurfing = () => {
             </TabsTrigger>
           </TabsList>
 
+
           <TabsContent value="search" className="space-y-4">
             <SearchTab
               searchQuery={searchQuery}
@@ -361,6 +398,12 @@ const HearthSurfing = () => {
               onSearch={searchHosts}
             />
           </TabsContent>
+
+          <TabsContent value="buddies" className="space-y-4">
+            <BuddiesTab />
+          </TabsContent>
+
+
 
           <TabsContent value="requests" className="space-y-6">
             <RequestsTab

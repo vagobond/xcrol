@@ -9,6 +9,12 @@ export interface HostingPreferences {
   compensation_type_preferred: string[];
   is_hosting_paused?: boolean;
   precise_address?: string | null;
+  accepts_last_minute?: boolean;
+}
+
+export interface HostStayStats {
+  hosted_count: number;
+  positive_refs: number;
 }
 
 export interface HostProfile {
@@ -18,6 +24,7 @@ export interface HostProfile {
   hometown_city: string | null;
   hometown_country: string | null;
   hosting_preferences: HostingPreferences;
+  stay_stats?: HostStayStats;
 }
 
 export interface HostingRequest {
@@ -29,6 +36,7 @@ export interface HostingRequest {
   arrival_date: string | null;
   departure_date: string | null;
   num_guests: number | null;
+  companions_note?: string | null;
   response_message: string | null;
   created_at: string;
   host_precise_address?: string | null;
@@ -59,6 +67,12 @@ export const ACCOMMODATION_TYPES = [
   { value: "guest_house", label: "Guest House / Separate Unit" },
 ];
 
+export const FRIENDSHIP_LEVEL_LABEL: Record<string, string> = {
+  friendly_acquaintance: "Wayfarers & above",
+  buddy: "Companions & above",
+  close_friend: "Oath Bound only",
+};
+
 export const getCompensationLabel = (value: string) =>
   COMPENSATION_TYPES.find((c) => c.value === value)?.label || value;
 
@@ -69,3 +83,6 @@ export const getCompensationLabels = (values: string[]) => {
 
 export const getAccommodationLabel = (value: string | null) =>
   ACCOMMODATION_TYPES.find((a) => a.value === value)?.label || value;
+
+export const getFriendshipLevelLabel = (value: string | null | undefined) =>
+  (value && FRIENDSHIP_LEVEL_LABEL[value]) || "Open to all friends";

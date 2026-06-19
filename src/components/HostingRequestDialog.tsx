@@ -29,12 +29,14 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
   const [arrivalDate, setArrivalDate] = useState("");
   const [departureDate, setDepartureDate] = useState("");
   const [numGuests, setNumGuests] = useState(1);
+  const [companionsNote, setCompanionsNote] = useState("");
   const [sending, setSending] = useState(false);
   const [conflict, setConflict] = useState<null | { kind: string; start: string; end: string }>(null);
   const [recurringDows, setRecurringDows] = useState<number[]>([]);
   const [recurringHit, setRecurringHit] = useState<number[]>([]);
   const [trips, setTrips] = useState<Array<{ id: string; destination_city: string | null; destination_country: string | null; start_date: string; end_date: string }>>([]);
   const [tripId, setTripId] = useState<string>("none");
+
 
   // Load recurring unavailability + my upcoming trips once dialog opens
   useEffect(() => {
@@ -125,6 +127,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
           arrival_date: arrivalDate || null,
           departure_date: departureDate || null,
           num_guests: numGuests,
+          companions_note: companionsNote.trim() || null,
           trip_id: tripId !== "none" ? tripId : null,
         });
 
@@ -136,13 +139,16 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
       } else if (arrivalDate) {
         dateInfo = `\n\nArrival: ${new Date(arrivalDate).toLocaleDateString()}`;
       }
+      const companionInfo = companionsNote.trim()
+        ? `\n\nTraveling with: ${companionsNote.trim()}`
+        : "";
 
       const { error: messageError } = await supabase
         .from("messages")
         .insert({
           from_user_id: user.id,
           to_user_id: recipientId,
-          content: `[Hosting Request - ${numGuests} guest${numGuests > 1 ? "s" : ""}]\n\n${message.trim()}${dateInfo}`,
+          content: `[Hosting Request - ${numGuests} guest${numGuests > 1 ? "s" : ""}]\n\n${message.trim()}${dateInfo}${companionInfo}`,
           platform_suggestion: "hosting",
         });
 
@@ -154,7 +160,9 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
       setArrivalDate("");
       setDepartureDate("");
       setNumGuests(1);
+      setCompanionsNote("");
       setTripId("none");
+
     } catch (error) {
       console.error("Error sending hosting request:", error);
       toast.error("Failed to send hosting request");
@@ -263,6 +271,24 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
               onChange={(e) => setNumGuests(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))}
             />
           </div>
+
+          {numGuests > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="companions">Who are the other travelers?</Label>
+              <Textarea
+                id="companions"
+                placeholder="e.g. my partner Sam, two friends from college, @alex…"
+                value={companionsNote}
+                onChange={(e) => setCompanionsNote(e.target.value)}
+                rows={2}
+              />
+              <p className="text-xs text-muted-foreground">
+                Hosts often want to know if it's partners, family, or strangers.
+              </p>
+            </div>
+          )}
+
+
 
           <div className="space-y-2">
             <Label htmlFor="message">Your message *</Label>

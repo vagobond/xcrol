@@ -929,6 +929,7 @@ export type Database = {
       }
       hosting_preferences: {
         Row: {
+          accepts_last_minute: boolean
           accommodation_type: string | null
           compensation_type_preferred: string | null
           created_at: string
@@ -944,6 +945,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accepts_last_minute?: boolean
           accommodation_type?: string | null
           compensation_type_preferred?: string | null
           created_at?: string
@@ -959,6 +961,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accepts_last_minute?: boolean
           accommodation_type?: string | null
           compensation_type_preferred?: string | null
           created_at?: string
@@ -978,6 +981,7 @@ export type Database = {
       hosting_requests: {
         Row: {
           arrival_date: string | null
+          companions_note: string | null
           created_at: string
           departure_date: string | null
           from_user_id: string
@@ -992,6 +996,7 @@ export type Database = {
         }
         Insert: {
           arrival_date?: string | null
+          companions_note?: string | null
           created_at?: string
           departure_date?: string | null
           from_user_id: string
@@ -1006,6 +1011,7 @@ export type Database = {
         }
         Update: {
           arrival_date?: string | null
+          companions_note?: string | null
           created_at?: string
           departure_date?: string | null
           from_user_id?: string
@@ -2238,6 +2244,7 @@ export type Database = {
       }
       trips: {
         Row: {
+          buddy_note: string | null
           companions: string | null
           created_at: string
           destination_city: string | null
@@ -2245,12 +2252,14 @@ export type Database = {
           end_date: string
           id: string
           purpose: string | null
+          seeking_companions: boolean
           start_date: string
           updated_at: string
           user_id: string
           visibility: string
         }
         Insert: {
+          buddy_note?: string | null
           companions?: string | null
           created_at?: string
           destination_city?: string | null
@@ -2258,12 +2267,14 @@ export type Database = {
           end_date: string
           id?: string
           purpose?: string | null
+          seeking_companions?: boolean
           start_date: string
           updated_at?: string
           user_id: string
           visibility?: string
         }
         Update: {
+          buddy_note?: string | null
           companions?: string | null
           created_at?: string
           destination_city?: string | null
@@ -2271,6 +2282,7 @@ export type Database = {
           end_date?: string
           id?: string
           purpose?: string | null
+          seeking_companions?: boolean
           start_date?: string
           updated_at?: string
           user_id?: string

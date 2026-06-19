@@ -14,8 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plane, Plus, Pencil, Trash2, Loader2, MapPin, Calendar } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plane, Plus, Pencil, Trash2, Loader2, MapPin, Calendar, Users } from "lucide-react";
 import { toast } from "sonner";
+
 
 export interface Trip {
   id: string;
@@ -27,6 +29,8 @@ export interface Trip {
   purpose: string | null;
   companions: string | null;
   visibility: "private" | "friends" | "public";
+  seeking_companions?: boolean;
+  buddy_note?: string | null;
 }
 
 const empty = (uid: string): Partial<Trip> => ({
@@ -38,7 +42,10 @@ const empty = (uid: string): Partial<Trip> => ({
   purpose: "",
   companions: "",
   visibility: "friends",
+  seeking_companions: false,
+  buddy_note: "",
 });
+
 
 export default function TripsManager() {
   const { user } = useAuth();
@@ -53,9 +60,10 @@ export default function TripsManager() {
     setLoading(true);
     const { data, error } = await supabase
       .from("trips")
-      .select("id,user_id,destination_city,destination_country,start_date,end_date,purpose,companions,visibility")
+      .select("id,user_id,destination_city,destination_country,start_date,end_date,purpose,companions,visibility,seeking_companions,buddy_note")
       .eq("user_id", user.id)
       .order("start_date", { ascending: true });
+
     if (error) {
       console.error(error);
     } else {
@@ -101,7 +109,10 @@ export default function TripsManager() {
         purpose: draft.purpose || null,
         companions: draft.companions || null,
         visibility: draft.visibility || "friends",
+        seeking_companions: draft.seeking_companions ?? false,
+        buddy_note: draft.buddy_note || null,
       };
+
       if (draft.id) {
         const { error } = await supabase.from("trips").update(payload).eq("id", draft.id);
         if (error) throw error;
@@ -258,6 +269,31 @@ export default function TripsManager() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="rounded-md border border-border bg-muted/20 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="seeking-buddies" className="flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" /> Looking for travel buddies
+                </Label>
+                <Switch
+                  id="seeking-buddies"
+                  checked={draft.seeking_companions ?? false}
+                  onCheckedChange={(c) => setDraft({ ...draft, seeking_companions: c })}
+                />
+              </div>
+              {draft.seeking_companions && (
+                <Textarea
+                  rows={2}
+                  value={draft.buddy_note || ""}
+                  onChange={(e) => setDraft({ ...draft, buddy_note: e.target.value })}
+                  placeholder="What kind of buddy are you hoping to meet? Hiking partner, fellow nomad…"
+                />
+              )}
+              <p className="text-xs text-muted-foreground">
+                Trip visibility still controls who can see this. Buddies tab shows trips visible to you.
+              </p>
+            </div>
+
             <Button onClick={save} disabled={saving} className="w-full">
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               {draft.id ? "Save changes" : "Create trip"}
@@ -290,7 +326,15 @@ function TripRow({
           <Calendar className="w-3.5 h-3.5" /> {fmt(trip.start_date)} – {fmt(trip.end_date)}
         </p>
         {trip.purpose && <p className="text-xs text-muted-foreground">{trip.purpose}</p>}
-        <p className="text-xs text-muted-foreground capitalize">{trip.visibility}</p>
+        <p className="text-xs text-muted-foreground capitalize flex items-center gap-2">
+          <span>{trip.visibility}</span>
+          {trip.seeking_companions && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 px-2 py-0.5">
+              <Users className="w-3 h-3" /> Looking for buddies
+            </span>
+          )}
+        </p>
+
       </div>
       <div className="flex gap-1">
         <Button size="icon" variant="ghost" onClick={onEdit}>

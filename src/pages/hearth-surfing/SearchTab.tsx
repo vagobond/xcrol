@@ -1,12 +1,20 @@
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Loader2, Users, MapPin } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Search, Loader2, Users, MapPin, Zap, ShieldCheck, Star } from "lucide-react";
 import { HostingRequestDialog } from "@/components/HostingRequestDialog";
-import { HostProfile, getAccommodationLabel, getCompensationLabels } from "./types";
+import {
+  HostProfile,
+  getAccommodationLabel,
+  getCompensationLabels,
+  getFriendshipLevelLabel,
+} from "./types";
 
 interface Props {
   searchQuery: string;
@@ -16,8 +24,24 @@ interface Props {
   onSearch: () => void;
 }
 
-export default function SearchTab({ searchQuery, setSearchQuery, hosts, searchLoading, onSearch }: Props) {
+export default function SearchTab({
+  searchQuery,
+  setSearchQuery,
+  hosts,
+  searchLoading,
+  onSearch,
+}: Props) {
   const navigate = useNavigate();
+  const [lastMinuteOnly, setLastMinuteOnly] = useState(false);
+
+  const visibleHosts = useMemo(
+    () =>
+      lastMinuteOnly
+        ? hosts.filter((h) => h.hosting_preferences.accepts_last_minute)
+        : hosts,
+    [hosts, lastMinuteOnly]
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
@@ -35,11 +59,23 @@ export default function SearchTab({ searchQuery, setSearchQuery, hosts, searchLo
         </Button>
       </div>
 
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="last-minute-filter"
+          checked={lastMinuteOnly}
+          onCheckedChange={(c) => setLastMinuteOnly(!!c)}
+        />
+        <Label htmlFor="last-minute-filter" className="text-sm cursor-pointer flex items-center gap-1">
+          <Zap className="w-3.5 h-3.5 text-amber-500" />
+          Last-minute hosts only (&lt;48h)
+        </Label>
+      </div>
+
       {searchLoading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
-      ) : hosts.length === 0 ? (
+      ) : visibleHosts.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -48,7 +84,7 @@ export default function SearchTab({ searchQuery, setSearchQuery, hosts, searchLo
         </Card>
       ) : (
         <div className="grid gap-4">
-          {hosts.map((host) => (
+          {visibleHosts.map((host) => (
             <Card key={host.id} className="hover:border-primary/50 transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
@@ -79,12 +115,33 @@ export default function SearchTab({ searchQuery, setSearchQuery, hosts, searchLo
                         Max {host.hosting_preferences.max_guests} guest
                         {host.hosting_preferences.max_guests !== 1 ? "s" : ""}
                       </Badge>
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" />
+                        {getFriendshipLevelLabel(host.hosting_preferences.min_friendship_level)}
+                      </Badge>
+                      {host.hosting_preferences.accepts_last_minute && (
+                        <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 flex items-center gap-1">
+                          <Zap className="w-3 h-3" />
+                          Last-minute OK
+                        </Badge>
+                      )}
                       {host.hosting_preferences.compensation_type_preferred.length > 0 && (
                         <Badge variant="outline" className="text-primary border-primary">
                           {getCompensationLabels(host.hosting_preferences.compensation_type_preferred)}
                         </Badge>
                       )}
                     </div>
+                    {host.stay_stats && host.stay_stats.hosted_count > 0 && (
+                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                        <Star className="w-3 h-3 text-amber-500" />
+                        {host.stay_stats.hosted_count} stay reference
+                        {host.stay_stats.hosted_count !== 1 ? "s" : ""}
+                        {host.stay_stats.positive_refs > 0
+                          ? ` · ${host.stay_stats.positive_refs} positive`
+                          : ""}
+                      </p>
+                    )}
+
                     {host.hosting_preferences.hosting_description && (
                       <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                         {host.hosting_preferences.hosting_description}
