@@ -326,7 +326,15 @@ function TripRow({
           <Calendar className="w-3.5 h-3.5" /> {fmt(trip.start_date)} – {fmt(trip.end_date)}
         </p>
         {trip.purpose && <p className="text-xs text-muted-foreground">{trip.purpose}</p>}
-        <p className="text-xs text-muted-foreground capitalize">{trip.visibility}</p>
+        <p className="text-xs text-muted-foreground capitalize flex items-center gap-2">
+          <span>{trip.visibility}</span>
+          {trip.seeking_companions && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 px-2 py-0.5">
+              <Users className="w-3 h-3" /> Looking for buddies
+            </span>
+          )}
+        </p>
+
       </div>
       <div className="flex gap-1">
         <Button size="icon" variant="ghost" onClick={onEdit}>
