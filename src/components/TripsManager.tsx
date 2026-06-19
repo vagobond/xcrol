@@ -29,6 +29,8 @@ export interface Trip {
   purpose: string | null;
   companions: string | null;
   visibility: "private" | "friends" | "public";
+  seeking_companions?: boolean;
+  buddy_note?: string | null;
 }
 
 const empty = (uid: string): Partial<Trip> => ({
@@ -40,7 +42,10 @@ const empty = (uid: string): Partial<Trip> => ({
   purpose: "",
   companions: "",
   visibility: "friends",
+  seeking_companions: false,
+  buddy_note: "",
 });
+
 
 export default function TripsManager() {
   const { user } = useAuth();
