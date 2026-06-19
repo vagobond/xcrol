@@ -108,7 +108,7 @@ const HearthSurfing = () => {
     if (!user) return;
     try {
       const cols =
-        "id, from_user_id, to_user_id, message, status, arrival_date, departure_date, num_guests, response_message, created_at";
+        "id, from_user_id, to_user_id, message, status, arrival_date, departure_date, num_guests, companions_note, response_message, created_at";
 
       const { data: incoming, error: inError } = await supabase
         .from("hosting_requests")
@@ -139,7 +139,6 @@ const HearthSurfing = () => {
 
         const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
 
-        // Fetch precise_address only for hosts of accepted outgoing requests
         const acceptedHostIds = [
           ...new Set(
             (outgoing || [])
@@ -159,10 +158,10 @@ const HearthSurfing = () => {
         }
 
         setIncomingRequests(
-          (incoming || []).map((r) => ({ ...r, from_profile: profileMap.get(r.from_user_id) }))
+          (incoming || []).map((r: any) => ({ ...r, from_profile: profileMap.get(r.from_user_id) }))
         );
         setOutgoingRequests(
-          (outgoing || []).map((r) => ({
+          (outgoing || []).map((r: any) => ({
             ...r,
             to_profile: profileMap.get(r.to_user_id),
             host_precise_address:
@@ -170,8 +169,8 @@ const HearthSurfing = () => {
           }))
         );
       } else {
-        setIncomingRequests(incoming || []);
-        setOutgoingRequests(outgoing || []);
+        setIncomingRequests((incoming as any) || []);
+        setOutgoingRequests((outgoing as any) || []);
       }
     } catch (error) {
       console.error("Error loading requests:", error);
@@ -179,6 +178,7 @@ const HearthSurfing = () => {
       setRequestsLoading(false);
     }
   };
+
 
   const searchHosts = async () => {
     setSearchLoading(true);
