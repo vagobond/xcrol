@@ -186,14 +186,14 @@ const HearthSurfing = () => {
       const { data, error } = await supabase
         .from("hosting_preferences")
         .select(
-          "*, profiles!hosting_preferences_user_id_fkey(id, display_name, avatar_url, hometown_city, hometown_country)"
+          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, accepts_last_minute, profiles!hosting_preferences_user_id_fkey(id, display_name, avatar_url, hometown_city, hometown_country)"
         )
         .eq("is_open_to_hosting", true)
         .eq("is_hosting_paused", false);
 
       if (error) throw error;
 
-      const hostProfiles: HostProfile[] = (data || [])
+      const baseProfiles: HostProfile[] = (data || [])
         .filter((d: any) => d.profiles && d.user_id !== user?.id)
         .map((d: any) => ({
           id: d.profiles.id,
@@ -209,6 +209,7 @@ const HearthSurfing = () => {
             accommodation_type: d.accommodation_type,
             max_guests: d.max_guests,
             min_friendship_level: d.min_friendship_level,
+            accepts_last_minute: d.accepts_last_minute ?? false,
             compensation_type_preferred: Array.isArray(d.compensation_type_preferred)
               ? d.compensation_type_preferred
               : d.compensation_type_preferred && d.compensation_type_preferred !== "none"
@@ -216,6 +217,41 @@ const HearthSurfing = () => {
               : [],
           },
         }));
+
+      // Load aggregate stay stats for visible hosts in one shot.
+      const hostIds = baseProfiles.map((h) => h.id);
+      const statsMap = new Map<string, { hosted_count: number; positive_refs: number }>();
+      if (hostIds.length > 0) {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: stays } = await supabase
+          .from("hosting_requests")
+          .select("to_user_id, id")
+          .in("to_user_id", hostIds)
+          .eq("status", "accepted")
+          .lt("departure_date", today);
+        (stays || []).forEach((s: any) => {
+          const e = statsMap.get(s.to_user_id) || { hosted_count: 0, positive_refs: 0 };
+          e.hosted_count += 1;
+          statsMap.set(s.to_user_id, e);
+        });
+        const { data: refs } = await supabase
+          .from("user_references")
+          .select("to_user_id, sentiment")
+          .in("to_user_id", hostIds)
+          .not("hosting_request_id", "is", null);
+        (refs || []).forEach((r: any) => {
+          if (r.sentiment === "positive") {
+            const e = statsMap.get(r.to_user_id) || { hosted_count: 0, positive_refs: 0 };
+            e.positive_refs += 1;
+            statsMap.set(r.to_user_id, e);
+          }
+        });
+      }
+
+      const hostProfiles = baseProfiles.map((h) => ({
+        ...h,
+        stay_stats: statsMap.get(h.id),
+      }));
 
       const filtered = searchQuery
         ? hostProfiles.filter(
@@ -233,6 +269,7 @@ const HearthSurfing = () => {
       setSearchLoading(false);
     }
   };
+
 
   const handleSavePreferences = async () => {
     if (!user) return;
