@@ -55,7 +55,7 @@ const HearthSurfing = () => {
       const { data, error } = await supabase
         .from("hosting_preferences")
         .select(
-          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused"
+          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused, accepts_last_minute"
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -85,6 +85,7 @@ const HearthSurfing = () => {
           min_friendship_level: data.min_friendship_level,
           compensation_type_preferred: compensationTypes,
           is_hosting_paused: data.is_hosting_paused ?? false,
+          accepts_last_minute: (data as any).accepts_last_minute ?? false,
           precise_address: addrRow?.address ?? null,
         });
       } else {
@@ -94,6 +95,7 @@ const HearthSurfing = () => {
           precise_address: addrRow?.address ?? null,
         }));
       }
+
     } catch (error) {
       console.error("Error loading hosting preferences:", error);
     } finally {
