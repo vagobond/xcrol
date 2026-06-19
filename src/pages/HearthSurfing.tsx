@@ -220,36 +220,24 @@ const HearthSurfing = () => {
           },
         }));
 
-      // Load aggregate stay stats for visible hosts in one shot.
+      // Stay stats: derived from public references (RLS-readable). We don't
+      // try to aggregate other users' hosting_requests rows — they're RLS-gated.
       const hostIds = baseProfiles.map((h) => h.id);
       const statsMap = new Map<string, { hosted_count: number; positive_refs: number }>();
       if (hostIds.length > 0) {
-        const today = new Date().toISOString().slice(0, 10);
-        const { data: stays } = await supabase
-          .from("hosting_requests")
-          .select("to_user_id, id")
-          .in("to_user_id", hostIds)
-          .eq("status", "accepted")
-          .lt("departure_date", today);
-        (stays || []).forEach((s: any) => {
-          const e = statsMap.get(s.to_user_id) || { hosted_count: 0, positive_refs: 0 };
-          e.hosted_count += 1;
-          statsMap.set(s.to_user_id, e);
-        });
         const { data: refs } = await supabase
           .from("user_references")
-          .select("to_user_id, rating")
+          .select("to_user_id, rating, hosting_request_id")
           .in("to_user_id", hostIds)
           .not("hosting_request_id", "is", null);
         (refs || []).forEach((r: any) => {
-          if ((r.rating ?? 0) >= 4) {
-            const e = statsMap.get(r.to_user_id) || { hosted_count: 0, positive_refs: 0 };
-            e.positive_refs += 1;
-            statsMap.set(r.to_user_id, e);
-          }
+          const e = statsMap.get(r.to_user_id) || { hosted_count: 0, positive_refs: 0 };
+          e.hosted_count += 1;
+          if ((r.rating ?? 0) >= 4) e.positive_refs += 1;
+          statsMap.set(r.to_user_id, e);
         });
-
       }
+
 
       const hostProfiles = baseProfiles.map((h) => ({
         ...h,
