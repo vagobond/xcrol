@@ -55,12 +55,19 @@ const HearthSurfing = () => {
       const { data, error } = await supabase
         .from("hosting_preferences")
         .select(
-          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused, precise_address"
+          "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, is_hosting_paused"
         )
         .eq("user_id", user.id)
         .maybeSingle();
 
       if (error) throw error;
+
+      // Precise address now lives in its own gated table
+      const { data: addrRow } = await supabase
+        .from("host_precise_addresses")
+        .select("address")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
       if (data) {
         let compensationTypes: string[] = [];
@@ -78,10 +85,14 @@ const HearthSurfing = () => {
           min_friendship_level: data.min_friendship_level,
           compensation_type_preferred: compensationTypes,
           is_hosting_paused: data.is_hosting_paused ?? false,
-          precise_address: data.precise_address ?? null,
+          precise_address: addrRow?.address ?? null,
         });
       } else {
-        setPreferences((prev) => ({ ...prev, user_id: user.id }));
+        setPreferences((prev) => ({
+          ...prev,
+          user_id: user.id,
+          precise_address: addrRow?.address ?? null,
+        }));
       }
     } catch (error) {
       console.error("Error loading hosting preferences:", error);
@@ -89,6 +100,7 @@ const HearthSurfing = () => {
       setPrefsLoading(false);
     }
   };
+
 
   const loadRequests = async () => {
     if (!user) return;
