@@ -148,11 +148,11 @@ const HearthSurfing = () => {
         const addressMap = new Map<string, string | null>();
         if (acceptedHostIds.length > 0) {
           const { data: addresses } = await supabase
-            .from("hosting_preferences")
-            .select("user_id, precise_address")
+            .from("host_precise_addresses")
+            .select("user_id, address")
             .in("user_id", acceptedHostIds);
           (addresses || []).forEach((a: any) =>
-            addressMap.set(a.user_id, a.precise_address ?? null)
+            addressMap.set(a.user_id, a.address ?? null)
           );
         }
 
