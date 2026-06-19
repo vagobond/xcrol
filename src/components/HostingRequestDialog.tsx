@@ -29,12 +29,14 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
   const [arrivalDate, setArrivalDate] = useState("");
   const [departureDate, setDepartureDate] = useState("");
   const [numGuests, setNumGuests] = useState(1);
+  const [companionsNote, setCompanionsNote] = useState("");
   const [sending, setSending] = useState(false);
   const [conflict, setConflict] = useState<null | { kind: string; start: string; end: string }>(null);
   const [recurringDows, setRecurringDows] = useState<number[]>([]);
   const [recurringHit, setRecurringHit] = useState<number[]>([]);
   const [trips, setTrips] = useState<Array<{ id: string; destination_city: string | null; destination_country: string | null; start_date: string; end_date: string }>>([]);
   const [tripId, setTripId] = useState<string>("none");
+
 
   // Load recurring unavailability + my upcoming trips once dialog opens
   useEffect(() => {
