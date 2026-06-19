@@ -109,7 +109,10 @@ export default function TripsManager() {
         purpose: draft.purpose || null,
         companions: draft.companions || null,
         visibility: draft.visibility || "friends",
+        seeking_companions: draft.seeking_companions ?? false,
+        buddy_note: draft.buddy_note || null,
       };
+
       if (draft.id) {
         const { error } = await supabase.from("trips").update(payload).eq("id", draft.id);
         if (error) throw error;
