@@ -373,10 +373,14 @@ const HearthSurfing = () => {
         </div>
 
         <Tabs defaultValue="search" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="search" className="flex items-center gap-2">
               <Search className="w-4 h-4" />
               Find Hosts
+            </TabsTrigger>
+            <TabsTrigger value="buddies" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Buddies
             </TabsTrigger>
             <TabsTrigger value="requests" className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
@@ -395,6 +399,7 @@ const HearthSurfing = () => {
               My Space
             </TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="search" className="space-y-4">
             <SearchTab
