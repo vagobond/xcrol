@@ -66,6 +66,23 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
               />
             </div>
 
+            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+              <div>
+                <Label htmlFor="last-minute-toggle">Accept last-minute requests</Label>
+                <p className="text-sm text-muted-foreground">
+                  Surface me in the "Last-minute hosts" filter for requests under 48 hours.
+                </p>
+              </div>
+              <Switch
+                id="last-minute-toggle"
+                checked={preferences.accepts_last_minute ?? false}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, accepts_last_minute: checked })
+                }
+              />
+            </div>
+
+
             <div className="space-y-2">
               <Label>Who can request hosting?</Label>
               <Select
