@@ -269,6 +269,31 @@ export default function TripsManager() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="rounded-md border border-border bg-muted/20 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="seeking-buddies" className="flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" /> Looking for travel buddies
+                </Label>
+                <Switch
+                  id="seeking-buddies"
+                  checked={draft.seeking_companions ?? false}
+                  onCheckedChange={(c) => setDraft({ ...draft, seeking_companions: c })}
+                />
+              </div>
+              {draft.seeking_companions && (
+                <Textarea
+                  rows={2}
+                  value={draft.buddy_note || ""}
+                  onChange={(e) => setDraft({ ...draft, buddy_note: e.target.value })}
+                  placeholder="What kind of buddy are you hoping to meet? Hiking partner, fellow nomad…"
+                />
+              )}
+              <p className="text-xs text-muted-foreground">
+                Trip visibility still controls who can see this. Buddies tab shows trips visible to you.
+              </p>
+            </div>
+
             <Button onClick={save} disabled={saving} className="w-full">
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               {draft.id ? "Save changes" : "Create trip"}
