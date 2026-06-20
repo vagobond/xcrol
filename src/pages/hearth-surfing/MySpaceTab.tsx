@@ -227,6 +227,24 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
         </Button>
       </CardContent>
     </Card>
+    {publicHostUrl && (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Share2 className="w-4 h-4" /> Your public host page
+          </CardTitle>
+          <CardDescription>
+            Share a partial host card with friends. No exact location or contact details are exposed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-2">
+          <Input value={publicHostUrl} readOnly className="flex-1 text-xs" />
+          <Button onClick={copyUrl} variant="outline" className="sm:w-auto">
+            <Copy className="w-4 h-4 mr-2" /> Copy
+          </Button>
+        </CardContent>
+      </Card>
+    )}
     {preferences.is_open_to_hosting && preferences.id && <HostAvailabilityCalendar />}
     <TripsManager />
     </div>
