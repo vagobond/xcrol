@@ -17,6 +17,7 @@ import { PasswordSection } from "@/components/settings/PasswordSection";
 import { AccountDeletionSection } from "@/components/settings/AccountDeletionSection";
 import { NostrIdentitySection } from "@/components/settings/NostrIdentitySection";
 import { AiAssistanceSection } from "@/components/settings/AiAssistanceSection";
+import { EmergencyContactSection } from "@/components/settings/EmergencyContactSection";
 
 const Settings = () => {
   const navigate = useNavigate();
