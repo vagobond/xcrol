@@ -63,7 +63,7 @@ export function useSettingsData(userId: string | undefined) {
     try {
       const { data, error } = await supabase
         .from("user_settings")
-        .select("email_notifications, friend_request_notifications, show_online_status, allow_friend_requests, default_share_email, default_share_hometown, default_share_connections, default_share_xcrol, notify_river_replies, notify_brook_activity, notify_hosting_requests, notify_meetup_requests, notify_group_activity, weekly_digest_enabled")
+        .select("email_notifications, friend_request_notifications, show_online_status, allow_friend_requests, default_share_email, default_share_hometown, default_share_connections, default_share_xcrol, notify_river_replies, notify_brook_activity, notify_hosting_requests, notify_meetup_requests, notify_group_activity, weekly_digest_enabled, emergency_contact")
         .eq("user_id", uid)
         .maybeSingle();
 
@@ -85,6 +85,7 @@ export function useSettingsData(userId: string | undefined) {
           notify_meetup_requests: data.notify_meetup_requests ?? true,
           notify_group_activity: data.notify_group_activity ?? true,
           weekly_digest_enabled: (data as any).weekly_digest_enabled ?? true,
+          emergency_contact: (data as any).emergency_contact ?? null,
         });
       }
       setSettingsLoaded(true);
