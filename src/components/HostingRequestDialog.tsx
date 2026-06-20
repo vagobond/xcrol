@@ -30,6 +30,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
   const [departureDate, setDepartureDate] = useState("");
   const [numGuests, setNumGuests] = useState(1);
   const [companionsNote, setCompanionsNote] = useState("");
+  const [skillsOffered, setSkillsOffered] = useState("");
   const [sending, setSending] = useState(false);
   const [conflict, setConflict] = useState<null | { kind: string; start: string; end: string }>(null);
   const [recurringDows, setRecurringDows] = useState<number[]>([]);
