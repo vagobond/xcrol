@@ -23,6 +23,34 @@ interface Props {
 }
 
 export default function MySpaceTab({ preferences, setPreferences, saving, onSave }: Props) {
+  const { user } = useAuth();
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setUsername(data?.username ?? null));
+  }, [user]);
+
+  const publicHostUrl =
+    preferences.is_open_to_hosting && !preferences.is_hosting_paused && username
+      ? `${window.location.origin}/host/${username}`
+      : null;
+
+  const copyUrl = async () => {
+    if (!publicHostUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicHostUrl);
+      toast.success("Link copied");
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
+
   const toggleCompensation = (value: string) => {
     const current = preferences.compensation_type_preferred;
     const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
