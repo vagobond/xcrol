@@ -144,13 +144,16 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
       const companionInfo = companionsNote.trim()
         ? `\n\nTraveling with: ${companionsNote.trim()}`
         : "";
+      const skillsInfo = skillsOffered.trim()
+        ? `\n\nSkills I can offer: ${skillsOffered.trim()}`
+        : "";
 
       const { error: messageError } = await supabase
         .from("messages")
         .insert({
           from_user_id: user.id,
           to_user_id: recipientId,
-          content: `[Hosting Request - ${numGuests} guest${numGuests > 1 ? "s" : ""}]\n\n${message.trim()}${dateInfo}${companionInfo}`,
+          content: `[Hosting Request - ${numGuests} guest${numGuests > 1 ? "s" : ""}]\n\n${message.trim()}${dateInfo}${companionInfo}${skillsInfo}`,
           platform_suggestion: "hosting",
         });
 
@@ -163,6 +166,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
       setDepartureDate("");
       setNumGuests(1);
       setCompanionsNote("");
+      setSkillsOffered("");
       setTripId("none");
 
     } catch (error) {
