@@ -129,6 +129,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
           departure_date: departureDate || null,
           num_guests: numGuests,
           companions_note: companionsNote.trim() || null,
+          skills_offered: skillsOffered.trim() || null,
           trip_id: tripId !== "none" ? tripId : null,
         });
 
