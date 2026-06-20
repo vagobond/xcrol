@@ -138,6 +138,14 @@ const ThreadDetailView = ({
           })}
         </div>
 
+        {currentUserId && (
+          <SafetyFooter
+            currentUserId={currentUserId}
+            otherUserId={thread.otherUserId}
+            hostingHinted={thread.messages.some((m) => m.platform_suggestion === "hosting")}
+          />
+        )}
+
         <div className="mt-4 pt-4 border-t">
           <Button
             className="w-full"
