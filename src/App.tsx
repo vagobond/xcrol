@@ -149,6 +149,7 @@ const App = () => (
                 <Route path="/content-policy" element={<ContentPolicy />} />
                 <Route path="/developers" element={<Developers />} />
                 <Route path="/post/:postId" element={<SharedPost />} />
+                <Route path="/host/:username" element={<PublicHost />} />
                 <Route path="/install-app" element={<ProtectedRoute><InstallApp /></ProtectedRoute>} />
                 <Route path="/map" element={<ProtectedRoute><Map /></ProtectedRoute>} />
                 <Route path="/scrolls" element={<ProtectedRoute><Scrolls /></ProtectedRoute>} />
