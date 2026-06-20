@@ -76,6 +76,7 @@ const Settings = () => {
 
             <DataPrivacySection settings={settings} onSettingChange={handleSettingChange} />
             <NotificationsPrivacySection settings={settings} onSettingChange={handleSettingChange} />
+            <EmergencyContactSection settings={settings} onSettingChange={handleSettingChange} />
             <PasswordSection />
 
             <NostrIdentitySection />
