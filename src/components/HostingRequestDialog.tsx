@@ -294,7 +294,19 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
             </div>
           )}
 
-
+          <div className="space-y-2">
+            <Label htmlFor="skills">Skills you can offer in exchange (optional)</Label>
+            <Textarea
+              id="skills"
+              placeholder="e.g. cooking, language tutoring, gardening, photography, code, handywork…"
+              value={skillsOffered}
+              onChange={(e) => setSkillsOffered(e.target.value)}
+              rows={2}
+            />
+            <p className="text-xs text-muted-foreground">
+              Hosts who prefer "Skill Swap" compensation will see this on your request.
+            </p>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="message">Your message *</Label>
