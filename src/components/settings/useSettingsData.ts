@@ -17,6 +17,7 @@ export interface UserSettings {
   notify_meetup_requests: boolean;
   notify_group_activity: boolean;
   weekly_digest_enabled: boolean;
+  emergency_contact: string | null;
 }
 
 export interface DeletionRequest {
@@ -41,6 +42,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   notify_meetup_requests: true,
   notify_group_activity: true,
   weekly_digest_enabled: true,
+  emergency_contact: null,
 };
 
 export function useSettingsData(userId: string | undefined) {
