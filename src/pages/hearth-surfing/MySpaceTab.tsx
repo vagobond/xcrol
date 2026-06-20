@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Home, Loader2, Save } from "lucide-react";
+import { Home, Loader2, Save, Share2, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { HostingPreferences, ACCOMMODATION_TYPES, COMPENSATION_TYPES } from "./types";
 import HostAvailabilityCalendar from "@/components/HostAvailabilityCalendar";
 import TripsManager from "@/components/TripsManager";
@@ -19,6 +23,34 @@ interface Props {
 }
 
 export default function MySpaceTab({ preferences, setPreferences, saving, onSave }: Props) {
+  const { user } = useAuth();
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setUsername(data?.username ?? null));
+  }, [user]);
+
+  const publicHostUrl =
+    preferences.is_open_to_hosting && !preferences.is_hosting_paused && username
+      ? `${window.location.origin}/host/${username}`
+      : null;
+
+  const copyUrl = async () => {
+    if (!publicHostUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicHostUrl);
+      toast.success("Link copied");
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
+
   const toggleCompensation = (value: string) => {
     const current = preferences.compensation_type_preferred;
     const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
@@ -195,6 +227,24 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
         </Button>
       </CardContent>
     </Card>
+    {publicHostUrl && (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Share2 className="w-4 h-4" /> Your public host page
+          </CardTitle>
+          <CardDescription>
+            Share a partial host card with friends. No exact location or contact details are exposed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-2">
+          <Input value={publicHostUrl} readOnly className="flex-1 text-xs" />
+          <Button onClick={copyUrl} variant="outline" className="sm:w-auto">
+            <Copy className="w-4 h-4 mr-2" /> Copy
+          </Button>
+        </CardContent>
+      </Card>
+    )}
     {preferences.is_open_to_hosting && preferences.id && <HostAvailabilityCalendar />}
     <TripsManager />
     </div>

@@ -37,6 +37,7 @@ export interface HostingRequest {
   departure_date: string | null;
   num_guests: number | null;
   companions_note?: string | null;
+  skills_offered?: string | null;
   response_message: string | null;
   created_at: string;
   host_precise_address?: string | null;
@@ -57,7 +58,9 @@ export const COMPENSATION_TYPES = [
   { value: "hangout_time", label: "Hangout Time" },
   { value: "friendship", label: "Friendship" },
   { value: "fwb", label: "FWB" },
+  { value: "skills_exchange", label: "Skill Swap" },
 ];
+
 
 export const ACCOMMODATION_TYPES = [
   { value: "private_room", label: "Private Room" },

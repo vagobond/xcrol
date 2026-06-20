@@ -30,6 +30,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
   const [departureDate, setDepartureDate] = useState("");
   const [numGuests, setNumGuests] = useState(1);
   const [companionsNote, setCompanionsNote] = useState("");
+  const [skillsOffered, setSkillsOffered] = useState("");
   const [sending, setSending] = useState(false);
   const [conflict, setConflict] = useState<null | { kind: string; start: string; end: string }>(null);
   const [recurringDows, setRecurringDows] = useState<number[]>([]);
@@ -128,6 +129,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
           departure_date: departureDate || null,
           num_guests: numGuests,
           companions_note: companionsNote.trim() || null,
+          skills_offered: skillsOffered.trim() || null,
           trip_id: tripId !== "none" ? tripId : null,
         });
 
@@ -142,13 +144,16 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
       const companionInfo = companionsNote.trim()
         ? `\n\nTraveling with: ${companionsNote.trim()}`
         : "";
+      const skillsInfo = skillsOffered.trim()
+        ? `\n\nSkills I can offer: ${skillsOffered.trim()}`
+        : "";
 
       const { error: messageError } = await supabase
         .from("messages")
         .insert({
           from_user_id: user.id,
           to_user_id: recipientId,
-          content: `[Hosting Request - ${numGuests} guest${numGuests > 1 ? "s" : ""}]\n\n${message.trim()}${dateInfo}${companionInfo}`,
+          content: `[Hosting Request - ${numGuests} guest${numGuests > 1 ? "s" : ""}]\n\n${message.trim()}${dateInfo}${companionInfo}${skillsInfo}`,
           platform_suggestion: "hosting",
         });
 
@@ -161,6 +166,7 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
       setDepartureDate("");
       setNumGuests(1);
       setCompanionsNote("");
+      setSkillsOffered("");
       setTripId("none");
 
     } catch (error) {
@@ -288,7 +294,19 @@ export const HostingRequestDialog = ({ recipientId, recipientName }: HostingRequ
             </div>
           )}
 
-
+          <div className="space-y-2">
+            <Label htmlFor="skills">Skills you can offer in exchange (optional)</Label>
+            <Textarea
+              id="skills"
+              placeholder="e.g. cooking, language tutoring, gardening, photography, code, handywork…"
+              value={skillsOffered}
+              onChange={(e) => setSkillsOffered(e.target.value)}
+              rows={2}
+            />
+            <p className="text-xs text-muted-foreground">
+              Hosts who prefer "Skill Swap" compensation will see this on your request.
+            </p>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="message">Your message *</Label>

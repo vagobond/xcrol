@@ -110,7 +110,7 @@ const HearthSurfing = () => {
     if (!user) return;
     try {
       const cols =
-        "id, from_user_id, to_user_id, message, status, arrival_date, departure_date, num_guests, companions_note, response_message, created_at";
+        "id, from_user_id, to_user_id, message, status, arrival_date, departure_date, num_guests, companions_note, skills_offered, response_message, created_at";
 
       const { data: incoming, error: inError } = await supabase
         .from("hosting_requests")

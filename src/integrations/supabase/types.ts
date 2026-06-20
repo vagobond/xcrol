@@ -989,6 +989,7 @@ export type Database = {
           message: string
           num_guests: number | null
           response_message: string | null
+          skills_offered: string | null
           status: Database["public"]["Enums"]["request_status"]
           to_user_id: string
           trip_id: string | null
@@ -1004,6 +1005,7 @@ export type Database = {
           message: string
           num_guests?: number | null
           response_message?: string | null
+          skills_offered?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           to_user_id: string
           trip_id?: string | null
@@ -1019,6 +1021,7 @@ export type Database = {
           message?: string
           num_guests?: number | null
           response_message?: string | null
+          skills_offered?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           to_user_id?: string
           trip_id?: string | null
@@ -2490,6 +2493,7 @@ export type Database = {
           default_share_hometown: boolean
           default_share_xcrol: boolean
           email_notifications: boolean
+          emergency_contact: string | null
           friend_request_notifications: boolean
           id: string
           notify_brook_activity: boolean
@@ -2511,6 +2515,7 @@ export type Database = {
           default_share_hometown?: boolean
           default_share_xcrol?: boolean
           email_notifications?: boolean
+          emergency_contact?: string | null
           friend_request_notifications?: boolean
           id?: string
           notify_brook_activity?: boolean
@@ -2532,6 +2537,7 @@ export type Database = {
           default_share_hometown?: boolean
           default_share_xcrol?: boolean
           email_notifications?: boolean
+          emergency_contact?: string | null
           friend_request_notifications?: boolean
           id?: string
           notify_brook_activity?: boolean

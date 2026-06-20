@@ -67,6 +67,11 @@ export default function RequestsTab({ loading, incoming, outgoing, onRespond }: 
                         Traveling with: {request.companions_note}
                       </p>
                     )}
+                    {request.skills_offered && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Skills offered: {request.skills_offered}
+                      </p>
+                    )}
                     <p className="text-sm mt-1">{request.message}</p>
                     <Badge variant={statusVariant(request.status) as any} className="mt-2">
                       {request.status}

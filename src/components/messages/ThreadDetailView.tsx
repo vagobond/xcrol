@@ -7,6 +7,7 @@ import { ArrowLeft, ExternalLink, Reply, Waves } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SendMessageDialog from "@/components/SendMessageDialog";
 import MessageBubble from "./MessageBubble";
+import SafetyFooter from "./SafetyFooter";
 import type { ConversationThread, Message } from "./types";
 
 interface ThreadDetailViewProps {
@@ -136,6 +137,14 @@ const ThreadDetailView = ({
             );
           })}
         </div>
+
+        {currentUserId && (
+          <SafetyFooter
+            currentUserId={currentUserId}
+            otherUserId={thread.otherUserId}
+            hostingHinted={thread.messages.some((m) => m.platform_suggestion === "hosting")}
+          />
+        )}
 
         <div className="mt-4 pt-4 border-t">
           <Button
