@@ -56,7 +56,8 @@ export default function SafetyFooter({ currentUserId, otherUserId, hostingHinted
       const { error } = await supabase.from("private_stay_feedback").insert({
         hosting_request_id: requestId,
         from_user_id: currentUserId,
-        feedback: note.trim(),
+        to_user_id: otherUserId,
+        content: note.trim(),
       });
       if (error) throw error;
       toast.success("Sent to admins privately. Thank you.");
