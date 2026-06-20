@@ -7,6 +7,7 @@ import { ArrowLeft, ExternalLink, Reply, Waves } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SendMessageDialog from "@/components/SendMessageDialog";
 import MessageBubble from "./MessageBubble";
+import SafetyFooter from "./SafetyFooter";
 import type { ConversationThread, Message } from "./types";
 
 interface ThreadDetailViewProps {
