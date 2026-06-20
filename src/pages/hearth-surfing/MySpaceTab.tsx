@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Home, Loader2, Save } from "lucide-react";
+import { Home, Loader2, Save, Share2, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { HostingPreferences, ACCOMMODATION_TYPES, COMPENSATION_TYPES } from "./types";
 import HostAvailabilityCalendar from "@/components/HostAvailabilityCalendar";
 import TripsManager from "@/components/TripsManager";
