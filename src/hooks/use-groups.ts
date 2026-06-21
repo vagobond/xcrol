@@ -119,11 +119,11 @@ export const useGroupBySlug = (slug: string | undefined) => {
 
       if (error) throw error;
 
-      const { count } = await supabase
-        .from("group_members")
-        .select("id", { count: "exact", head: true })
-        .eq("group_id", group.id)
-        .eq("status", "active");
+      // Use SECURITY DEFINER RPC so anon visitors can read member counts too
+      const { data: countData } = await supabase.rpc("get_group_member_count", {
+        target_group_id: group.id,
+      });
+      const count = (countData as number | null) ?? 0;
 
       let is_member = false;
       let is_admin = false;
