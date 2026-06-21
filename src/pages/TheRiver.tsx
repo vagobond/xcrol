@@ -70,11 +70,13 @@ export default function TheRiver() {
   const [searchParams] = useSearchParams();
   const highlightedPostId = searchParams.get("post");
   const { user, loading: authLoading } = useAuth();
+  const requireAuth = useRequireAuth();
+  const isGuest = !user && !authLoading;
   const [entries, setEntries] = useState<RiverEntry[]>([]);
   const [reactions, setReactions] = useState<ReactionsMap>({});
   const [repliesMap, setRepliesMap] = useState<RepliesMap>({});
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState(isGuest ? "public" : "all");
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [hasScrolledToPost, setHasScrolledToPost] = useState(false);
@@ -82,7 +84,8 @@ export default function TheRiver() {
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const hasLoadedRef = useRef(false);
   const prevFilterRef = useRef(filter);
-  const PAGE_SIZE = 20;
+  // Guests only see the 5 most recent public posts. Authenticated users see 20 per page.
+  const PAGE_SIZE = isGuest ? 5 : 20;
 
   useEffect(() => {
     if (authLoading) return;
