@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { MentionText } from "@/components/MentionText";
 import { GroupPostReactions } from "./GroupPostReactions";
+import { useRequireAuth } from "@/components/auth/GuestAuthGate";
 
 interface Comment {
   id: string;
@@ -30,6 +31,7 @@ interface GroupPostCommentsProps {
 
 export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusCommentId }: GroupPostCommentsProps) => {
   const navigate = useNavigate();
+  const requireAuth = useRequireAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [showInput, setShowInput] = useState(false);
   const [content, setContent] = useState("");
@@ -94,7 +96,9 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
   }, [loadComments]);
 
   const handleSubmit = async () => {
-    if (!currentUserId || !content.trim()) return;
+    if (!content.trim()) return;
+    if (!requireAuth("post a comment")) return;
+    if (!currentUserId) return;
     setSubmitting(true);
     try {
       const { error } = await supabase.from("group_post_comments").insert({
@@ -144,17 +148,15 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
   return (
     <div className="mt-3 pt-3 border-t border-border/50">
       <div className="flex items-center gap-2 mb-2">
-        {currentUserId && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs gap-1"
-            onClick={() => setShowInput(!showInput)}
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            Comment
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs gap-1"
+          onClick={() => setShowInput(!showInput)}
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+          Comment
+        </Button>
         {count > 0 && (
           <span className="text-xs text-muted-foreground">
             {count} {count === 1 ? "comment" : "comments"}
