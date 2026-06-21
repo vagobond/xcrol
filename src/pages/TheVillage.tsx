@@ -3,23 +3,31 @@ import { useNavigate, Link } from "react-router-dom";
 import { useGroups } from "@/hooks/use-groups";
 import { useAuth } from "@/hooks/use-auth";
 import { useGroupActivity } from "@/hooks/use-group-activity";
+import { useRequireAuth } from "@/components/auth/GuestAuthGate";
 import CreateGroupDialog from "@/components/CreateGroupDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Users, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getFriendshipLabel } from "@/lib/friendship-labels";
 import { useEffect, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 const TheVillage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const requireAuth = useRequireAuth();
   const { data: groups, isLoading } = useGroups();
+  const isGuest = !user;
 
-  const myGroups = groups?.filter((g) => g.is_member || g.creator_id === user?.id) ?? [];
-  const otherGroups = groups?.filter((g) => !g.is_member && g.creator_id !== user?.id) ?? [];
+  // Guests only see public-trust groups.
+  const visibleGroups = useMemo(
+    () => (isGuest ? (groups ?? []).filter((g) => g.trust_level === "public") : groups ?? []),
+    [groups, isGuest]
+  );
+
+  const myGroups = visibleGroups.filter((g) => g.is_member || g.creator_id === user?.id);
+  const otherGroups = visibleGroups.filter((g) => !g.is_member && g.creator_id !== user?.id);
 
   const memberGroupIds = useMemo(() => myGroups.map((g) => g.id), [myGroups]);
   const activityCounts = useGroupActivity(memberGroupIds);
@@ -36,7 +44,11 @@ const TheVillage = () => {
     <div className="min-h-screen px-3 sm:px-4 pt-20 pb-8 max-w-4xl mx-auto">
       <Helmet>
         <title>The Village | Xcrol</title>
-        <meta name="description" content="User groups and communities" />
+        <meta name="description" content="Public communities and groups on XCROL — browse the Village and join the conversation." />
+        <link rel="canonical" href="https://xcrol.com/the-village" />
+        <meta property="og:title" content="The Village — XCROL" />
+        <meta property="og:url" content="https://xcrol.com/the-village" />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       <Button
@@ -52,9 +64,15 @@ const TheVillage = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-glow">The Village</h1>
-          <p className="text-muted-foreground mt-1">Communities you belong to and can discover</p>
+          <p className="text-muted-foreground mt-1">
+            {isGuest ? "Browse public communities — sign up to join or create a group." : "Communities you belong to and can discover"}
+          </p>
         </div>
-        {user && <CreateGroupDialog />}
+        {user ? (
+          <CreateGroupDialog />
+        ) : (
+          <Button onClick={() => requireAuth("create or join groups")}>Sign up</Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -65,7 +83,7 @@ const TheVillage = () => {
         <div className="space-y-8">
           {myGroups.length > 0 && (
             <section>
-              <h2 className="text-xl font-semibold mb-4">Your Groups</h2>
+              <h2 className="text-xl font-semibold mb-4">{isGuest ? "Public Groups" : "Your Groups"}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {myGroups.map((group) => (
                   <GroupCard
@@ -81,7 +99,7 @@ const TheVillage = () => {
 
           {otherGroups.length > 0 && (
             <section>
-              <h2 className="text-xl font-semibold mb-4">Discover Groups</h2>
+              <h2 className="text-xl font-semibold mb-4">{isGuest ? "Public Groups" : "Discover Groups"}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {otherGroups.map((group) => (
                   <GroupCard key={group.id} group={group} newPostCount={0} to={`/group/${group.slug}`} />
@@ -90,10 +108,10 @@ const TheVillage = () => {
             </section>
           )}
 
-          {(!groups || groups.length === 0) && (
+          {visibleGroups.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No groups yet. Be the first to create one!</p>
+              <p>{isGuest ? "No public groups yet." : "No groups yet. Be the first to create one!"}</p>
             </div>
           )}
         </div>
