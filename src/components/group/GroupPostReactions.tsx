@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Smile } from "lucide-react";
 import { toast } from "sonner";
+import { useRequireAuth } from "@/components/auth/GuestAuthGate";
 
 const AVAILABLE_EMOJIS = ["❤️", "👍", "🔥", "😂", "😮", "😢", "🙏", "✨"];
 
@@ -28,6 +29,7 @@ interface GroupPostReactionsProps {
 
 export const GroupPostReactions = ({ targetId, targetType }: GroupPostReactionsProps) => {
   const { user } = useAuth();
+  const requireAuth = useRequireAuth();
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const userId = user?.id || null;
   const [currentUserName, setCurrentUserName] = useState("You");
@@ -100,10 +102,8 @@ export const GroupPostReactions = ({ targetId, targetType }: GroupPostReactionsP
 
   const toggleReaction = useCallback(
     async (emoji: string) => {
-      if (!userId) {
-        toast.error("Sign in to react");
-        return;
-      }
+      if (!requireAuth("react to this post")) return;
+      if (!userId) return;
       if (pendingOps.current.has(emoji)) return;
       pendingOps.current.add(emoji);
 

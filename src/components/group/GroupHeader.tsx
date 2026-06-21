@@ -1,9 +1,10 @@
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, LogOut, UserPlus } from "lucide-react";
 import { getFriendshipLabel } from "@/lib/friendship-labels";
+import { useRequireAuth } from "@/components/auth/GuestAuthGate";
 import type { Group } from "@/hooks/use-groups";
 
 interface GroupHeaderProps {
@@ -16,7 +17,12 @@ interface GroupHeaderProps {
 }
 
 const GroupHeader = ({ group, isCreator, userId, onJoin, onLeave, joinPending }: GroupHeaderProps) => {
+  const requireAuth = useRequireAuth();
   const joinLabel = group.require_approval ? "Request to Join" : "Join Group";
+  const handleJoinClick = () => {
+    if (!requireAuth(`join ${group.name}`)) return;
+    onJoin();
+  };
 
   return (
   <Card className="mb-6">
@@ -42,8 +48,8 @@ const GroupHeader = ({ group, isCreator, userId, onJoin, onLeave, joinPending }:
         </div>
       </div>
       <div className="flex flex-wrap gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-        {userId && !group.is_member && group.membership_status !== "pending" && (
-          <Button onClick={onJoin} disabled={joinPending} size="sm" className="w-full sm:w-auto">
+        {!group.is_member && group.membership_status !== "pending" && (
+          <Button onClick={handleJoinClick} disabled={joinPending} size="sm" className="w-full sm:w-auto">
             <UserPlus className="mr-2 h-4 w-4" />
             {joinLabel}
           </Button>

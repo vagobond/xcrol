@@ -56,28 +56,31 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
     else navigate(`/u/${post.user_id}`);
   };
 
+  const canPost = !!userId && !!group.is_member;
   return (
     <div className="space-y-4">
-      <Card>
-        <CardContent className="pt-4">
-          <form onSubmit={handlePost} className="space-y-3">
-            <Textarea
-              value={postContent}
-              onChange={(e) => setPostContent(e.target.value)}
-              placeholder="Share something with the group..."
-              rows={3}
-            />
-            <Input
-              value={postLink}
-              onChange={(e) => setPostLink(e.target.value)}
-              placeholder="Add a link (optional — PixelFed & PeerTube embeds supported)"
-            />
-            <Button type="submit" disabled={!postContent.trim() || createPending} size="sm">
-              {createPending ? "Posting..." : "Post"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {canPost && (
+        <Card>
+          <CardContent className="pt-4">
+            <form onSubmit={handlePost} className="space-y-3">
+              <Textarea
+                value={postContent}
+                onChange={(e) => setPostContent(e.target.value)}
+                placeholder="Share something with the group..."
+                rows={3}
+              />
+              <Input
+                value={postLink}
+                onChange={(e) => setPostLink(e.target.value)}
+                placeholder="Add a link (optional — PixelFed & PeerTube embeds supported)"
+              />
+              <Button type="submit" disabled={!postContent.trim() || createPending} size="sm">
+                {createPending ? "Posting..." : "Post"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {posts?.map((post) => {
         const isFocused = post.id === focusPostId;

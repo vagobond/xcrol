@@ -12,6 +12,7 @@ import {
 import { Smile, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import SendMessageDialog from "@/components/SendMessageDialog";
+import { useRequireAuth } from "@/components/auth/GuestAuthGate";
 
 const AVAILABLE_EMOJIS = ["❤️", "👍", "🔥", "😂", "😮", "😢", "🙏", "✨"];
 
@@ -33,6 +34,7 @@ interface XcrolReactionsProps {
 
 export const XcrolReactions = ({ entryId, compact = false, authorId, authorName, initialReactions, onReactionsChange }: XcrolReactionsProps) => {
   const { user } = useAuth();
+  const requireAuth = useRequireAuth();
   const [reactions, setReactions] = useState<Reaction[]>(initialReactions || []);
   const userId = user?.id || null;
   const [currentUserName, setCurrentUserName] = useState<string>("You");
@@ -136,10 +138,8 @@ export const XcrolReactions = ({ entryId, compact = false, authorId, authorName,
   }, [entryId, userId]);
 
   const toggleReaction = useCallback(async (emoji: string) => {
-    if (!userId) {
-      toast.error("Sign in to react");
-      return;
-    }
+    if (!requireAuth("react to this post")) return;
+    if (!userId) return;
 
     if (pendingOps.current.has(emoji)) return;
     pendingOps.current.add(emoji);

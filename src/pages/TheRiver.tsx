@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Helmet } from "react-helmet-async";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, Filter, Waves, PenLine, Rss, ArrowUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useRequireAuth } from "@/components/auth/GuestAuthGate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -68,11 +70,13 @@ export default function TheRiver() {
   const [searchParams] = useSearchParams();
   const highlightedPostId = searchParams.get("post");
   const { user, loading: authLoading } = useAuth();
+  const requireAuth = useRequireAuth();
+  const isGuest = !user && !authLoading;
   const [entries, setEntries] = useState<RiverEntry[]>([]);
   const [reactions, setReactions] = useState<ReactionsMap>({});
   const [repliesMap, setRepliesMap] = useState<RepliesMap>({});
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState(isGuest ? "public" : "all");
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [hasScrolledToPost, setHasScrolledToPost] = useState(false);
@@ -80,7 +84,8 @@ export default function TheRiver() {
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const hasLoadedRef = useRef(false);
   const prevFilterRef = useRef(filter);
-  const PAGE_SIZE = 20;
+  // Guests only see the 5 most recent public posts. Authenticated users see 20 per page.
+  const PAGE_SIZE = isGuest ? 5 : 20;
 
   useEffect(() => {
     if (authLoading) return;
@@ -338,6 +343,19 @@ export default function TheRiver() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>The River — public posts on XCROL</title>
+        <meta
+          name="description"
+          content="Browse the most recent public posts on The River — XCROL's daily-journal feed of real friendships and small stories."
+        />
+        <link rel="canonical" href="https://xcrol.com/the-river" />
+        <meta property="og:title" content="The River — XCROL" />
+        <meta property="og:description" content="Recent public posts from the XCROL community." />
+        <meta property="og:url" content="https://xcrol.com/the-river" />
+        <meta property="og:type" content="website" />
+      </Helmet>
+
       {/* Floating new-posts banner */}
       {newPostsCount > 0 && (
         <button
@@ -373,41 +391,58 @@ export default function TheRiver() {
           </Card>
         )}
 
-        {/* Filter */}
-        <div className="flex items-center gap-2 mb-6">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {FILTER_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Guest banner */}
+        {isGuest && (
+          <Card className="mb-6 border-primary/30 bg-primary/5">
+            <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <p className="font-medium">You're viewing the public River</p>
+                <p className="text-sm text-muted-foreground">
+                  Showing the 5 most recent public posts. Sign up to see more and to reply.
+                </p>
+              </div>
+              <Button onClick={() => requireAuth("see more posts")}>Sign up</Button>
+            </CardContent>
+          </Card>
+        )}
 
-          {user && (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="ml-auto">
-                  <Rss className="h-4 w-4 mr-1" />
-                  Feeds
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[85vh] flex flex-col">
-                <DialogHeader>
-                  <DialogTitle>Manage RSS Feeds</DialogTitle>
-                </DialogHeader>
-                <div className="overflow-y-auto flex-1 -mx-6 px-6">
-                  <RssFeedManager />
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
+        {/* Filter (hidden for guests — locked to Public) */}
+        {!isGuest && (
+          <div className="flex items-center gap-2 mb-6">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FILTER_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {user && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="ml-auto">
+                    <Rss className="h-4 w-4 mr-1" />
+                    Feeds
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[85vh] flex flex-col">
+                  <DialogHeader>
+                    <DialogTitle>Manage RSS Feeds</DialogTitle>
+                  </DialogHeader>
+                  <div className="overflow-y-auto flex-1 -mx-6 px-6">
+                    <RssFeedManager />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        )}
 
         {/* Loading state */}
         {loading && (
@@ -425,10 +460,10 @@ export default function TheRiver() {
               <p className="text-muted-foreground mb-4">
                 {user 
                   ? "No posts match your filter, or your friends haven't shared anything yet."
-                  : "Sign in to see posts from your friends."}
+                  : "No public posts yet. Check back soon."}
               </p>
               {!user && (
-                <Button onClick={() => navigate("/auth")}>Sign In</Button>
+                <Button onClick={() => navigate("/auth")}>Sign Up / Sign In</Button>
               )}
             </CardContent>
           </Card>
@@ -458,8 +493,8 @@ export default function TheRiver() {
               </div>
             ))}
 
-            {/* Load more */}
-            {hasMore && (
+            {/* Load more — auth users only */}
+            {!isGuest && hasMore && (
               <div className="flex justify-center pt-4">
                 <Button
                   variant="outline"
@@ -472,15 +507,18 @@ export default function TheRiver() {
           </div>
         )}
 
-        {/* Sign in prompt for unauthenticated users */}
-        {!user && !loading && filteredEntries.length > 0 && (
-          <Card className="mt-6">
-            <CardContent className="p-4 text-center">
-              <p className="text-muted-foreground mb-2">
-                Sign in to see more posts from friends
+        {/* Sign up CTA for guests at the bottom of the 5-item list */}
+        {isGuest && !loading && filteredEntries.length > 0 && (
+          <Card className="mt-6 border-primary/30 bg-primary/5">
+            <CardContent className="p-6 text-center space-y-3">
+              <Waves className="h-10 w-10 mx-auto text-primary" />
+              <h3 className="text-lg font-semibold">Want to see more?</h3>
+              <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                Sign up for XCROL to read the full River, reply to posts, and join the conversation.
+                Email verification required before posting.
               </p>
-              <Button variant="outline" onClick={() => navigate("/auth")}>
-                Sign In
+              <Button size="lg" onClick={() => requireAuth("see the full feed")}>
+                Sign up to continue
               </Button>
             </CardContent>
           </Card>
