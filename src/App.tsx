@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/use-auth";
 import { TutorialProvider } from "@/components/onboarding";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { GuestAuthGateProvider } from "@/components/auth/GuestAuthGate";
 import { Loader2 } from "lucide-react";
 import AppHeader from "./components/AppHeader";
 import React from "react";
@@ -111,6 +112,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <TutorialProvider>
+            <GuestAuthGateProvider>
             <AppHeader />
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
@@ -119,15 +121,18 @@ const App = () => (
                 <Route path="/" element={<Welcome />} />
                 <Route path="/powers" element={<ProtectedRoute><Powers /></ProtectedRoute>} />
                 <Route path="/auth" element={<Auth />} />
+                {/* Public-readable routes (guests can browse, replies prompt sign-up) */}
+                <Route path="/the-river" element={<TheRiver />} />
+                <Route path="/the-village" element={<TheVillage />} />
+                <Route path="/group/:slug" element={<GroupProfile />} />
+                <Route path="/u/:userId" element={<PublicProfile />} />
                 {/* Protected routes */}
-                <Route path="/the-river" element={<ProtectedRoute><TheRiver /></ProtectedRoute>} />
                 <Route path="/the-forest" element={<ProtectedRoute><TheForest /></ProtectedRoute>} />
                 <Route path="/mini-games-hub" element={<ProtectedRoute><MiniGamesHub /></ProtectedRoute>} />
                 <Route path="/irl-layer" element={<ProtectedRoute><IRLLayer /></ProtectedRoute>} />
                 <Route path="/hearthsurf" element={<ProtectedRoute><HearthSurfing /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-                <Route path="/u/:userId" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 <Route path="/getting-started" element={<ProtectedRoute><GettingStarted /></ProtectedRoute>} />
@@ -138,8 +143,6 @@ const App = () => (
                 <Route path="/myxcrol/edit" element={<ProtectedRoute><MyXcrol /></ProtectedRoute>} />
                 <Route path="/xcrol/:username" element={<ProtectedRoute><UserXcrol /></ProtectedRoute>} />
                 <Route path="/brook/:brookId" element={<ProtectedRoute><Brook /></ProtectedRoute>} />
-                <Route path="/the-village" element={<ProtectedRoute><TheVillage /></ProtectedRoute>} />
-                <Route path="/group/:slug" element={<ProtectedRoute><GroupProfile /></ProtectedRoute>} />
                 <Route path="/the-town" element={<ProtectedRoute><TheTown /></ProtectedRoute>} />
                 <Route path="/the-castle" element={<ProtectedRoute><TheCastle /></ProtectedRoute>} />
                 <Route path="/every-country" element={<ProtectedRoute><EveryCountry /></ProtectedRoute>} />
@@ -158,13 +161,14 @@ const App = () => (
                 <Route path="/scrolls/:scrollId/read" element={<ProtectedRoute><ScrollReader /></ProtectedRoute>} />
                 <Route path="/the-castle/library" element={<CastleLibrary />} />
                 <Route path="/library/:slug" element={<PublicationReader />} />
-                <Route path="/:username" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
+                <Route path="/:username" element={<PublicProfile />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </main>
             </Suspense>
             </ErrorBoundary>
+            </GuestAuthGateProvider>
           </TutorialProvider>
         </BrowserRouter>
       </TooltipProvider>
