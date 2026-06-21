@@ -3080,6 +3080,7 @@ export type Database = {
         Args: { p_group_id: string; p_user_id: string }
         Returns: boolean
       }
+      is_public_group: { Args: { p_group_id: string }; Returns: boolean }
       is_within_three_degrees: {
         Args: { target_id: string; viewer_id: string }
         Returns: boolean
