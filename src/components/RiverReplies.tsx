@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { RiverReplyItem } from "@/components/river/RiverReplyItem";
+import { useRequireAuth } from "@/components/auth/GuestAuthGate";
 
 export interface RiverReply {
   id: string;
@@ -27,6 +28,7 @@ interface RiverRepliesProps {
 }
 
 export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange }: RiverRepliesProps) => {
+  const requireAuth = useRequireAuth();
   const draftKey = `river-reply-draft-${entryId}`;
   const [showReplyInput, setShowReplyInput] = useState(() => {
     return !!sessionStorage.getItem(draftKey);
@@ -53,7 +55,9 @@ export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange 
   const hasMore = topLevelReplies.length > 2;
 
   const handleSubmitReply = async () => {
-    if (!currentUserId || !replyContent.trim()) return;
+    if (!replyContent.trim()) return;
+    if (!requireAuth("post a reply")) return;
+    if (!currentUserId) return;
     setSubmitting(true);
     try {
       const { error } = await supabase
@@ -76,7 +80,10 @@ export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange 
     }
   };
 
-  if (replyCount === 0 && !currentUserId) return null;
+  // Always show the reply input (guests may type freely; submit prompts sign-up)
+  if (replyCount === 0 && !currentUserId && !showReplyInput) {
+    // still render the Reply button so guests can engage
+  }
 
   return (
     <div className="mt-3 pt-3 border-t border-border/50">
