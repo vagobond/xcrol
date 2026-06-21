@@ -89,17 +89,15 @@ export const RiverReplies = ({ entryId, currentUserId, replies, onRepliesChange 
     <div className="mt-3 pt-3 border-t border-border/50">
       {/* Reply toggle button */}
       <div className="flex items-center gap-2 mb-2">
-        {currentUserId && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs gap-1"
-            onClick={() => setShowReplyInput(!showReplyInput)}
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            Reply
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs gap-1"
+          onClick={() => setShowReplyInput(!showReplyInput)}
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+          Reply
+        </Button>
         {replyCount > 0 && (
           <span className="text-xs text-muted-foreground">
             {replyCount} {replyCount === 1 ? "reply" : "replies"}
