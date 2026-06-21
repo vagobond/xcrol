@@ -33,7 +33,11 @@ const GroupProfile = () => {
   const { user } = useAuth();
   const { data: group, isLoading } = useGroupBySlug(slug);
   const { data: members } = useGroupMembers(group?.id);
-  const { data: posts } = useGroupPosts(group?.is_member ? group?.id : undefined);
+  // Load posts whenever the viewer can see them: members OR anyone (incl. guests)
+  // when the group is publicly readable.
+  const isPublicGroup = group?.trust_level === "public";
+  const canReadPosts = !!group && (group.is_member || isPublicGroup);
+  const { data: posts } = useGroupPosts(canReadPosts ? group?.id : undefined);
   const createPost = useCreateGroupPost();
   const joinGroup = useJoinGroup();
   const leaveGroup = useLeaveGroup();
@@ -196,11 +200,25 @@ const GroupProfile = () => {
             </TabsContent>
           )}
         </Tabs>
+      ) : isPublicGroup ? (
+        <GroupPostsTab
+          posts={posts}
+          group={group}
+          userId={user?.id}
+          onCreatePost={async (content, link) => {
+            await createPost.mutateAsync({ group_id: group.id, content, link });
+          }}
+          onDeletePost={(postId) => deletePost.mutate({ postId, groupId: group.id })}
+          createPending={createPost.isPending}
+          lastVisitedAt={lastVisitedAt}
+          focusPostId={focusPostId}
+          focusCommentId={focusCommentId}
+        />
       ) : (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Join this group to see posts and members</p>
+            <p>{user ? "Join this group to see posts and members" : "Sign in and join this group to see posts and members"}</p>
           </CardContent>
         </Card>
       )}
