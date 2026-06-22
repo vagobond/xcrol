@@ -198,15 +198,20 @@ export const useMessagesData = () => {
     setThreads(groupedThreads);
   }, [messages, currentUserId, entryPreviews]);
 
-  const markAsRead = useCallback(async (messageId: string) => {
+  const markAsRead = useCallback(async (messageIdOrIds: string | string[]) => {
     try {
+      const ids = Array.isArray(messageIdOrIds) ? messageIdOrIds : [messageIdOrIds];
+      if (ids.length === 0) return;
+      const readAt = new Date().toISOString();
+
       await supabase
         .from("messages")
-        .update({ read_at: new Date().toISOString() })
-        .eq("id", messageId);
+        .update({ read_at: readAt })
+        .in("id", ids);
 
+      const idSet = new Set(ids);
       setMessages(prev =>
-        prev.map(m => m.id === messageId ? { ...m, read_at: new Date().toISOString() } : m)
+        prev.map(m => idSet.has(m.id) ? { ...m, read_at: readAt } : m)
       );
 
       window.dispatchEvent(new CustomEvent('messages-updated'));
