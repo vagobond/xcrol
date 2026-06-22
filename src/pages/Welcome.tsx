@@ -128,6 +128,16 @@ const Welcome = () => {
             >
               USE YOUR POWERS
             </Button>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button variant="outline" size="sm" onClick={reopenTutorial}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Tour Xcrol
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate("/getting-started")}>
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Getting Started & FAQ
+              </Button>
+            </div>
             <div className="mt-8">
               <LiveStatsStrip />
             </div>
