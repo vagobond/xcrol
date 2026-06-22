@@ -13,6 +13,7 @@ import { LiveStatsStrip } from "@/components/LiveStatsStrip";
 const Welcome = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { reopenTutorial } = useTutorial();
   const [animationPhase, setAnimationPhase] = useState<"gif" | "dissolve" | "complete">("gif");
   const [isGifLoading, setIsGifLoading] = useState(true);
 
