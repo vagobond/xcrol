@@ -1,66 +1,76 @@
-# Public access for profiles, River, and Village
+## Where your ~1.2 credits/day on the database is going
 
-Logged-out visitors can browse public content and start typing replies; submitting requires a verified Xcrol account.
+From the workspace ledger (Jun 15–22):
 
-## 1. Public profiles
+| Item | Credits | Notes |
+|---|---|---|
+| Cloud compute pico | **4.90** | The database instance itself — ~0.7/day. This is the big one. |
+| Cloud egress | 0.081 | Data sent to browsers |
+| Cloud cached egress | 0.015 | |
+| Cloud functions | 0.011 | Edge functions |
+| Cloud file storage | 0.0016 | |
+| Cloud realtime | 0.00004 | |
 
-- Remove `ProtectedRoute` from `/u/:userId` and `/:username` in `src/App.tsx`.
-- In `PublicProfile.tsx` + `usePublicProfileData.ts`: keep all data fetches read-only and guard any "friend / message / request" action buttons (`ProfileActionBar`) behind an auth check — show the inline sign-up modal (see §4) when a guest clicks them.
-- Hide sections that already require auth context (Brooks, private references, edit affordances) for guests.
-- Add per-route `<Helmet>` title/description/canonical/og:* (og-profile edge function already provides the OG image).
-- RLS check: confirm `profiles` SELECT policy permits anon for the columns shown; tighten via a public view if any sensitive column leaks.
+So "database cost" is almost entirely the **always-on compute instance** (pico tier). It is billed for being up, not per query — but if query load forces a bigger instance, this number jumps. Right now the instance is healthy (memory 54%, disk 4%, 21/60 connections), so you do not need to upsize. The goal is to **keep it on pico** by stopping a few runaway queries before traffic grows.
 
-## 2. The River — public posts
+## What's hammering the DB
 
-- Remove `ProtectedRoute` from `/the-river`.
-- In `TheRiver.tsx`, when `user` is null:
-  - Fetch only the **5 most recent** `xcrol_entries` where `privacy_level = 'public'`.
-  - Render reply input fields normally; intercept submit → sign-up modal.
-  - Show a "Sign up to see more" CTA at the bottom of the 5-item list (and on any "load more" / pagination control).
-  - Block opening reply threads beyond first level / reactions → sign-up modal.
-- `/post/:postId` already public — verify it shows the same guest reply UX.
-- RLS: ensure anon `SELECT` on `xcrol_entries WHERE privacy_level='public'` (and on `river_replies` for the public parent).
+Top offenders from `pg_stat_statements` (last ~week):
 
-## 3. The Village — public hub + public groups
+1. **Mark-message-read UPDATE** — 193,365 calls, 147 s total. One row at a time.
+2. **Unread messages SELECT** (`to_user_id = ? AND read_at IS NULL`) — 278,410 calls, 18 s total. This is the inbox badge poller.
+3. **Unread messages SELECT (id only)** — 2,122 calls, 6.7 s. Same pattern.
+4. **Profiles by id ANY(...)** — 13,669 + 17,643 calls, 26 s combined. Repeated avatar/name lookups in feeds.
+5. **xcrol_entries feed ORDER BY entry_date DESC, created_at DESC** — 1,196 calls, 11.7 s. No matching index.
+6. **xcrol_reactions / group_post_reactions / group_post_comments / group_comment_reactions by parent id** — 50k+ calls combined. Likely missing or unused indexes on the FK columns.
+7. **user_references by to_user_id + created_at** — 6.6k calls, 6.2 s.
+8. **profiles scan for `hometown_city IS NOT NULL`** — 1,096 calls, 6.4 s. Used by the world map.
 
-- Remove `ProtectedRoute` from `/the-village` and `/group/:slug`.
-- `TheVillage.tsx`: when guest, list only `groups WHERE trust_level = 'public'`; hide create/join/notification controls; show sign-up CTA.
-- `GroupProfile.tsx`: if `trust_level != 'public'` and visitor is anon → render a "Sign in to view this group" gate. If public:
-  - Show group meta, member count, posts, comments (read-only).
-  - Reply / react / join → sign-up modal.
-- RLS: anon `SELECT` on `groups WHERE trust_level='public'`, `group_posts`/`group_post_comments`/`group_post_reactions` joined to a public group. Use a SECURITY DEFINER helper `public.is_public_group(group_id)` to keep policies non-recursive.
+Together those few patterns are ~80% of DB CPU time.
 
-## 4. Guest reply UX (shared component)
+## Plan to lower cost
 
-- New `<GuestAuthGate>` wrapper / `useGuestSubmitGuard()` hook used by River replies, group post comments, profile actions.
-- Guests can focus and type freely in any reply textarea.
-- On submit (or on protected action click) → open an **inline auth prompt modal** containing:
-  - "Sign up or sign in to post" message.
-  - Sign-up + sign-in tabs (reusing `Auth` page components inline).
-  - Note that email verification is required before posting.
-- Draft text stays in the field; modal is dismissible. We do **not** auto-submit after verification (per chosen UX).
+### 1. Stop the unread-messages polling storm (biggest win)
+The inbox badge query + per-row `UPDATE ... SET read_at` accounts for **~470k calls/week**. Likely causes: a `setInterval` refetch and marking each message individually as it scrolls into view.
 
-## 5. SEO / previews
+- Switch the unread badge to a single Supabase **Realtime** subscription on `messages` filtered by `to_user_id`, or at minimum lower the poll interval to ≥60s and use `count: 'exact', head: true` (no row payload).
+- Batch read receipts: one `UPDATE messages SET read_at = now() WHERE to_user_id = me AND id IN (...)` per thread open, not per message.
 
-- Per-route Helmet tags on PublicProfile, TheRiver, GroupProfile, and existing SharedPost.
-- Reuse existing `og-profile` and `og-post` edge functions; add an `og-group` edge function returning a rendered card for public groups, wired to `/group/:slug` meta-refresh fallback (mirrors `og-host`).
+### 2. Add targeted indexes (cheap, fast wins)
 
-## Technical details
+```sql
+CREATE INDEX IF NOT EXISTS idx_messages_unread_to
+  ON public.messages (to_user_id) WHERE read_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_xcrol_entries_feed
+  ON public.xcrol_entries (entry_date DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_xcrol_reactions_entry
+  ON public.xcrol_reactions (entry_id);
+CREATE INDEX IF NOT EXISTS idx_group_post_reactions_post
+  ON public.group_post_reactions (post_id);
+CREATE INDEX IF NOT EXISTS idx_group_post_comments_post_created
+  ON public.group_post_comments (post_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_group_comment_reactions_comment
+  ON public.group_comment_reactions (comment_id);
+CREATE INDEX IF NOT EXISTS idx_user_references_to_created
+  ON public.user_references (to_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_group_members_user_status
+  ON public.group_members (user_id, status);
+CREATE INDEX IF NOT EXISTS idx_profiles_hometown_country
+  ON public.profiles (hometown_country) WHERE hometown_city IS NOT NULL;
+```
 
-**Files edited**
-- `src/App.tsx` — drop `ProtectedRoute` on 4 routes.
-- `src/pages/PublicProfile.tsx`, `src/components/public-profile/*` — guest-aware rendering + Helmet.
-- `src/pages/TheRiver.tsx` (+ `RiverEntryCard`, reply components) — 5-post guest mode, sign-up CTA.
-- `src/pages/TheVillage.tsx`, `src/pages/GroupProfile.tsx` (+ group post components) — guest mode, public-only filtering.
-- `src/pages/SharedPost.tsx` — wire guest reply UX.
-- New `src/components/auth/GuestAuthGate.tsx` + `src/hooks/useGuestSubmitGuard.ts`.
-- New `supabase/functions/og-group/index.ts` + `supabase/config.toml` entry (no verify_jwt change needed).
+Tradeoff: tiny extra storage, slightly slower writes on these tables — negligible at current volumes.
 
-**Migration (one file)**
-- `is_public_group(uuid)` SECURITY DEFINER helper.
-- Add/adjust RLS policies to grant anon `SELECT` on: `profiles` (public-safe columns via view if needed), `xcrol_entries` where `privacy_level='public'`, `river_replies` on public parents, `groups` where `trust_level='public'`, `group_posts`/`group_post_comments`/`group_post_reactions` on public groups. `GRANT SELECT ... TO anon` on each affected table/view.
+### 3. Cache profile lookups on the client
+The `profiles WHERE id = ANY(...)` queries fire from every feed render. Use a single React Query cache keyed by user id with a long staleTime (e.g. 5 min) so the same author's row is not re-fetched per post component.
 
-**Out of scope**
-- No changes to NOSTR/ActivityPub bridges.
-- No new privacy fields — uses existing `privacy_level` and `trust_level`.
-- No change to friends-only / family-only content visibility.
+### 4. Investigate the 69,525 rolled-back transactions
+That number is high for a quiet app and usually means an RLS-denied write loop or a failing trigger retrying. After the messages fix lands I'll check edge function and Postgres logs to see what's rolling back.
+
+### What this will NOT do
+This will not directly shrink the pico compute line item — that bill stays the same as long as the instance is up. What it does is prevent the next traffic bump from forcing an upgrade to a larger (more expensive) instance.
+
+## Technical notes
+- All migrations go through the standard migration tool; no concurrent index creation.
+- Realtime is already enabled (you have a Cloud realtime line item, just unused for this).
+- No schema-breaking changes; safe to roll back any index with `DROP INDEX`.
