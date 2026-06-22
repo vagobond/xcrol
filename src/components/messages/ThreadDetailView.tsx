@@ -40,15 +40,14 @@ const ThreadDetailView = ({
     }
   }, [thread.messages.length]);
 
-  // Mark unread messages as read via effect, not during render
+  // Mark unread messages as read in a single batched UPDATE per thread render
   useEffect(() => {
-    const unreadMessages = thread.messages.filter(
-      m => m.to_user_id === currentUserId && !m.read_at && m.type === "message" && !markedAsRead.current.has(m.id)
-    );
-    unreadMessages.forEach(m => {
-      markedAsRead.current.add(m.id);
-      onMarkAsRead(m.id);
-    });
+    const unreadIds = thread.messages
+      .filter(m => m.to_user_id === currentUserId && !m.read_at && m.type === "message" && !markedAsRead.current.has(m.id))
+      .map(m => m.id);
+    if (unreadIds.length === 0) return;
+    unreadIds.forEach(id => markedAsRead.current.add(id));
+    onMarkAsRead(unreadIds);
   }, [thread.messages, currentUserId, onMarkAsRead]);
 
   const toggleExpanded = (messageId: string) => {
