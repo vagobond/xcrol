@@ -135,7 +135,7 @@ const App = () => (
                 <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-                <Route path="/getting-started" element={<ProtectedRoute><GettingStarted /></ProtectedRoute>} />
+                <Route path="/getting-started" element={<GettingStarted />} />
                 <Route path="/invite-friends" element={<ProtectedRoute><InviteFriends /></ProtectedRoute>} />
                 <Route path="/my-xcrol" element={<ProtectedRoute><MyXcrol /></ProtectedRoute>} />
                 <Route path="/my-xcrol/edit" element={<ProtectedRoute><MyXcrol /></ProtectedRoute>} />
