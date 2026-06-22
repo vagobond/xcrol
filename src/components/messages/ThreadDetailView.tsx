@@ -14,7 +14,7 @@ interface ThreadDetailViewProps {
   thread: ConversationThread;
   currentUserId: string | null;
   onBack: () => void;
-  onMarkAsRead: (messageId: string) => void;
+  onMarkAsRead: (messageIdOrIds: string | string[]) => void;
   onDeleteMessage: (messageId: string, type: "message" | "friend_request") => void;
   onMessagesChanged: () => void;
 }
