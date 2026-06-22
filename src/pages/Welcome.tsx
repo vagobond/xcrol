@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles, HelpCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useTutorial } from "@/components/onboarding";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
 import xcrolLogo from "@/assets/xcrol-logo.webp";
 import { LiveStatsStrip } from "@/components/LiveStatsStrip";
@@ -12,6 +13,7 @@ import { LiveStatsStrip } from "@/components/LiveStatsStrip";
 const Welcome = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { reopenTutorial } = useTutorial();
   const [animationPhase, setAnimationPhase] = useState<"gif" | "dissolve" | "complete">("gif");
   const [isGifLoading, setIsGifLoading] = useState(true);
 
@@ -126,6 +128,16 @@ const Welcome = () => {
             >
               USE YOUR POWERS
             </Button>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button variant="outline" size="sm" onClick={reopenTutorial}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Tour Xcrol
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate("/getting-started")}>
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Getting Started & FAQ
+              </Button>
+            </div>
             <div className="mt-8">
               <LiveStatsStrip />
             </div>

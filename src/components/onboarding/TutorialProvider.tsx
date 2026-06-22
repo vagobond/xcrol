@@ -95,26 +95,24 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
   const resume = useCallback(() => setIsPaused(false), []);
 
   const complete = useCallback(async (skipped: boolean = false) => {
+    setIsVisible(false);
     if (!userId) return;
 
     setCachedCompletion(userId, true);
     await supabase
       .from("tutorial_completion")
       .insert({ user_id: userId, skipped });
-
-    setIsVisible(false);
   }, [userId]);
 
   const reopen = useCallback(async () => {
-    if (!userId) return;
-
-    setCachedCompletion(userId, false);
-
-    // Delete the completion record to allow re-showing
-    await supabase
-      .from("tutorial_completion")
-      .delete()
-      .eq("user_id", userId);
+    // Allow guests to take the tour without persistence
+    if (userId) {
+      setCachedCompletion(userId, false);
+      await supabase
+        .from("tutorial_completion")
+        .delete()
+        .eq("user_id", userId);
+    }
 
     setIsVisible(true);
     setCurrentStepIndex(0);
