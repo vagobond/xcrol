@@ -181,7 +181,11 @@ const MyXcrol = () => {
                             size="sm"
                             className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
                             onClick={() => {
-                              const url = `${window.location.origin}/post/${entry.id}`;
+                              // Edge-function URL so shared links render rich
+                              // OpenGraph previews instead of the generic XCROL
+                              // homepage card. Humans get meta-refreshed to
+                              // /post/:id; crawlers see post-specific meta.
+                              const url = `https://ceuaibqpikcvcnmuesos.supabase.co/functions/v1/og-post?postId=${entry.id}`;
                               navigator.clipboard.writeText(url);
                               toast.success("Shareable link copied!");
                             }}

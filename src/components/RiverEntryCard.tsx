@@ -184,7 +184,12 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
                       size="sm"
                       className="h-7 px-2 text-muted-foreground hover:text-primary"
                       onClick={() => {
-                        const url = `${window.location.origin}/post/${entry.id}`;
+                        // Use the og-post edge function URL so social platforms
+                        // (LinkedIn, Slack, iMessage, Discord, Facebook) get
+                        // post-specific OpenGraph tags. The function serves
+                        // crawler-friendly meta and meta-refreshes humans to
+                        // the canonical /post/:id route in the SPA.
+                        const url = `https://ceuaibqpikcvcnmuesos.supabase.co/functions/v1/og-post?postId=${entry.id}`;
                         navigator.clipboard.writeText(url);
                         toast.success("Shareable link copied to clipboard!");
                       }}
