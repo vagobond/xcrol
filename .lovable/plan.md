@@ -1,76 +1,86 @@
-## Where your ~1.2 credits/day on the database is going
+# Xcrol Continuity Audit — Without Lovable, Without You
 
-From the workspace ledger (Jun 15–22):
+A full status check across three dimensions: (1) self-hosting the frontend off Lovable, (2) migrating off Lovable Cloud, and (3) a stranger or your trustee being able to keep Xcrol running if you disappear.
 
-| Item | Credits | Notes |
-|---|---|---|
-| Cloud compute pico | **4.90** | The database instance itself — ~0.7/day. This is the big one. |
-| Cloud egress | 0.081 | Data sent to browsers |
-| Cloud cached egress | 0.015 | |
-| Cloud functions | 0.011 | Edge functions |
-| Cloud file storage | 0.0016 | |
-| Cloud realtime | 0.00004 | |
+## Overall verdict
 
-So "database cost" is almost entirely the **always-on compute instance** (pico tier). It is billed for being up, not per query — but if query load forces a bigger instance, this number jumps. Right now the instance is healthy (memory 54%, disk 4%, 21/60 connections), so you do not need to upsize. The goal is to **keep it on pico** by stopping a few runaway queries before traffic grows.
+You are in good shape — better than most Lovable projects. A documented cold-backup pipeline exists, runs to Backblaze B2, and a `RUNBOOK.md` describes revival. The main gaps are: (a) backup pipeline shows only **manual** runs in `backup_runs` since June 10 — the nightly cron may not actually be firing despite being scheduled, (b) no one but you currently holds the recovery credentials, and (c) a few hard ties to Lovable's hosted services remain (AI gateway, auth SDK, lovable-tagger).
 
-## What's hammering the DB
-
-Top offenders from `pg_stat_statements` (last ~week):
-
-1. **Mark-message-read UPDATE** — 193,365 calls, 147 s total. One row at a time.
-2. **Unread messages SELECT** (`to_user_id = ? AND read_at IS NULL`) — 278,410 calls, 18 s total. This is the inbox badge poller.
-3. **Unread messages SELECT (id only)** — 2,122 calls, 6.7 s. Same pattern.
-4. **Profiles by id ANY(...)** — 13,669 + 17,643 calls, 26 s combined. Repeated avatar/name lookups in feeds.
-5. **xcrol_entries feed ORDER BY entry_date DESC, created_at DESC** — 1,196 calls, 11.7 s. No matching index.
-6. **xcrol_reactions / group_post_reactions / group_post_comments / group_comment_reactions by parent id** — 50k+ calls combined. Likely missing or unused indexes on the FK columns.
-7. **user_references by to_user_id + created_at** — 6.6k calls, 6.2 s.
-8. **profiles scan for `hometown_city IS NOT NULL`** — 1,096 calls, 6.4 s. Used by the world map.
-
-Together those few patterns are ~80% of DB CPU time.
-
-## Plan to lower cost
-
-### 1. Stop the unread-messages polling storm (biggest win)
-The inbox badge query + per-row `UPDATE ... SET read_at` accounts for **~470k calls/week**. Likely causes: a `setInterval` refetch and marking each message individually as it scrolls into view.
-
-- Switch the unread badge to a single Supabase **Realtime** subscription on `messages` filtered by `to_user_id`, or at minimum lower the poll interval to ≥60s and use `count: 'exact', head: true` (no row payload).
-- Batch read receipts: one `UPDATE messages SET read_at = now() WHERE to_user_id = me AND id IN (...)` per thread open, not per message.
-
-### 2. Add targeted indexes (cheap, fast wins)
-
-```sql
-CREATE INDEX IF NOT EXISTS idx_messages_unread_to
-  ON public.messages (to_user_id) WHERE read_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_xcrol_entries_feed
-  ON public.xcrol_entries (entry_date DESC, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_xcrol_reactions_entry
-  ON public.xcrol_reactions (entry_id);
-CREATE INDEX IF NOT EXISTS idx_group_post_reactions_post
-  ON public.group_post_reactions (post_id);
-CREATE INDEX IF NOT EXISTS idx_group_post_comments_post_created
-  ON public.group_post_comments (post_id, created_at);
-CREATE INDEX IF NOT EXISTS idx_group_comment_reactions_comment
-  ON public.group_comment_reactions (comment_id);
-CREATE INDEX IF NOT EXISTS idx_user_references_to_created
-  ON public.user_references (to_user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_group_members_user_status
-  ON public.group_members (user_id, status);
-CREATE INDEX IF NOT EXISTS idx_profiles_hometown_country
-  ON public.profiles (hometown_country) WHERE hometown_city IS NOT NULL;
+```text
+                Ready        Partial       Gap
+Frontend        [####------]                          (Vite app portable; needs build tweaks)
+Backend         [######----]                          (Schema in git, data in B2, secrets undocumented)
+Personal        [###-------]                          (Docs exist, but no trustee, no dry-run)
 ```
 
-Tradeoff: tiny extra storage, slightly slower writes on these tables — negligible at current volumes.
+---
 
-### 3. Cache profile lookups on the client
-The `profiles WHERE id = ANY(...)` queries fire from every feed render. Use a single React Query cache keyed by user id with a long staleTime (e.g. 5 min) so the same author's row is not re-fetched per post component.
+## 1. Frontend — running off Lovable hosting
 
-### 4. Investigate the 69,525 rolled-back transactions
-That number is high for a quiet app and usually means an RLS-denied write loop or a failing trigger retrying. After the messages fix lands I'll check edge function and Postgres logs to see what's rolling back.
+**What works today**
+- Standard Vite + React + Tailwind app. Builds with `vite build`, deploys anywhere static (Cloudflare Pages, Netlify, Vercel, S3+CloudFront).
+- Custom domain `xcrol.com` already live — DNS is yours, not Lovable's.
+- Code is in a real `.git` repo; GitHub sync presumed active.
 
-### What this will NOT do
-This will not directly shrink the pico compute line item — that bill stays the same as long as the instance is up. What it does is prevent the next traffic bump from forcing an upgrade to a larger (more expensive) instance.
+**What needs change to leave Lovable**
+- `vite.config.ts` imports `lovable-tagger` — dev-only plugin, harmless but should be removed or guarded.
+- `package.json` depends on `@lovable.dev/cloud-auth-js` — this is the auth wrapper. Either swap to plain `@supabase/supabase-js` auth (already imported) or vendor it.
+- `.env` uses `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` — already standard Supabase, portable as-is.
+- `src/integrations/lovable/index.ts` — audit and replace any Lovable-specific calls.
 
-## Technical notes
-- All migrations go through the standard migration tool; no concurrent index creation.
-- Realtime is already enabled (you have a Cloud realtime line item, just unused for this).
-- No schema-breaking changes; safe to roll back any index with `DROP INDEX`.
+**Effort to migrate hosting**: ~1 hour. Mostly removing `lovable-tagger`, replacing the auth wrapper, repointing DNS.
+
+---
+
+## 2. Backend — running off Lovable Cloud
+
+**What works today**
+- All 170 migrations are committed to git → schema, RLS, functions, triggers, grants all reproducible on any Supabase project (managed or self-hosted).
+- Edge functions (29 of them) all live in `supabase/functions/` and deploy with `supabase functions deploy`.
+- Nightly backup function `nightly-backup` dumps every public table + `auth.users` (with password hashes) + storage catalog to **Backblaze B2** under a bucket you own.
+- Cron job `nightly-backup-0400-utc` is **scheduled and active** in `cron.job`.
+- Secrets are listed in `fetch_secrets`; `nightly-backup` records secret names (not values) in the manifest for revival reference.
+- `RUNBOOK.md` covers two revival paths (managed Supabase + Cloudflare Pages, or self-hosted Supabase on Hetzner) with concrete commands.
+
+**Gaps**
+- `public.backup_runs` only shows `kind = 'manual'` runs; the most recent is **2026-06-10**. Either the nightly cron isn't actually invoking the function, or the run rows are being filtered. Needs verification.
+- Storage object **bytes** are not copied (avatars, OG images would be lost on revival — only the catalog survives). Doc calls this "Tier 1.5", not yet built.
+- Lovable AI Gateway (`LOVABLE_API_KEY`) powers `adventure-game`, `dream-trip`, and the paid `scroll-ai` path. On revival, these break until you rewire to OpenAI/Gemini directly. Scroll-AI BYOK already works for free users.
+- No documented `service_role_key` rotation drill — if Lovable revokes/loses it, you have no copy on Lovable Cloud (per platform constraint).
+
+**Effort to migrate backend**: ~3–4 hours per the runbook; loss is "last 24h of data + storage bytes".
+
+---
+
+## 3. Personal continuity — Xcrol surviving you
+
+**What works today**
+- `RUNBOOK.md` is written for "a competent stranger" — clear, executable steps.
+- `BACKUP-ARCHITECTURE.md` documents what's backed up, retention, and the dead-man's switch design.
+- Dead-man's switch (`heartbeat-check` weekly, off by default) — wired up in code, ready to arm.
+
+**Gaps**
+- **No trustee.** `TRUSTEE_EMAIL`, `DEADMAN_ENABLED`, `DEADMAN_DAYS` secrets are not set → if you disappear, no one gets notified, no one receives B2 credentials.
+- **B2 credentials only exist in your head + the secrets store.** No sealed envelope, no password-manager share, no lawyer letter.
+- **Domain registrar access** for `xcrol.com` is not part of any continuity plan — without it, the revived app cannot be reached at the canonical URL.
+- **No dry-run.** The runbook has never been executed end-to-end. Estimated 3-hour revival is unverified.
+- **GitHub mirror ownership** — currently tied to your GitHub account. If GitHub locks the account, the source vanishes (B2 doesn't have source code).
+
+---
+
+## Proposed next steps (in priority order)
+
+1. **Verify nightly cron is actually running.** Inspect cron job logs and confirm `backup_runs` gets a `kind='nightly'` row tonight; fix the invocation if not.
+2. **Pick and notify a trustee** (one person + one backup person). Set `TRUSTEE_EMAIL`, set `DEADMAN_ENABLED=1`, `DEADMAN_DAYS=90`.
+3. **Hand off credentials out-of-band.** Sealed envelope, 1Password emergency kit, or a lawyer's escrow containing: B2 key id + secret, domain registrar login, GitHub recovery codes, link to `RUNBOOK.md`.
+4. **One dry-run revival to a throwaway Supabase project.** Time it. Fix any runbook steps that don't work. Delete the throwaway after.
+5. **Move source mirror to a second GitHub account or GitLab** so loss of one account doesn't kill source recovery.
+6. **Optional, later:** Build Tier 1.5 storage byte sync so avatars and OG images survive. Build BYOK fallbacks for `adventure-game` and `dream-trip` so AI features don't break post-Lovable.
+
+## Technical details (what I would implement when you greenlight)
+
+- For step 1, run `SELECT * FROM cron.job_run_details WHERE jobid = (SELECT jobid FROM cron.job WHERE jobname='nightly-backup-0400-utc') ORDER BY start_time DESC LIMIT 10;` to see actual cron execution history; if the function is being called but failing, check `edge_function_logs` for `nightly-backup`. If it's not being invoked at all, recreate the schedule.
+- For step 2, use `add_secret` to add `TRUSTEE_EMAIL`, `DEADMAN_ENABLED`, `DEADMAN_DAYS`, then confirm `heartbeat-check` reads them.
+- For step 5, set up a second remote on the same repo (`git remote add mirror …`) and a GitHub Action that pushes to both on every commit.
+
+This plan does not change any application code — it's a continuity/ops audit and a list of decisions for you to make.
