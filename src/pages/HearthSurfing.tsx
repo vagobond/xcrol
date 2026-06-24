@@ -345,21 +345,53 @@ const HearthSurfing = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-4xl mx-auto py-8 px-4">
-        <Button variant="ghost" className="mb-6" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+      {/* Hero — sunset over ocean, evokes Couchsurfing/Workaway warmth */}
+      <div className="relative overflow-hidden border-b border-border/40">
+        <div
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(135deg, hsl(15 85% 55% / 0.18) 0%, hsl(330 75% 60% / 0.18) 35%, hsl(265 60% 55% / 0.18) 65%, hsl(200 70% 45% / 0.22) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-24 -z-10 opacity-40"
+          style={{
+            background:
+              "radial-gradient(ellipse at 20% 100%, hsl(200 80% 60% / 0.5), transparent 60%), radial-gradient(ellipse at 80% 100%, hsl(330 80% 60% / 0.5), transparent 60%)",
+          }}
+        />
 
-        <div className="space-y-2 mb-8">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Heart className="w-8 h-8 text-primary" />
-            Hearth Surf
-          </h1>
-          <p className="text-muted-foreground">
-            Find hosts, manage your hosting preferences, and connect with travelers
-          </p>
+        <div className="container max-w-4xl mx-auto pt-6 pb-10 px-4">
+          <Button variant="ghost" className="mb-6 -ml-2" onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+
+          <div className="flex items-start gap-4 sm:gap-6">
+            <div className="shrink-0 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/60 p-3 sm:p-4 shadow-lg">
+              <SurferIcon className="w-10 h-10 sm:w-14 sm:h-14 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-glow">
+                Hearth Surf
+              </h1>
+              <p className="text-base sm:text-lg text-foreground/80 max-w-2xl leading-relaxed">
+                Open your home. Find a couch. Trade skills for a place to stay.
+                Hospitality, the XCROL way — built on trust, not transactions.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Badge variant="secondary" className="rounded-full">Host travelers</Badge>
+                <Badge variant="secondary" className="rounded-full">Find a couch</Badge>
+                <Badge variant="secondary" className="rounded-full">Skill exchanges</Badge>
+                <Badge variant="secondary" className="rounded-full">Friends-of-friends first</Badge>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="container max-w-4xl mx-auto py-8 px-4">
 
         <Tabs defaultValue="search" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
