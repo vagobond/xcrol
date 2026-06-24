@@ -86,7 +86,7 @@ const IRLLayer = () => {
               Meetups/Events
             </Button>
             <Button onClick={() => navigate("/hearthsurf")} className="gap-2 bg-pink-500 hover:bg-pink-600 text-white">
-              <Heart className="w-4 h-4" />
+              <SurferIcon className="w-4 h-4" />
               Hearth Surf
             </Button>
             <Button onClick={() => navigate("/powers")} variant="outline">
