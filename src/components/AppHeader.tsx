@@ -6,6 +6,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useTutorial } from "@/components/onboarding";
 import villageIconSrc from "@/assets/village-icon.png";
+import SurferIcon from "@/components/icons/SurferIcon";
 
 const UserMenu = lazy(() => import("./UserMenu"));
 const NotificationBell = lazy(() => import("./NotificationBell"));
