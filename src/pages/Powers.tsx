@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Globe, Waves, TreePine, Layers } from "lucide-react";
 import villageIconSrc from "@/assets/village-icon.png";
+import SurferIcon from "@/components/icons/SurferIcon";
 import {
   Tooltip,
   TooltipContent,
@@ -358,6 +359,28 @@ const Powers = () => {
                 </TooltipContent>
               </Tooltip>
 
+            </div>
+
+            {/* Fourth row: Hearth Surf — hospitality exchange */}
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="mystical"
+                    size="xl"
+                    asChild
+                    className="w-full sm:w-auto min-w-[250px]"
+                  >
+                    <Link to="/hearthsurf" data-tutorial="hearthsurf">
+                      <SurferIcon className="mr-2 h-5 w-5" />
+                      HEARTH SURF
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Host travelers, find a couch, exchange skills — hospitality across XCROL</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </TooltipProvider>

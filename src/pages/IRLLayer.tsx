@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Globe, ChevronRight, CalendarIcon, Heart } from "lucide-react";
+import { Globe, ChevronRight, CalendarIcon } from "lucide-react";
+import SurferIcon from "@/components/icons/SurferIcon";
 import { CreateMeetupDialog } from "@/components/CreateMeetupDialog";
 import { MeetupsListModal } from "@/components/MeetupsListModal";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -85,7 +86,7 @@ const IRLLayer = () => {
               Meetups/Events
             </Button>
             <Button onClick={() => navigate("/hearthsurf")} className="gap-2 bg-pink-500 hover:bg-pink-600 text-white">
-              <Heart className="w-4 h-4" />
+              <SurferIcon className="w-4 h-4" />
               Hearth Surf
             </Button>
             <Button onClick={() => navigate("/powers")} variant="outline">
