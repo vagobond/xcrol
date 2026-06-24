@@ -6,6 +6,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useTutorial } from "@/components/onboarding";
 import villageIconSrc from "@/assets/village-icon.png";
+import SurferIcon from "@/components/icons/SurferIcon";
 
 const UserMenu = lazy(() => import("./UserMenu"));
 const NotificationBell = lazy(() => import("./NotificationBell"));
@@ -41,6 +42,9 @@ const AppHeader = () => {
           }>
             <WorldBadge />
           </Suspense>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/hearthsurf")} className="h-9 w-9" title="Hearth Surf">
+            <SurferIcon className="h-5 w-5" />
+          </Button>
         </>
       ) : (
         <>
@@ -55,6 +59,9 @@ const AppHeader = () => {
           </Button>
           <Button variant="ghost" size="icon" onClick={() => navigate("/map")} className="h-9 w-9" title="The World">
             <Globe className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/hearthsurf")} className="h-9 w-9" title="Hearth Surf">
+            <SurferIcon className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon" onClick={reopenTutorial} className="h-9 w-9" title="Tour Xcrol">
             <Sparkles className="h-5 w-5" />
