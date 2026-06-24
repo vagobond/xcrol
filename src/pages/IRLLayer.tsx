@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Globe, ChevronRight, CalendarIcon, Heart } from "lucide-react";
+import { Globe, ChevronRight, CalendarIcon } from "lucide-react";
+import SurferIcon from "@/components/icons/SurferIcon";
 import { CreateMeetupDialog } from "@/components/CreateMeetupDialog";
 import { MeetupsListModal } from "@/components/MeetupsListModal";
 import "mapbox-gl/dist/mapbox-gl.css";
