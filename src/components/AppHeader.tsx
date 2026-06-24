@@ -42,6 +42,9 @@ const AppHeader = () => {
           }>
             <WorldBadge />
           </Suspense>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/hearthsurf")} className="h-9 w-9" title="Hearth Surf">
+            <SurferIcon className="h-5 w-5" />
+          </Button>
         </>
       ) : (
         <>
