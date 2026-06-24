@@ -60,6 +60,9 @@ const AppHeader = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate("/map")} className="h-9 w-9" title="The World">
             <Globe className="h-5 w-5" />
           </Button>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/hearthsurf")} className="h-9 w-9" title="Hearth Surf">
+            <SurferIcon className="h-5 w-5" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={reopenTutorial} className="h-9 w-9" title="Tour Xcrol">
             <Sparkles className="h-5 w-5" />
           </Button>
