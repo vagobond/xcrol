@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Globe, Waves, TreePine, Layers } from "lucide-react";
 import villageIconSrc from "@/assets/village-icon.png";
+import SurferIcon from "@/components/icons/SurferIcon";
 import {
   Tooltip,
   TooltipContent,
