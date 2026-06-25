@@ -22,7 +22,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
-    let graceTimer: ReturnType<typeof setTimeout> | undefined;
     let hardTimeout: ReturnType<typeof setTimeout> | undefined;
 
     const applySession = (nextSession: Session | null, finalized = true) => {
@@ -34,7 +33,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const clearTimers = () => {
-      if (graceTimer) clearTimeout(graceTimer);
       if (hardTimeout) clearTimeout(hardTimeout);
     };
 
@@ -55,15 +53,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (event, session) => {
         if (event === "INITIAL_SESSION") {
           // A real stored session should be trusted immediately. A null initial
-          // session gets a short grace window so ProtectedRoute does not bounce a
-          // signed-in user before getSession finishes restoring browser storage.
+          // session is not enough to declare the user signed out; wait for the
+          // explicit getSession() call below. That prevents refresh-time races
+          // from bouncing a valid user to /auth.
           if (session) {
             clearTimers();
             applySession(session);
-          } else if (!initializedRef.current) {
-            graceTimer = setTimeout(() => {
-              if (!initializedRef.current) applySession(null);
-            }, 1200);
           }
           return;
         }
