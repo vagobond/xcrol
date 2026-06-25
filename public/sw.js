@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xcrol-v2';
+const CACHE_NAME = 'xcrol-v3';
 const STATIC_ASSETS = [
   '/',
   '/favicon.png',
@@ -42,23 +42,18 @@ self.addEventListener('fetch', (event) => {
   // Never intercept .well-known paths (NIP-05, etc.) — serve directly from origin
   if (url.pathname.startsWith('/.well-known/')) return;
 
-  // Network-first for API calls (Supabase, edge functions, dynamic data)
+  // Never cache backend/auth/API calls. Caching authenticated GET responses can
+  // replay a stale 401/403 or stale user payload after refresh and make the app
+  // appear logged out even though the browser still has a valid session.
   if (
     url.pathname.startsWith('/rest/') ||
     url.pathname.startsWith('/functions/') ||
+    url.pathname.startsWith('/auth/') ||
+    url.pathname === '/user' ||
+    url.pathname === '/token' ||
     url.hostname.includes('supabase')
   ) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
+    event.respondWith(fetch(request));
     return;
   }
 

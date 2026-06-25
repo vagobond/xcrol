@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,25 +18,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const initialSessionResolvedRef = useRef(false);
 
   useEffect(() => {
+    let mounted = true;
+
+    const applySession = (nextSession: Session | null) => {
+      if (!mounted) return;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      setLoading(false);
+    };
+
     // Set up auth state listener FIRST to avoid missing events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+      (event, session) => {
+        // Supabase can emit INITIAL_SESSION before storage restoration has fully
+        // settled in some refresh/PWA paths. Do not let a transient null session
+        // mark the app as logged-out before the explicit getSession check below.
+        if (event === "INITIAL_SESSION" && !initialSessionResolvedRef.current) {
+          if (session) applySession(session);
+          return;
+        }
+
+        applySession(session);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        initialSessionResolvedRef.current = true;
+        applySession(session);
+      })
+      .catch((error) => {
+        initialSessionResolvedRef.current = true;
+        console.error("Auth session restore failed:", error);
+        applySession(null);
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
