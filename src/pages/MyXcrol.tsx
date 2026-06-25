@@ -57,6 +57,7 @@ const MyXcrol = () => {
   const [entries, setEntries] = useState<XcrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
+  const [shareEntryId, setShareEntryId] = useState<string | null>(null);
   const { todayDate, loading: dateLoading, timezone } = useHometownDate(user?.id ?? null);
 
 
