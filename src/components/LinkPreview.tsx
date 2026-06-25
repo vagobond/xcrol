@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Play, Globe } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 
@@ -49,11 +50,13 @@ function isPreviewableUrl(url: string): boolean {
 }
 
 export const LinkPreview = ({ url }: LinkPreviewProps) => {
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<LinkPreviewData | null>(null);
   const [loading, setLoading] = useState(false);
   const [showEmbed, setShowEmbed] = useState(false);
 
   useEffect(() => {
+    if (authLoading || !user) return;
     if (!url || !isPreviewableUrl(url)) return;
 
     let cancelled = false;
@@ -73,7 +76,7 @@ export const LinkPreview = ({ url }: LinkPreviewProps) => {
       });
 
     return () => { cancelled = true; };
-  }, [url]);
+  }, [url, user, authLoading]);
 
   if (!isPreviewableUrl(url) || loading || !data) {
     return null;

@@ -44,10 +44,22 @@ export const useAuthPage = () => {
   useEffect(() => {
     let didRedirect = false;
 
-    const redirectTo = (url: string) => {
+    const redirectTo = async (url: string) => {
       if (didRedirect) return;
       didRedirect = true;
-      window.location.href = url;
+      // Make sure Supabase has finished writing the session before leaving the
+      // auth screen. A full reload here can race browser storage/service-worker
+      // startup and make the next route appear signed out.
+      try {
+        await supabase.auth.getSession();
+      } catch {
+        // Continue; AuthProvider will handle the actual session state.
+      }
+      if (url.startsWith("/") && !url.startsWith("//")) {
+        navigate(url, { replace: true });
+      } else {
+        window.location.assign(url);
+      }
     };
 
     const bounceIfAlreadySignedIn = (session: any | null) => {
@@ -58,7 +70,7 @@ export const useAuthPage = () => {
       if (returnUrl) {
         redirectTo(returnUrl);
       } else {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     };
 

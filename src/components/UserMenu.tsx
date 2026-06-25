@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 const UserMenu = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
@@ -80,6 +80,10 @@ const UserMenu = () => {
     }
     return "U";
   };
+
+  if (authLoading) {
+    return null;
+  }
 
   if (!user) {
     return (
