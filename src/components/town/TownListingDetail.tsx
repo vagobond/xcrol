@@ -67,6 +67,7 @@ const TownListingDetail = ({ listingId, onBack }: TownListingDetailProps) => {
   if (!listing) return <p className="text-sm text-muted-foreground">listing not found</p>;
 
   const isOwner = user?.id === listing.user_id;
+  const isGuest = !user;
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -84,9 +85,25 @@ const TownListingDetail = ({ listingId, onBack }: TownListingDetailProps) => {
         )}
       </div>
 
-      <div className="border border-border rounded p-4 bg-card/30 whitespace-pre-wrap text-sm text-foreground/90">
-        {listing.body}
-      </div>
+      {isGuest ? (
+        <div className="border border-dashed border-border rounded p-4 bg-card/30 text-sm space-y-3">
+          <p className="text-muted-foreground">
+            Sign in to read the full listing, see contact info, and reply.
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => navigate("/auth")}>
+              Sign in
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => navigate("/auth?mode=signup")}>
+              Create an account
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="border border-border rounded p-4 bg-card/30 whitespace-pre-wrap text-sm text-foreground/90">
+          {listing.body}
+        </div>
+      )}
 
       <div className="text-xs text-muted-foreground space-y-1">
         {listing.location && <p>📍 {listing.location}</p>}
@@ -104,8 +121,8 @@ const TownListingDetail = ({ listingId, onBack }: TownListingDetailProps) => {
         )}
       </div>
 
-      {/* Contact */}
-      {listing.contact_info && (
+      {/* Contact — only for signed-in viewers */}
+      {!isGuest && listing.contact_info && (
         <div className="border border-border rounded p-3 bg-card/30 text-sm">
           <p className="text-xs text-muted-foreground mb-1 font-medium">contact:</p>
           <p className="text-foreground">{listing.contact_info}</p>

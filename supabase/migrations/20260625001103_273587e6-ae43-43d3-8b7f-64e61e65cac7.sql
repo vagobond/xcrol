@@ -1,0 +1,1 @@
+GRANT SELECT ON public.town_listings TO anon;
