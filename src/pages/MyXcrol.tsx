@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Scroll, Lock, Users, UserCheck, Heart, ExternalLink, Trash2, Share2, Globe } from "lucide-react";
 import { XcrolEntryForm } from "@/components/XcrolEntryForm";
 import { LinkPreview } from "@/components/LinkPreview";
+import { SharePostDialog } from "@/components/SharePostDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useHometownDate } from "@/hooks/use-hometown-date";

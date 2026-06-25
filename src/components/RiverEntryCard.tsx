@@ -48,6 +48,7 @@ const PRIVACY_CONFIG: Record<string, { icon: React.ElementType; label: string; c
 
 export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, replies = [], currentUserId, onRepliesChange }: RiverEntryCardProps) => {
   const navigate = useNavigate();
+  const [shareOpen, setShareOpen] = useState(false);
   const config = PRIVACY_CONFIG[entry.privacy_level] || PRIVACY_CONFIG.private;
   const PrivacyIcon = config.icon;
   const isRss = entry.privacy_level === "rss";
@@ -181,24 +182,28 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
                     onReactionsChange={onReactionsChange}
                   />
                   {currentUserId === entry.user_id && entry.privacy_level === "public" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-muted-foreground hover:text-primary"
-                      onClick={() => {
-                        // Use the og-post edge function URL so social platforms
-                        // (LinkedIn, Slack, iMessage, Discord, Facebook) get
-                        // post-specific OpenGraph tags. The function serves
-                        // crawler-friendly meta and meta-refreshes humans to
-                        // the canonical /post/:id route in the SPA.
-                        const url = `https://ceuaibqpikcvcnmuesos.supabase.co/functions/v1/og-post?postId=${entry.id}`;
-                        navigator.clipboard.writeText(url);
-                        toast.success("Shareable link copied to clipboard!");
-                      }}
-                    >
-                      <Share2 className="h-3.5 w-3.5 mr-1" />
-                      <span className="text-xs">Share</span>
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-muted-foreground hover:text-primary"
+                        onClick={() => setShareOpen(true)}
+                      >
+                        <Share2 className="h-3.5 w-3.5 mr-1" />
+                        <span className="text-xs">Share</span>
+                      </Button>
+                      <SharePostDialog
+                        open={shareOpen}
+                        onOpenChange={setShareOpen}
+                        postId={entry.id}
+                        snippet={entry.content}
+                        authorLabel={
+                          entry.author.display_name || entry.author.username
+                            ? `${entry.author.display_name || entry.author.username} on XCROL`
+                            : undefined
+                        }
+                      />
+                    </>
                   )}
                 </>
               )}
