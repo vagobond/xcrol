@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         const { data: { session } } = await supabase.auth.getSession();
         clearTimers();
-        applySession(session);
+        applySession(session ?? getStoredSessionSnapshot());
       } catch (error) {
         clearTimers();
         console.error("Auth session restore failed:", error);
