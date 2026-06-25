@@ -233,6 +233,15 @@ const MyXcrol = () => {
           </CardContent>
         </Card>
       </div>
+      {shareEntryId && (
+        <SharePostDialog
+          open={!!shareEntryId}
+          onOpenChange={(open) => !open && setShareEntryId(null)}
+          postId={shareEntryId}
+          snippet={entries.find((e) => e.id === shareEntryId)?.content}
+          authorLabel={username ? `@${username} on XCROL` : "XCROL"}
+        />
+      )}
     </div>
   );
 };
