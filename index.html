@@ -48,7 +48,11 @@
       })();
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
+          navigator.serviceWorker.register('/sw.js').then((registration) => {
+            // Pull auth/cache fixes promptly instead of waiting for the browser's
+            // normal service-worker update cadence.
+            registration.update().catch(() => {});
+          }).catch(() => {});
         });
       }
     </script>

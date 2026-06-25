@@ -15,12 +15,12 @@ const WorldBadge = lazy(() => import("./WorldBadge"));
 
 const AppHeader = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { reopenTutorial } = useTutorial();
 
   return (
     <header className="fixed top-0 right-0 z-50 p-2 sm:p-4 flex items-center gap-1 sm:gap-2">
-      {user ? (
+      {authLoading ? null : user ? (
         <>
           <Button variant="ghost" size="icon" onClick={() => navigate("/powers")} className="h-9 w-9" title="Home">
             <Home className="h-5 w-5" />

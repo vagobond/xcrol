@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * For a list of group IDs the user is a member of, returns a Map of groupId -> new post count
  * (posts created after the user's last_visited_at stored on group_members, falling back to created_at).
  */
 export function useGroupActivity(memberGroupIds: string[]) {
+  const { user, loading: authLoading } = useAuth();
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
-    if (memberGroupIds.length === 0) {
+    if (authLoading) return;
+
+    if (!user || memberGroupIds.length === 0) {
       setCounts(new Map());
       return;
     }
@@ -17,8 +21,6 @@ export function useGroupActivity(memberGroupIds: string[]) {
     let cancelled = false;
 
     const fetchCounts = async () => {
-      // Get the user's last_visited_at for each group from the server
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
 
       const { data: memberships } = await supabase
@@ -73,7 +75,7 @@ export function useGroupActivity(memberGroupIds: string[]) {
     return () => {
       cancelled = true;
     };
-  }, [memberGroupIds.join(",")]);
+  }, [memberGroupIds.join(","), user?.id, authLoading]);
 
   return counts;
 }
