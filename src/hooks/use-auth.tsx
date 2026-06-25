@@ -2,6 +2,33 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+const getStoredSessionSnapshot = (): Session | null => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    const projectRef = supabaseUrl ? new URL(supabaseUrl).hostname.split(".")[0] : null;
+    const preferredKey = projectRef ? `sb-${projectRef}-auth-token` : null;
+    const storageKeys = preferredKey
+      ? [preferredKey]
+      : Object.keys(window.localStorage).filter((key) => key.startsWith("sb-") && key.endsWith("-auth-token"));
+
+    for (const key of storageKeys) {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+
+      const parsed = JSON.parse(raw) as { access_token?: string; refresh_token?: string; expires_at?: number; user?: User };
+      if (parsed?.access_token && parsed?.refresh_token && parsed?.user?.id) {
+        return parsed as Session;
+      }
+    }
+  } catch (error) {
+    console.warn("Unable to inspect stored auth session:", error);
+  }
+
+  return null;
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -38,13 +65,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const restoreStoredSession = async () => {
       try {
+        const storedSession = getStoredSessionSnapshot();
+        if (storedSession) {
+          // Optimistically keep the app in the signed-in state while Supabase
+          // validates/refreshes the session. This prevents route guards from
+          // treating a refresh-time null INITIAL_SESSION as a logout.
+          applySession(storedSession, false);
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         clearTimers();
         applySession(session);
       } catch (error) {
         clearTimers();
         console.error("Auth session restore failed:", error);
-        applySession(null);
+        applySession(getStoredSessionSnapshot());
       }
     };
 
@@ -73,8 +108,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     restoreStoredSession();
     hardTimeout = setTimeout(() => {
       if (!initializedRef.current) {
-        console.warn("Auth session restore timed out; continuing as signed out.");
-        applySession(null);
+        const storedSession = getStoredSessionSnapshot();
+        if (storedSession) {
+          console.warn("Auth session restore timed out; using stored session snapshot.");
+          applySession(storedSession);
+        } else {
+          console.warn("Auth session restore timed out; continuing as signed out.");
+          applySession(null);
+        }
       }
     }, 5000);
 
