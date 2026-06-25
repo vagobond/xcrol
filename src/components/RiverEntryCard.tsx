@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Globe, Users, UserCheck, Heart, Lock, ExternalLink, Share2, Rss } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +13,7 @@ import { LinkPreview } from "@/components/LinkPreview";
 import { RiverReplies } from "@/components/RiverReplies";
 import type { RiverReply } from "@/components/RiverReplies";
 import type { ReactionData } from "@/pages/TheRiver";
+import { SharePostDialog } from "@/components/SharePostDialog";
 
 interface RiverEntryCardProps {
   entry: {
