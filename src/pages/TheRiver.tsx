@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, Filter, Waves, PenLine, Rss, ArrowUp } from "lucide-react";
+import { Loader2, Filter, Waves, PenLine, Rss, ArrowUp, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useRequireAuth } from "@/components/auth/GuestAuthGate";
@@ -76,6 +76,7 @@ export default function TheRiver() {
   const [reactions, setReactions] = useState<ReactionsMap>({});
   const [repliesMap, setRepliesMap] = useState<RepliesMap>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState(isGuest ? "public" : "all");
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -84,6 +85,7 @@ export default function TheRiver() {
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const hasLoadedRef = useRef(false);
   const prevFilterRef = useRef(filter);
+  const loadRequestRef = useRef(0);
   // Guests only see the 5 most recent public posts. Authenticated users see 20 per page.
   const PAGE_SIZE = isGuest ? 5 : 20;
 
@@ -177,145 +179,188 @@ export default function TheRiver() {
   };
 
 
+  const withTimeout = async <T,>(promise: PromiseLike<T>, message: string): Promise<T> => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(message)), 15000);
+    });
+
+    try {
+      return await Promise.race([promise, timeout]);
+    } finally {
+      clearTimeout(timeoutId!);
+    }
+  };
+
   const loadEntries = async (loadMore = false) => {
+    const requestId = ++loadRequestRef.current;
+
     if (!loadMore) {
       setLoading(true);
+      setLoadError(null);
       setPage(0);
     }
 
-    const currentPage = loadMore ? page + 1 : 0;
-    const offset = currentPage * PAGE_SIZE;
+    try {
+      const currentPage = loadMore ? page + 1 : 0;
+      const offset = currentPage * PAGE_SIZE;
 
-    const { data, error } = await supabase.rpc("get_river_entries", {
-      p_viewer_id: user?.id ?? null,
-      p_limit: PAGE_SIZE,
-      p_offset: offset,
-      p_filter: filter,
-    });
+      const { data, error } = await withTimeout(
+        supabase.rpc("get_river_entries", {
+          p_viewer_id: user?.id ?? null,
+          p_limit: PAGE_SIZE,
+          p_offset: offset,
+          p_filter: filter,
+        }),
+        "The River is taking too long to respond."
+      );
 
-    if (error) {
-      console.error("Error loading entries:", error);
-      setLoading(false);
-      return;
-    }
+      if (requestId !== loadRequestRef.current) return;
 
-    if (!data || data.length === 0) {
-      if (!loadMore) setEntries([]);
-      setHasMore(false);
-      setLoading(false);
-      return;
-    }
+      if (error) throw error;
 
-    const entryIds = data.map((e: any) => e.id);
-
-    // Build author map from RPC data first
-    const authorMap: Record<string, { display_name: string | null; username: string | null }> = {};
-    data.forEach((e: any) => {
-      authorMap[e.user_id] = { display_name: e.author_display_name, username: e.author_username };
-    });
-
-    // Fetch reactions and replies in parallel
-    const [{ data: reactionsData }, { data: repliesData }] = await Promise.all([
-      supabase
-        .from("xcrol_reactions")
-        .select("entry_id, emoji, user_id")
-        .in("entry_id", entryIds),
-      supabase.rpc("get_river_replies", {
-        p_entry_ids: entryIds,
-        p_viewer_id: user?.id ?? null,
-      }),
-    ]);
-
-    // Collect reactor user IDs that we don't already have profiles for
-    const knownUserIds = new Set(Object.keys(authorMap));
-    const missingReactorIds = new Set<string>();
-    (reactionsData || []).forEach(r => {
-      if (!knownUserIds.has(r.user_id)) missingReactorIds.add(r.user_id);
-    });
-
-    // Fetch missing reactor profiles (only if needed — no serial 3rd query if all are known)
-    let reactorProfileMap: Record<string, { display_name: string | null; username: string | null }> = {};
-    if (missingReactorIds.size > 0) {
-      const { data: reactorProfiles } = await supabase
-        .from("profiles")
-        .select("id, display_name, username")
-        .in("id", [...missingReactorIds]);
-      reactorProfiles?.forEach(p => {
-        reactorProfileMap[p.id] = p;
-      });
-    }
-
-    const profileMap = { ...authorMap, ...reactorProfileMap };
-
-    // Group reactions by entry_id
-    const newReactionsMap: ReactionsMap = {};
-    (reactionsData || []).forEach((r) => {
-      if (!newReactionsMap[r.entry_id]) {
-        newReactionsMap[r.entry_id] = [];
+      if (!data || data.length === 0) {
+        if (!loadMore) setEntries([]);
+        setHasMore(false);
+        hasLoadedRef.current = true;
+        return;
       }
-      const existing = newReactionsMap[r.entry_id].find(x => x.emoji === r.emoji);
-      const userName = profileMap[r.user_id]?.display_name || profileMap[r.user_id]?.username || "Anonymous";
-      
-      if (existing) {
-        existing.count++;
-        existing.users = existing.users || [];
-        existing.users.push({ id: r.user_id, name: userName });
-        if (user && r.user_id === user.id) {
-          existing.hasReacted = true;
-        }
-      } else {
-        newReactionsMap[r.entry_id].push({
-          emoji: r.emoji,
-          count: 1,
-          hasReacted: user ? r.user_id === user.id : false,
-          users: [{ id: r.user_id, name: userName }]
+
+      const entryIds = data.map((e: any) => e.id);
+
+      // Build author map from RPC data first
+      const authorMap: Record<string, { display_name: string | null; username: string | null }> = {};
+      data.forEach((e: any) => {
+        authorMap[e.user_id] = { display_name: e.author_display_name, username: e.author_username };
+      });
+
+      // Fetch reactions and replies in parallel
+      const [{ data: reactionsData, error: reactionsError }, { data: repliesData, error: repliesError }] = await withTimeout(
+        Promise.all([
+          supabase
+            .from("xcrol_reactions")
+            .select("entry_id, emoji, user_id")
+            .in("entry_id", entryIds),
+          supabase.rpc("get_river_replies", {
+            p_entry_ids: entryIds,
+            p_viewer_id: user?.id ?? null,
+          }),
+        ]),
+        "The River comments are taking too long to respond."
+      );
+
+      if (requestId !== loadRequestRef.current) return;
+      if (reactionsError) throw reactionsError;
+      if (repliesError) throw repliesError;
+
+      // Collect reactor user IDs that we don't already have profiles for
+      const knownUserIds = new Set(Object.keys(authorMap));
+      const missingReactorIds = new Set<string>();
+      (reactionsData || []).forEach(r => {
+        if (!knownUserIds.has(r.user_id)) missingReactorIds.add(r.user_id);
+      });
+
+      // Fetch missing reactor profiles (only if needed — no serial 3rd query if all are known)
+      let reactorProfileMap: Record<string, { display_name: string | null; username: string | null }> = {};
+      if (missingReactorIds.size > 0) {
+        const { data: reactorProfiles, error: profilesError } = await withTimeout(
+          supabase
+            .from("profiles")
+            .select("id, display_name, username")
+            .in("id", [...missingReactorIds]),
+          "River profile names are taking too long to respond."
+        );
+        if (requestId !== loadRequestRef.current) return;
+        if (profilesError) throw profilesError;
+        reactorProfiles?.forEach(p => {
+          reactorProfileMap[p.id] = p;
         });
       }
-    });
 
-    // Group replies by entry_id
-    const newRepliesMap: RepliesMap = {};
-    (repliesData || []).forEach((r: any) => {
-      if (!newRepliesMap[r.entry_id]) {
-        newRepliesMap[r.entry_id] = [];
-      }
-      newRepliesMap[r.entry_id].push({
-        ...r,
-        author_display_name: r.display_name,
-        author_avatar_url: r.avatar_url,
-        author_username: r.username,
-        parent_reply_id: r.parent_reply_id || null,
+      const profileMap = { ...authorMap, ...reactorProfileMap };
+
+      // Group reactions by entry_id
+      const newReactionsMap: ReactionsMap = {};
+      (reactionsData || []).forEach((r) => {
+        if (!newReactionsMap[r.entry_id]) {
+          newReactionsMap[r.entry_id] = [];
+        }
+        const existing = newReactionsMap[r.entry_id].find(x => x.emoji === r.emoji);
+        const userName = profileMap[r.user_id]?.display_name || profileMap[r.user_id]?.username || "Anonymous";
+        
+        if (existing) {
+          existing.count++;
+          existing.users = existing.users || [];
+          existing.users.push({ id: r.user_id, name: userName });
+          if (user && r.user_id === user.id) {
+            existing.hasReacted = true;
+          }
+        } else {
+          newReactionsMap[r.entry_id].push({
+            emoji: r.emoji,
+            count: 1,
+            hasReacted: user ? r.user_id === user.id : false,
+            users: [{ id: r.user_id, name: userName }]
+          });
+        }
       });
-    });
 
-    const entriesWithAuthors: RiverEntry[] = data.map((e: any) => ({
-      id: e.id,
-      content: e.content,
-      link: e.link,
-      entry_date: e.entry_date,
-      privacy_level: e.privacy_level,
-      user_id: e.user_id,
-      author: {
-        display_name: e.author_display_name,
-        avatar_url: e.author_avatar_url,
-        username: e.author_username,
-      },
-    }));
+      // Group replies by entry_id
+      const newRepliesMap: RepliesMap = {};
+      (repliesData || []).forEach((r: any) => {
+        if (!newRepliesMap[r.entry_id]) {
+          newRepliesMap[r.entry_id] = [];
+        }
+        newRepliesMap[r.entry_id].push({
+          ...r,
+          author_display_name: r.display_name,
+          author_avatar_url: r.avatar_url,
+          author_username: r.username,
+          parent_reply_id: r.parent_reply_id || null,
+        });
+      });
 
-    if (loadMore) {
-      setEntries((prev) => [...prev, ...entriesWithAuthors]);
-      setReactions((prev) => ({ ...prev, ...newReactionsMap }));
-      setRepliesMap((prev) => ({ ...prev, ...newRepliesMap }));
-      setPage(currentPage);
-    } else {
-      setEntries(entriesWithAuthors);
-      setReactions(newReactionsMap);
-      setRepliesMap(newRepliesMap);
+      const entriesWithAuthors: RiverEntry[] = data.map((e: any) => ({
+        id: e.id,
+        content: e.content,
+        link: e.link,
+        entry_date: e.entry_date,
+        privacy_level: e.privacy_level,
+        user_id: e.user_id,
+        author: {
+          display_name: e.author_display_name,
+          avatar_url: e.author_avatar_url,
+          username: e.author_username,
+        },
+      }));
+
+      if (loadMore) {
+        setEntries((prev) => [...prev, ...entriesWithAuthors]);
+        setReactions((prev) => ({ ...prev, ...newReactionsMap }));
+        setRepliesMap((prev) => ({ ...prev, ...newRepliesMap }));
+        setPage(currentPage);
+      } else {
+        setEntries(entriesWithAuthors);
+        setReactions(newReactionsMap);
+        setRepliesMap(newRepliesMap);
+      }
+
+      setHasMore(data.length === PAGE_SIZE);
+      hasLoadedRef.current = true;
+    } catch (error) {
+      if (requestId !== loadRequestRef.current) return;
+      console.error("Error loading entries:", error);
+      setLoadError(error instanceof Error ? error.message : "The River could not load.");
+      if (!loadMore) {
+        setEntries([]);
+        setReactions({});
+        setRepliesMap({});
+      }
+    } finally {
+      if (requestId === loadRequestRef.current) {
+        setLoading(false);
+      }
     }
-
-    setHasMore(data.length === PAGE_SIZE);
-    setLoading(false);
-    hasLoadedRef.current = true;
   };
 
   const refreshReplies = useCallback(async () => {
@@ -451,8 +496,20 @@ export default function TheRiver() {
           </div>
         )}
 
+        {/* Load error state */}
+        {!loading && loadError && (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">The River could not load</h3>
+              <p className="text-muted-foreground mb-4">{loadError}</p>
+              <Button onClick={() => loadEntries()}>Try again</Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Empty state */}
-        {!loading && filteredEntries.length === 0 && (
+        {!loading && !loadError && filteredEntries.length === 0 && (
           <Card>
             <CardContent className="p-8 text-center">
               <Waves className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -470,7 +527,7 @@ export default function TheRiver() {
         )}
 
         {/* Feed */}
-        {!loading && filteredEntries.length > 0 && (
+        {!loading && !loadError && filteredEntries.length > 0 && (
           <div className="space-y-4">
             {filteredEntries.map((entry) => (
               <div
@@ -508,7 +565,7 @@ export default function TheRiver() {
         )}
 
         {/* Sign up CTA for guests at the bottom of the 5-item list */}
-        {isGuest && !loading && filteredEntries.length > 0 && (
+        {isGuest && !loading && !loadError && filteredEntries.length > 0 && (
           <Card className="mt-6 border-primary/30 bg-primary/5">
             <CardContent className="p-6 text-center space-y-3">
               <Waves className="h-10 w-10 mx-auto text-primary" />
