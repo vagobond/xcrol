@@ -74,6 +74,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const { data: { session } } = await supabase.auth.getSession();
+        if (!session && storedSession?.refresh_token) {
+          const { data: refreshed } = await supabase.auth.refreshSession(storedSession);
+          clearTimers();
+          applySession(refreshed.session ?? getStoredSessionSnapshot());
+          return;
+        }
+
         clearTimers();
         applySession(session ?? getStoredSessionSnapshot());
       } catch (error) {
