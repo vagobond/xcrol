@@ -143,7 +143,7 @@ const App = () => (
                 <Route path="/myxcrol/edit" element={<ProtectedRoute><MyXcrol /></ProtectedRoute>} />
                 <Route path="/xcrol/:username" element={<ProtectedRoute><UserXcrol /></ProtectedRoute>} />
                 <Route path="/brook/:brookId" element={<ProtectedRoute><Brook /></ProtectedRoute>} />
-                <Route path="/the-town" element={<ProtectedRoute><TheTown /></ProtectedRoute>} />
+                <Route path="/the-town" element={<TheTown />} />
                 <Route path="/the-castle" element={<ProtectedRoute><TheCastle /></ProtectedRoute>} />
                 <Route path="/every-country" element={<ProtectedRoute><EveryCountry /></ProtectedRoute>} />
                 <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
