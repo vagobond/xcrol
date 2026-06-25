@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xcrol-v3';
+const CACHE_NAME = 'xcrol-v4-auth-fix';
 const STATIC_ASSETS = [
   '/',
   '/favicon.png',
@@ -12,6 +12,7 @@ const STATIC_ASSETS = [
 // This prevents mid-session cache swaps that cause unexpected page reloads
 // (especially on mobile PWA tab-switch).
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
@@ -22,7 +23,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    ).then(() => self.clients.claim())
   );
 });
 
@@ -101,22 +102,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for navigation requests (HTML pages)
-  // Serves cached page instantly on tab-return, preventing reload from bundle mismatch,
-  // while updating the cache in the background for the next visit.
+  // Network-first for navigation requests. Serving stale HTML after a deploy can
+  // load old JS chunks/auth code and strand signed-in users on a spinner.
   if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        const fetchPromise = fetch(request).then((response) => {
+      fetch(request)
+        .then((response) => {
           if (response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
-        }).catch(() => cached);
-
-        return cached || fetchPromise;
-      })
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
     );
     return;
   }
