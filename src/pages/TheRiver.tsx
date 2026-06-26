@@ -86,8 +86,13 @@ export default function TheRiver() {
   const hasLoadedRef = useRef(false);
   const prevFilterRef = useRef(filter);
   const loadRequestRef = useRef(0);
+  const entriesRef = useRef<RiverEntry[]>([]);
+  useEffect(() => {
+    entriesRef.current = entries;
+  }, [entries]);
   // Guests only see the 5 most recent public posts. Authenticated users see 20 per page.
   const PAGE_SIZE = isGuest ? 5 : 20;
+
 
   useEffect(() => {
     if (authLoading) return;
@@ -124,7 +129,7 @@ export default function TheRiver() {
           if (!newRow) return;
 
           // Skip if already in feed (e.g. own post via local navigation)
-          if (entries.some((e) => e.id === newRow.id)) return;
+          if (entriesRef.current.some((e) => e.id === newRow.id)) return;
 
           // Visibility check via SECURITY DEFINER function
           const { data: canView } = await supabase.rpc("can_view_xcrol_entry", {
@@ -169,7 +174,7 @@ export default function TheRiver() {
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, authLoading, filter, entries.length]);
+  }, [user?.id, authLoading, filter]);
 
   const handleShowNewPosts = () => {
     setNewPostsCount(0);
@@ -177,6 +182,7 @@ export default function TheRiver() {
     // Reload to pull in fresh entries with full reaction/reply data
     loadEntries();
   };
+
 
 
   const withTimeout = async <T,>(promise: PromiseLike<T>, message: string): Promise<T> => {
