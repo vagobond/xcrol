@@ -129,7 +129,7 @@ export default function TheRiver() {
           if (!newRow) return;
 
           // Skip if already in feed (e.g. own post via local navigation)
-          if (entries.some((e) => e.id === newRow.id)) return;
+          if (entriesRef.current.some((e) => e.id === newRow.id)) return;
 
           // Visibility check via SECURITY DEFINER function
           const { data: canView } = await supabase.rpc("can_view_xcrol_entry", {
@@ -174,7 +174,7 @@ export default function TheRiver() {
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, authLoading, filter, entries.length]);
+  }, [user?.id, authLoading, filter]);
 
   const handleShowNewPosts = () => {
     setNewPostsCount(0);
@@ -182,6 +182,7 @@ export default function TheRiver() {
     // Reload to pull in fresh entries with full reaction/reply data
     loadEntries();
   };
+
 
 
   const withTimeout = async <T,>(promise: PromiseLike<T>, message: string): Promise<T> => {
