@@ -86,8 +86,13 @@ export default function TheRiver() {
   const hasLoadedRef = useRef(false);
   const prevFilterRef = useRef(filter);
   const loadRequestRef = useRef(0);
+  const entriesRef = useRef<RiverEntry[]>([]);
+  useEffect(() => {
+    entriesRef.current = entries;
+  }, [entries]);
   // Guests only see the 5 most recent public posts. Authenticated users see 20 per page.
   const PAGE_SIZE = isGuest ? 5 : 20;
+
 
   useEffect(() => {
     if (authLoading) return;
