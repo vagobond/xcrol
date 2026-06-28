@@ -283,7 +283,7 @@ export function useProfileData() {
 
       const { error } = await supabase
         .from("profiles")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", user.id);
 
       if (error) {
