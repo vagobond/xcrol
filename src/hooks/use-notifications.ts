@@ -131,33 +131,16 @@ export const useNotifications = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, viewMode]);
 
-  // Reload message senders when unread count changes
+  // When the unread count drops to zero, clear senders locally.
+  // We intentionally do NOT refetch senders on every count change —
+  // loadAllNotifications() already returns unread_message_senders via RPC,
+  // and refetching here was generating tens of thousands of redundant
+  // messages + profiles queries.
   useEffect(() => {
-    if (user && unreadMessageCount > 0) {
-      loadMessageSendersOnly();
-    } else {
+    if (!user || unreadMessageCount === 0) {
       setUnreadMessageSenders([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unreadMessageCount]);
-
-  const loadMessageSendersOnly = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("messages")
-      .select("from_user_id")
-      .eq("to_user_id", user.id)
-      .is("read_at", null);
-    if (!data || data.length === 0) { setUnreadMessageSenders([]); return; }
-    const senderIds = [...new Set(data.map((m) => m.from_user_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url")
-      .in("id", senderIds);
-    setUnreadMessageSenders(
-      (profiles || []).map((p) => ({ id: p.id, display_name: p.display_name, avatar_url: p.avatar_url }))
-    );
-  };
+  }, [user, unreadMessageCount]);
 
   const loadAllNotifications = async (mode: ViewMode = "unread") => {
     if (!user) return;
