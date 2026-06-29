@@ -13,8 +13,6 @@ verify_jwt = false
 [functions.og-post]
 verify_jwt = false
 
-[functions.dream-trip]
-verify_jwt = true
 
 [functions.get-mapbox-token]
 verify_jwt = false
