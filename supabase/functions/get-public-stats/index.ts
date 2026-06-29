@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Cache-Control": "public, max-age=300",
+  "Cache-Control": "public, max-age=300, s-maxage=600, stale-while-revalidate=3600",
 };
 
 interface CachedStats {

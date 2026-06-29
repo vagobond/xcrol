@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 </head><body><p>Redirecting to <a href="${esc(canonical)}">${esc(title)}</a>…</p></body></html>`;
 
     return new Response(html, {
-      headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+      headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400" },
     });
   } catch (e) {
     console.error(e);
