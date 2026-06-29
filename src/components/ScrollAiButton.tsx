@@ -8,9 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import {
-  runScrollAi, ScrollAiError, userHasPaidTier,
-} from "@/lib/scroll-ai";
+import { runScrollAi, ScrollAiError } from "@/lib/scroll-ai";
 import { hasByokKey } from "@/lib/scroll-ai-keystore";
 import type {
   ScrollAiAction, ScrollContextForAi, ScrollItemForAi,
