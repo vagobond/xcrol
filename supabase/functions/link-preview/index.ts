@@ -301,7 +301,12 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        // Same URL is previewed by many viewers — let the CDN serve it.
+        'Cache-Control': 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
+      },
     });
   } catch (error) {
     console.error('Error:', error);

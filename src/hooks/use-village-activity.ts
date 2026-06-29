@@ -92,10 +92,11 @@ export function useVillageActivityCount(): number {
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("village-visited", handleVillageVisited);
     fetchCount();
-    const interval = setInterval(fetchCount, 600_000);
+    // Event-driven only: refresh on tab focus or explicit village-visited event.
+    // The previous 10-min interval was redundant and produced background load
+    // for every open tab even when idle.
     return () => {
       cancelled = true;
-      clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("village-visited", handleVillageVisited);
     };
