@@ -45,7 +45,7 @@ export function ScrollAiButton({
   const [polished, setPolished] = useState("");
 
   const run = async () => {
-    if (!userHasPaidTier() && !(await hasByokKey())) {
+    if (!(await hasByokKey())) {
       toast({
         title: "AI key needed",
         description: "Add your AI provider key in Settings, or wait for Wayfarer+ (coming soon).",
