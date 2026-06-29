@@ -1,7 +1,5 @@
 project_id = "ceuaibqpikcvcnmuesos"
 
-[functions.adventure-game]
-verify_jwt = true
 
 [functions.send-welcome-email]
 verify_jwt = false
@@ -15,8 +13,6 @@ verify_jwt = false
 [functions.og-post]
 verify_jwt = false
 
-[functions.dream-trip]
-verify_jwt = true
 
 [functions.get-mapbox-token]
 verify_jwt = false
@@ -54,8 +50,6 @@ verify_jwt = false
 [functions.export-scroll]
 verify_jwt = true
 
-[functions.scroll-ai]
-verify_jwt = true
 
 [functions.og-publication]
 verify_jwt = false

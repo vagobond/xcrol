@@ -1,11 +1,10 @@
 /**
  * Scroll AI router.
  *
- * Free users -> direct call to their BYOK provider (browser only).
- * Paid users -> Xcrol AI edge function (gated "coming soon" for now).
+ * Browser-only: every call goes direct to the user's BYOK provider.
+ * Xcrol servers and Lovable AI are never involved.
  */
 
-import { supabase } from "@/integrations/supabase/client";
 import { callByok, ByokError } from "./scroll-ai-byok";
 import {
   getByokConfig,
@@ -28,7 +27,6 @@ export class ScrollAiError extends Error {
   constructor(
     public code:
       | "no_byok_key"
-      | "paid_coming_soon"
       | "provider_error"
       | "rate_limited"
       | "credits_exhausted"
@@ -39,26 +37,13 @@ export class ScrollAiError extends Error {
   }
 }
 
-/**
- * Tier detection. Wayfarer+ is not yet sold, so this always returns false
- * today. The edge function is the real source of truth.
- */
-export function userHasPaidTier(): boolean {
-  return false;
-}
-
 export async function runScrollAi(
-  scrollId: string,
+  _scrollId: string,
   action: ScrollAiAction,
   ctx: ScrollContextForAi,
   payload?: { interludeText?: string },
 ): Promise<ScrollAiResult> {
   const spec = buildPrompt(action, ctx, payload);
-
-  if (userHasPaidTier()) {
-    // Future: invoke edge function. For now this branch is unreachable.
-    return invokeEdge(scrollId, action, payload);
-  }
 
   if (!(await hasByokKey())) {
     throw new ScrollAiError("no_byok_key", "Add your AI provider key to use this feature.");
@@ -82,24 +67,6 @@ export async function runScrollAi(
   }
 
   return parseResult(action, raw);
-}
-
-async function invokeEdge(
-  scrollId: string,
-  action: ScrollAiAction,
-  payload?: { interludeText?: string },
-): Promise<ScrollAiResult> {
-  const { data, error } = await supabase.functions.invoke("scroll-ai", {
-    body: { scroll_id: scrollId, action, payload },
-  });
-  if (error) {
-    const ctx = (error as { context?: Response }).context;
-    const status = ctx?.status;
-    if (status === 402) throw new ScrollAiError("paid_coming_soon", "Xcrol AI is coming soon.");
-    if (status === 429) throw new ScrollAiError("rate_limited", "Daily limit reached.");
-    throw new ScrollAiError("provider_error", error.message);
-  }
-  return parseResult(action, data);
 }
 
 function parseResult(action: ScrollAiAction, raw: unknown): ScrollAiResult {
