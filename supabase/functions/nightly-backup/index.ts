@@ -196,7 +196,6 @@ Deno.serve(async (req) => {
       "SUPABASE_URL",
       "SUPABASE_ANON_KEY",
       "SUPABASE_SERVICE_ROLE_KEY",
-      "LOVABLE_API_KEY",
       "RESEND_API_KEY",
       "MAPBOX_TOKEN",
       "B2_KEY_ID",
