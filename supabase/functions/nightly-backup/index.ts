@@ -191,6 +191,16 @@ Deno.serve(async (req) => {
       errors.push(`storage catalog: ${errMsg(e)}`);
     }
 
+    // 4b) Tier-2 read-only fallback snapshot — small JSON of public content
+    // uploaded to the public `public-snapshots` storage bucket. Served by the
+    // Storage CDN so the public site keeps rendering when Postgres compute is
+    // paused. Best-effort — never fails the whole backup run.
+    try {
+      await publishPublicSnapshot(admin);
+    } catch (e) {
+      errors.push(`public snapshot: ${errMsg(e)}`);
+    }
+
     // 5) Secret-name inventory (NAMES ONLY — never values)
     const secretInventory = [
       "SUPABASE_URL",
