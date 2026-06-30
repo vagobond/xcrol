@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { GuestAuthGateProvider } from "@/components/auth/GuestAuthGate";
 import { Loader2 } from "lucide-react";
 import AppHeader from "./components/AppHeader";
+import OfflineBanner from "./components/OfflineBanner";
 import React from "react";
 
 class ErrorBoundary extends React.Component<
@@ -114,6 +115,7 @@ const App = () => (
           <TutorialProvider>
             <GuestAuthGateProvider>
             <AppHeader />
+            <OfflineBanner />
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <main>

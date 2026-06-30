@@ -191,6 +191,16 @@ Deno.serve(async (req) => {
       errors.push(`storage catalog: ${errMsg(e)}`);
     }
 
+    // 4b) Tier-2 read-only fallback snapshot — small JSON of public content
+    // uploaded to the public `public-snapshots` storage bucket. Served by the
+    // Storage CDN so the public site keeps rendering when Postgres compute is
+    // paused. Best-effort — never fails the whole backup run.
+    try {
+      await publishPublicSnapshot(admin);
+    } catch (e) {
+      errors.push(`public snapshot: ${errMsg(e)}`);
+    }
+
     // 5) Secret-name inventory (NAMES ONLY — never values)
     const secretInventory = [
       "SUPABASE_URL",
@@ -390,3 +400,98 @@ const KNOWN_TABLES = [
   "xcrol_entries",
   "xcrol_reactions",
 ];
+
+// ---------------------------------------------------------------------------
+// Tier-2 public snapshot
+// ---------------------------------------------------------------------------
+// Writes a small JSON blob to the public `public-snapshots` bucket so the
+// public surface of the app can degrade gracefully to read-only when the
+// backend is unreachable. Contains ONLY public-safe data — no PII, no
+// private fields. Overwrites `latest.json` each run.
+// deno-lint-ignore no-explicit-any
+async function publishPublicSnapshot(admin: any) {
+  const BUCKET = "public-snapshots";
+
+  // Ensure the bucket exists and is public. createBucket throws if exists;
+  // updateBucket is the safe upsert path.
+  try {
+    await admin.storage.createBucket(BUCKET, { public: true });
+  } catch {
+    // Already exists — ensure it is public.
+    try {
+      await admin.storage.updateBucket(BUCKET, { public: true });
+    } catch { /* ignore */ }
+  }
+
+  const todayUtc = new Date().toISOString().slice(0, 10);
+
+  // Stats — mirrors get-public-stats.
+  const [entriesRes, hometownsRes, brooksRes] = await Promise.all([
+    admin.from("xcrol_entries").select("id", { count: "exact", head: true }).eq("entry_date", todayUtc),
+    admin.from("profiles").select("hometown_country", { count: "exact" }).not("hometown_city", "is", null),
+    admin.from("brooks").select("id", { count: "exact", head: true }).eq("status", "active"),
+  ]);
+  const countries = new Set(
+    (hometownsRes.data ?? [])
+      .map((r: { hometown_country: string | null }) => r.hometown_country)
+      .filter((c: string | null) => c && c.trim() !== ""),
+  );
+
+  // Recent public River posts (last 50). Only public-tier scrolls.
+  const { data: river } = await admin
+    .from("scroll_items")
+    .select("id, user_id, content, created_at, privacy_level")
+    .eq("privacy_level", "public")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  // Map user_ids → public display info.
+  const userIds = Array.from(new Set((river ?? []).map((r: { user_id: string }) => r.user_id)));
+  const profilesById: Record<string, { username: string | null; display_name: string | null }> = {};
+  if (userIds.length) {
+    const { data: profs } = await admin
+      .from("profiles")
+      .select("id, username, display_name")
+      .in("id", userIds);
+    for (const p of profs ?? []) {
+      profilesById[p.id] = { username: p.username, display_name: p.display_name };
+    }
+  }
+
+  // Recent publications (public).
+  const { data: pubs } = await admin
+    .from("scroll_publications")
+    .select("id, slug, title, author_id, published_at")
+    .order("published_at", { ascending: false })
+    .limit(30);
+
+  const snapshot = {
+    generated_at: new Date().toISOString(),
+    stats: {
+      entries_today: entriesRes.count ?? 0,
+      hometowns_total: hometownsRes.count ?? 0,
+      countries_total: countries.size,
+      brooks_active: brooksRes.count ?? 0,
+    },
+    river: (river ?? []).map((r: { id: string; user_id: string; content: string; created_at: string }) => ({
+      id: r.id,
+      user_id: r.user_id,
+      username: profilesById[r.user_id]?.username ?? null,
+      display_name: profilesById[r.user_id]?.display_name ?? null,
+      content: r.content,
+      created_at: r.created_at,
+    })),
+    publications: pubs ?? [],
+  };
+
+  const body = new TextEncoder().encode(JSON.stringify(snapshot));
+  const { error: upErr } = await admin.storage
+    .from(BUCKET)
+    .upload("latest.json", body, {
+      contentType: "application/json",
+      upsert: true,
+      cacheControl: "public, max-age=300, s-maxage=600, stale-while-revalidate=86400",
+    });
+  if (upErr) throw upErr;
+}
+
