@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchSnapshot } from "@/lib/offline-mode";
 
 interface PublicStats {
   entries_today: number;
@@ -44,9 +45,17 @@ export const LiveStatsStrip = () => {
     (async () => {
       try {
         const { data, error } = await supabase.functions.invoke("get-public-stats");
-        if (!cancelled && !error && data) setStats(data as PublicStats);
+        if (!cancelled && !error && data) {
+          setStats(data as PublicStats);
+          return;
+        }
+        // Backend unavailable — fall back to nightly public snapshot.
+        const snap = await fetchSnapshot();
+        if (!cancelled && snap?.stats) setStats(snap.stats);
       } catch (e) {
         console.error("stats fetch failed", e);
+        const snap = await fetchSnapshot();
+        if (!cancelled && snap?.stats) setStats(snap.stats);
       }
     })();
     return () => {
