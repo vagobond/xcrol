@@ -463,8 +463,7 @@ async function publishPublicSnapshot(admin: any) {
     .from("scroll_publications")
     .select("id, slug, title, author_id, published_at")
     .order("published_at", { ascending: false })
-    .limit: 30 as never; // type-quiet for older clients
-  // (older deno-supabase types may not type `limit` chained after select+order; ignore)
+    .limit(30);
 
   const snapshot = {
     generated_at: new Date().toISOString(),
