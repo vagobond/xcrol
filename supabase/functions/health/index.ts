@@ -54,9 +54,15 @@ Deno.serve(async (req) => {
       checks.backup = { ok: true, detail: "no runs yet" };
     } else {
       const ageMs = Date.now() - new Date(data[0].finished_at).getTime();
-      const ok = ageMs < 48 * 3600 * 1000;
-      if (!ok) overallOk = false;
-      checks.backup = { ok, detail: `last success ${Math.round(ageMs / 3600000)}h ago` };
+      const fresh = ageMs < 48 * 3600 * 1000;
+      // Backup staleness is informational only — it must NOT flip the
+      // overall liveness signal to 503, because clients use that signal
+      // to decide whether to show the read-only banner. A stale backup
+      // does not mean the backend is down.
+      checks.backup = {
+        ok: fresh,
+        detail: `last success ${Math.round(ageMs / 3600000)}h ago`,
+      };
     }
   } catch (e) {
     // Non-fatal — backups are auxiliary.

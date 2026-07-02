@@ -90,11 +90,15 @@ export function useBackendHealth(): BackendStatus {
       try {
         const res = await fetch(`${SUPABASE_URL}/functions/v1/health`, {
           signal: controller.signal,
-          // Probe should never be cached client-side.
           cache: "no-store",
         });
         if (cancelled) return;
-        setStatus(res.ok ? "online" : "offline");
+        // Any HTTP response — even 5xx — means the edge network is up
+        // and reachable. Only treat a total network failure as offline,
+        // otherwise a degraded-but-responding backend (e.g. stale backup)
+        // would incorrectly flip the whole site to read-only mode.
+        setStatus("online");
+        void res;
       } catch {
         if (!cancelled) setStatus("offline");
       } finally {
