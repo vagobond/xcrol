@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xcrol-v4-auth-fix';
+const CACHE_NAME = 'xcrol-v5-health-fix';
 const STATIC_ASSETS = [
   '/',
   '/favicon.png',
