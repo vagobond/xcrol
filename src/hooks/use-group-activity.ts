@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -72,10 +72,30 @@ export function useGroupActivity(memberGroupIds: string[]) {
 
     fetchCounts();
 
+    // Live updates: when a new post lands in one of the user's groups
+    // (by someone else), refresh counts so the per-group bubble appears
+    // immediately without waiting for a reload or tab focus.
+    const channel = supabase
+      .channel(`group-activity-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "group_posts" },
+        (payload) => {
+          const row: any = payload.new;
+          if (!row) return;
+          if (row.user_id === user.id) return;
+          if (!memberGroupIds.includes(row.group_id)) return;
+          fetchCounts();
+        }
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
+      supabase.removeChannel(channel);
     };
   }, [memberGroupIds.join(","), user?.id, authLoading]);
 
   return counts;
 }
+
