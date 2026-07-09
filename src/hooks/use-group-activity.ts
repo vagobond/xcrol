@@ -76,7 +76,7 @@ export function useGroupActivity(memberGroupIds: string[]) {
     // (by someone else), refresh counts so the per-group bubble appears
     // immediately without waiting for a reload or tab focus.
     const channel = supabase
-      .channel(`group-activity-${user.id}`)
+      .channel(`group-activity-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "group_posts" },
