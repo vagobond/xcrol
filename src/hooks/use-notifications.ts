@@ -131,6 +131,28 @@ export const useNotifications = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, viewMode]);
 
+  // Live updates: refresh notifications whenever a new row is inserted
+  // for this user (e.g. someone posts in a group they belong to). This
+  // makes the header Village badge appear immediately without reload.
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => { loadAllNotifications(viewMode); }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => { loadAllNotifications(viewMode); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, viewMode]);
+
   // When the unread count drops to zero, clear senders locally.
   // We intentionally do NOT refetch senders on every count change —
   // loadAllNotifications() already returns unread_message_senders via RPC,
