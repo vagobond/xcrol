@@ -1,6 +1,6 @@
 # XCROL
 
-**Take Control of Your Networks**
+**Not Being Used to Control You**
 
 XCROL is a private social network. No spying. No ads. No algorithms. Just real people building real connections with full control over their digital identity.
 

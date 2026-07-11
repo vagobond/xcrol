@@ -209,10 +209,10 @@ function generateFallbackHtml() {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>XCROL - Take Control of Your Networks</title>
-  <meta name="description" content="Build connections, shape your world, and own your digital presence.">
-  <meta property="og:title" content="XCROL - Take Control of Your Networks">
-  <meta property="og:description" content="Build connections, shape your world, and own your digital presence.">
+  <title>XCROL - Not Being Used to Control You</title>
+  <meta name="description" content="Not Being Used to Control You. Build connections, shape your world, and own your digital presence.">
+  <meta property="og:title" content="XCROL - Not Being Used to Control You">
+  <meta property="og:description" content="Not Being Used to Control You. Build connections, shape your world, and own your digital presence.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://xcrol.com">
   <meta http-equiv="refresh" content="0;url=https://xcrol.com">

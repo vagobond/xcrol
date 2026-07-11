@@ -112,7 +112,7 @@ const Welcome = () => {
                 Pronounced Scroll.
               </p>
               <p className="text-2xl md:text-3xl text-primary font-semibold">
-                Take Control of Your Networks.
+                Not Being Used to Control You.
               </p>
             </div>
           </div>
