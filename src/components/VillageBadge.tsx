@@ -44,6 +44,20 @@ const VillageBadge = () => {
   const VILLAGE_TYPE_LIST = ["group_post", "group_comment", "group_reaction", "group_comment_reaction"];
   const hasUnread = villageInteractions.some((n) => !n.isRead);
 
+  if (totalCount === 0) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => navigate("/the-village")}
+        className="h-9 w-9 relative"
+        title="The Village"
+      >
+        <img src={villageIconSrc} alt="Village" className="h-5 w-5 invert dark:invert-0 brightness-150 contrast-150" />
+      </Button>
+    );
+  }
+
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
