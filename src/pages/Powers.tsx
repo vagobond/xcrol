@@ -170,11 +170,10 @@ const Powers = () => {
       <div className="text-center space-y-16 animate-fade-in max-w-4xl">
         <div className="space-y-6">
           <h1 className="text-5xl md:text-7xl font-bold text-glow">
-            Your Powers Await
+            The Map
           </h1>
           <p className="text-xl md:text-2xl text-foreground/80 leading-relaxed max-w-2xl mx-auto">
-            You hold the power to shape your networks and build your world. 
-            What will you create?
+            The power to chart your networks and shape your social connections. Home is now behind you. The world is ahead. 
           </p>
         </div>
 
