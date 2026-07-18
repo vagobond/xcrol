@@ -41,6 +41,7 @@ export interface GroupPost {
   content: string;
   link: string | null;
   created_at: string;
+  updated_at?: string | null;
   profile?: {
     display_name: string | null;
     avatar_url: string | null;
