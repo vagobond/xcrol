@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Trash2, ExternalLink } from "lucide-react";
+import { Trash2, ExternalLink, Pencil, X, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { MentionText } from "@/components/MentionText";
@@ -20,16 +20,21 @@ interface GroupPostsTabProps {
   userId?: string;
   onCreatePost: (content: string, link?: string) => Promise<void>;
   onDeletePost: (postId: string) => void;
+  onUpdatePost?: (postId: string, content: string, link?: string | null) => Promise<void>;
   createPending: boolean;
   lastVisitedAt?: string | null;
   focusPostId?: string | null;
   focusCommentId?: string | null;
 }
 
-const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, createPending, lastVisitedAt, focusPostId, focusCommentId }: GroupPostsTabProps) => {
+const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, onUpdatePost, createPending, lastVisitedAt, focusPostId, focusCommentId }: GroupPostsTabProps) => {
   const navigate = useNavigate();
   const [postContent, setPostContent] = useState("");
   const [postLink, setPostLink] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editLink, setEditLink] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const focusedRef = useRef<HTMLDivElement | null>(null);
   const [highlightOn, setHighlightOn] = useState(false);
 
@@ -121,31 +126,91 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, creat
                       </Badge>
                     )}
                   </div>
-                  {(post.user_id === userId || group.is_admin) && (
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeletePost(post.id)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {post.user_id === userId && onUpdatePost && editingId !== post.id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          setEditingId(post.id);
+                          setEditContent(post.content);
+                          setEditLink(post.link ?? "");
+                        }}
+                        aria-label="Edit post"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    )}
+                    {(post.user_id === userId || group.is_admin) && (
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeletePost(post.id)} aria-label="Delete post">
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
-                <p className="mt-2 text-sm whitespace-pre-wrap break-words">
-                  <MentionText content={post.content} />
-                </p>
-
-                {post.link && (
+                {editingId === post.id ? (
+                  <div className="mt-2 space-y-2">
+                    <Textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      rows={3}
+                    />
+                    <Input
+                      value={editLink}
+                      onChange={(e) => setEditLink(e.target.value)}
+                      placeholder="Add a link (optional)"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        disabled={!editContent.trim() || savingEdit}
+                        onClick={async () => {
+                          if (!onUpdatePost) return;
+                          setSavingEdit(true);
+                          try {
+                            await onUpdatePost(post.id, editContent.trim(), editLink.trim() || null);
+                            setEditingId(null);
+                          } finally {
+                            setSavingEdit(false);
+                          }
+                        }}
+                      >
+                        <Check className="h-3 w-3 mr-1" />
+                        {savingEdit ? "Saving..." : "Save"}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} disabled={savingEdit}>
+                        <X className="h-3 w-3 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                   <>
-                    <LinkPreview url={post.link} />
-                    <a
-                      href={post.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      {(() => {
-                        try { return new URL(post.link).hostname; } catch { return post.link; }
-                      })()}
-                    </a>
+                    <p className="mt-2 text-sm whitespace-pre-wrap break-words">
+                      <MentionText content={post.content} />
+                      {post.updated_at && post.created_at && new Date(post.updated_at).getTime() - new Date(post.created_at).getTime() > 2000 && (
+                        <span className="ml-2 text-[10px] text-muted-foreground italic">(edited)</span>
+                      )}
+                    </p>
+
+                    {post.link && (
+                      <>
+                        <LinkPreview url={post.link} />
+                        <a
+                          href={post.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          {(() => {
+                            try { return new URL(post.link).hostname; } catch { return post.link; }
+                          })()}
+                        </a>
+                      </>
+                    )}
                   </>
                 )}
 

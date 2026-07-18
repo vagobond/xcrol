@@ -12,6 +12,7 @@ import {
   useLeaveGroup,
   useUpdateMember,
   useDeleteGroupPost,
+  useUpdateGroupPost,
   useUpdateGroup,
 } from "@/hooks/use-groups";
 import { useAuth } from "@/hooks/use-auth";
@@ -43,6 +44,7 @@ const GroupProfile = () => {
   const leaveGroup = useLeaveGroup();
   const updateMember = useUpdateMember();
   const deletePost = useDeleteGroupPost();
+  const updatePost = useUpdateGroupPost();
   const updateGroup = useUpdateGroup();
 
   // Server-side last_visited_at: captured on mount, then updated server-side
@@ -161,6 +163,9 @@ const GroupProfile = () => {
                 await createPost.mutateAsync({ group_id: group.id, content, link });
               }}
               onDeletePost={(postId) => deletePost.mutate({ postId, groupId: group.id })}
+              onUpdatePost={async (postId, content, link) => {
+                await updatePost.mutateAsync({ postId, groupId: group.id, content, link });
+              }}
               createPending={createPost.isPending}
               lastVisitedAt={lastVisitedAt}
               focusPostId={focusPostId}
@@ -209,6 +214,9 @@ const GroupProfile = () => {
             await createPost.mutateAsync({ group_id: group.id, content, link });
           }}
           onDeletePost={(postId) => deletePost.mutate({ postId, groupId: group.id })}
+          onUpdatePost={async (postId, content, link) => {
+            await updatePost.mutateAsync({ postId, groupId: group.id, content, link });
+          }}
           createPending={createPost.isPending}
           lastVisitedAt={lastVisitedAt}
           focusPostId={focusPostId}
