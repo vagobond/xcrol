@@ -12,6 +12,7 @@ import {
   useLeaveGroup,
   useUpdateMember,
   useDeleteGroupPost,
+  useUpdateGroupPost,
   useUpdateGroup,
 } from "@/hooks/use-groups";
 import { useAuth } from "@/hooks/use-auth";
