@@ -363,6 +363,30 @@ export const useUpdateMember = () => {
   });
 };
 
+export const useUpdateGroupPost = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (params: { postId: string; groupId: string; content: string; link?: string | null }) => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("group_posts")
+        .update({ content: params.content, link: params.link ?? null })
+        .eq("id", params.postId)
+        .eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["group-posts", vars.groupId] });
+      toast({ title: "Post updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error updating post", description: err.message, variant: "destructive" });
+    },
+  });
+};
+
 export const useDeleteGroupPost = () => {
   const queryClient = useQueryClient();
 
@@ -379,6 +403,7 @@ export const useDeleteGroupPost = () => {
     },
   });
 };
+
 
 export const useUpdateGroup = () => {
   const queryClient = useQueryClient();
