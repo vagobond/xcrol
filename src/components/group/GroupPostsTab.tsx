@@ -31,6 +31,10 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, onUpd
   const navigate = useNavigate();
   const [postContent, setPostContent] = useState("");
   const [postLink, setPostLink] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editLink, setEditLink] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const focusedRef = useRef<HTMLDivElement | null>(null);
   const [highlightOn, setHighlightOn] = useState(false);
 
