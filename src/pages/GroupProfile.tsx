@@ -44,6 +44,7 @@ const GroupProfile = () => {
   const leaveGroup = useLeaveGroup();
   const updateMember = useUpdateMember();
   const deletePost = useDeleteGroupPost();
+  const updatePost = useUpdateGroupPost();
   const updateGroup = useUpdateGroup();
 
   // Server-side last_visited_at: captured on mount, then updated server-side
