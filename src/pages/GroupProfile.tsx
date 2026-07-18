@@ -163,6 +163,9 @@ const GroupProfile = () => {
                 await createPost.mutateAsync({ group_id: group.id, content, link });
               }}
               onDeletePost={(postId) => deletePost.mutate({ postId, groupId: group.id })}
+              onUpdatePost={async (postId, content, link) => {
+                await updatePost.mutateAsync({ postId, groupId: group.id, content, link });
+              }}
               createPending={createPost.isPending}
               lastVisitedAt={lastVisitedAt}
               focusPostId={focusPostId}
