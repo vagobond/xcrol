@@ -20,13 +20,14 @@ interface GroupPostsTabProps {
   userId?: string;
   onCreatePost: (content: string, link?: string) => Promise<void>;
   onDeletePost: (postId: string) => void;
+  onUpdatePost?: (postId: string, content: string, link?: string | null) => Promise<void>;
   createPending: boolean;
   lastVisitedAt?: string | null;
   focusPostId?: string | null;
   focusCommentId?: string | null;
 }
 
-const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, createPending, lastVisitedAt, focusPostId, focusCommentId }: GroupPostsTabProps) => {
+const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, onUpdatePost, createPending, lastVisitedAt, focusPostId, focusCommentId }: GroupPostsTabProps) => {
   const navigate = useNavigate();
   const [postContent, setPostContent] = useState("");
   const [postLink, setPostLink] = useState("");
