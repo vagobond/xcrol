@@ -193,7 +193,7 @@ export const useGroupPosts = (groupId: string | undefined) => {
       if (!groupId) return [];
       const { data, error } = await supabase
         .from("group_posts")
-        .select("id, group_id, user_id, content, link, created_at")
+        .select("id, group_id, user_id, content, link, created_at, updated_at")
         .eq("group_id", groupId)
         .order("created_at", { ascending: false });
 
