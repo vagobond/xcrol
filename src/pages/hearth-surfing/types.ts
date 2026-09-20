@@ -76,6 +76,16 @@ export const FRIENDSHIP_LEVEL_LABEL: Record<string, string> = {
   close_friend: "Oath Bound only",
 };
 
+/**
+ * Allowed range for max_guests. Mirrored by a CHECK constraint on
+ * hosting_preferences.max_guests — keep the two in sync.
+ */
+export const MIN_GUESTS = 1;
+export const MAX_GUESTS = 10;
+
+export const clampGuests = (value: number): number =>
+  Math.min(MAX_GUESTS, Math.max(MIN_GUESTS, Math.trunc(value)));
+
 const KNOWN_COMPENSATION_VALUES = new Set(COMPENSATION_TYPES.map((c) => c.value));
 
 /**

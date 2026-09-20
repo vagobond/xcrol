@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -17,6 +17,7 @@ import {
   HostProfile,
   HostingRequest,
   parseCompensationTypes,
+  clampGuests,
 } from "./hearth-surfing/types";
 
 
@@ -25,6 +26,18 @@ const HearthSurfing = () => {
   const { user, loading: authLoading } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState("");
+  // Mirrors searchQuery so searchHosts() can read the current term without
+  // closing over it (which would make every caller depend on the query).
+  const searchQueryRef = useRef("");
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
+
+  const [lastMinuteOnly, setLastMinuteOnly] = useState(false);
+  const lastMinuteOnlyRef = useRef(false);
+  useEffect(() => {
+    lastMinuteOnlyRef.current = lastMinuteOnly;
+  }, [lastMinuteOnly]);
   const [hosts, setHosts] = useState<HostProfile[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
@@ -185,20 +198,27 @@ const HearthSurfing = () => {
   };
 
 
-  const searchHosts = async () => {
+  const searchHosts = async (queryOverride?: string, lastMinuteOverride?: boolean) => {
     setSearchLoading(true);
     try {
       // NOTE: do not embed profiles here. hosting_preferences.user_id references
       // auth.users(id), not public.profiles, so PostgREST has no relationship to
       // traverse and the whole query 400s (PGRST200). Fetch profiles separately —
       // same approach loadRequests() uses.
-      const { data, error } = await supabase
+      let query = supabase
         .from("hosting_preferences")
         .select(
           "id, user_id, is_open_to_hosting, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred, accepts_last_minute"
         )
         .eq("is_open_to_hosting", true)
         .eq("is_hosting_paused", false);
+
+      // Filter server-side rather than fetching every host and discarding most of them.
+      if (lastMinuteOverride ?? lastMinuteOnlyRef.current) {
+        query = query.eq("accepts_last_minute", true);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -271,12 +291,13 @@ const HearthSurfing = () => {
         stay_stats: statsMap.get(h.id),
       }));
 
-      const filtered = searchQuery
+      const term = (queryOverride ?? searchQueryRef.current).trim().toLowerCase();
+      const filtered = term
         ? hostProfiles.filter(
             (h) =>
-              h.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              h.hometown_city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              h.hometown_country?.toLowerCase().includes(searchQuery.toLowerCase())
+              h.display_name?.toLowerCase().includes(term) ||
+              h.hometown_city?.toLowerCase().includes(term) ||
+              h.hometown_country?.toLowerCase().includes(term)
           )
         : hostProfiles;
 
@@ -289,25 +310,27 @@ const HearthSurfing = () => {
   };
 
 
-  const handleSavePreferences = async () => {
+  const handleSavePreferences = async (overrides?: Partial<HostingPreferences>) => {
     if (!user) return;
     setSaving(true);
     try {
+      // Merge any edit that hasn't reached state yet (e.g. an in-progress guest count).
+      const pending = { ...preferences, ...overrides };
       // Normalise through the same parser used on read before serialising. If state
       // ever holds a legacy/nested value, this collapses it instead of wrapping it in
       // another layer of escaping (which is how existing rows got corrupted).
-      const cleanCompensation = parseCompensationTypes(preferences.compensation_type_preferred);
+      const cleanCompensation = parseCompensationTypes(pending.compensation_type_preferred);
 
       const prefData = {
         user_id: user.id,
-        is_open_to_hosting: preferences.is_open_to_hosting,
-        hosting_description: preferences.hosting_description,
-        accommodation_type: preferences.accommodation_type,
-        max_guests: preferences.max_guests,
-        min_friendship_level: preferences.min_friendship_level,
+        is_open_to_hosting: pending.is_open_to_hosting,
+        hosting_description: pending.hosting_description,
+        accommodation_type: pending.accommodation_type,
+        max_guests: clampGuests(pending.max_guests),
+        min_friendship_level: pending.min_friendship_level,
         compensation_type_preferred: JSON.stringify(cleanCompensation),
-        is_hosting_paused: preferences.is_hosting_paused ?? false,
-        accepts_last_minute: preferences.accepts_last_minute ?? false,
+        is_hosting_paused: pending.is_hosting_paused ?? false,
+        accepts_last_minute: pending.accepts_last_minute ?? false,
       };
 
 
@@ -328,7 +351,7 @@ const HearthSurfing = () => {
       }
 
       // Persist precise address separately in gated table
-      const addr = (preferences.precise_address ?? "").trim();
+      const addr = (pending.precise_address ?? "").trim();
       if (addr.length > 0) {
         const { error: addrErr } = await supabase
           .from("host_precise_addresses")
@@ -465,6 +488,8 @@ const HearthSurfing = () => {
               hosts={hosts}
               searchLoading={searchLoading}
               onSearch={searchHosts}
+              lastMinuteOnly={lastMinuteOnly}
+              setLastMinuteOnly={setLastMinuteOnly}
             />
           </TabsContent>
 
