@@ -76,6 +76,51 @@ export const FRIENDSHIP_LEVEL_LABEL: Record<string, string> = {
   close_friend: "Oath Bound only",
 };
 
+const KNOWN_COMPENSATION_VALUES = new Set(COMPENSATION_TYPES.map((c) => c.value));
+
+/**
+ * Read compensation_type_preferred out of the DB.
+ *
+ * The column is TEXT, and older code wrote `JSON.stringify(array)` into it while
+ * the loader never parsed it back — so each save wrapped the previous value in
+ * another layer of escaping. Live rows exist with several generations of nesting.
+ * This unwraps however deep it goes, keeps only values we recognise, and dedupes.
+ */
+export const parseCompensationTypes = (raw: unknown): string[] => {
+  const out = new Set<string>();
+
+  const walk = (value: unknown, depth: number) => {
+    if (depth > 10 || value == null) return;
+
+    if (Array.isArray(value)) {
+      value.forEach((v) => walk(v, depth + 1));
+      return;
+    }
+
+    if (typeof value !== "string") return;
+
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "none") return;
+
+    if (KNOWN_COMPENSATION_VALUES.has(trimmed)) {
+      out.add(trimmed);
+      return;
+    }
+
+    // Anything else that still looks like JSON is a nested generation.
+    if (trimmed.startsWith("[") || trimmed.startsWith('"')) {
+      try {
+        walk(JSON.parse(trimmed), depth + 1);
+      } catch {
+        // Not parseable — drop it rather than surfacing escaped text to users.
+      }
+    }
+  };
+
+  walk(raw, 0);
+  return [...out];
+};
+
 export const getCompensationLabel = (value: string) =>
   COMPENSATION_TYPES.find((c) => c.value === value)?.label || value;
 

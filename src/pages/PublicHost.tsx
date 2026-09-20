@@ -11,6 +11,7 @@ import {
   ACCOMMODATION_TYPES,
   COMPENSATION_TYPES,
   FRIENDSHIP_LEVEL_LABEL,
+  parseCompensationTypes,
 } from "./hearth-surfing/types";
 
 interface HostData {
@@ -98,11 +99,7 @@ export default function PublicHost() {
         return;
       }
 
-      const comp = Array.isArray(prefs.compensation_type_preferred)
-        ? (prefs.compensation_type_preferred as string[])
-        : typeof prefs.compensation_type_preferred === "string" && prefs.compensation_type_preferred
-        ? [prefs.compensation_type_preferred as string]
-        : [];
+      const comp = parseCompensationTypes(prefs.compensation_type_preferred);
 
       if (!cancelled) {
         setHost({
