@@ -9,6 +9,11 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { WaitlistForm } from "@/components/WaitlistForm";
 
+// NOT CURRENTLY IN USE. Signups are open to everyone — this component is not
+// imported anywhere, and mounting it would gate registration behind an invite
+// code. Its "invite-only" copy is correct *if* you deliberately switch to a
+// closed signup; it is intentionally left unchanged for that case.
+
 interface InviteCodeGateProps {
   onVerified: () => void;
 }

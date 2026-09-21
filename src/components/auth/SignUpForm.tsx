@@ -107,16 +107,20 @@ export const SignUpForm = ({
       </div>
       <div className="space-y-2">
         <Label htmlFor="signup-invite-code">
-          Invite Code <span className="text-muted-foreground text-xs">(optional — you and your inviter both earn points)</span>
+          Invite Code <span className="text-muted-foreground text-xs">(optional)</span>
         </Label>
         <Input
           id="signup-invite-code"
           type="text"
-          placeholder="Have an invite code? Enter it here"
+          placeholder="Leave blank — anyone can join"
           value={inviteCode}
           onChange={(e) => setInviteCode(e.target.value)}
           className="bg-muted/20 border-primary/30"
+          aria-describedby="signup-invite-code-help"
         />
+        <p id="signup-invite-code-help" className="text-xs text-muted-foreground">
+          No invite code needed to sign up. If someone gave you one, you&apos;ll both earn points.
+        </p>
         {errors.inviteCode && <p className="text-sm text-destructive">{errors.inviteCode}</p>}
       </div>
       <div className="space-y-2">

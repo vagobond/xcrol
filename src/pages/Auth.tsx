@@ -126,10 +126,10 @@ const Auth = () => {
     <div className="min-h-screen p-4 md:p-8 flex items-center justify-center">
       <Helmet>
         <title>Sign In or Join XCROL</title>
-        <meta name="description" content="Sign in or create your XCROL account. Take control of your networks — invite-only, no ads, no tracking." />
+        <meta name="description" content="Sign in or create your XCROL account. Open to everyone — no invite needed, no ads, no tracking." />
         <link rel="canonical" href="https://xcrol.com/auth" />
         <meta property="og:title" content="Sign In or Join XCROL" />
-        <meta property="og:description" content="Sign in or create your XCROL account. Take control of your networks — invite-only, no ads, no tracking." />
+        <meta property="og:description" content="Sign in or create your XCROL account. Open to everyone — no invite needed, no ads, no tracking." />
         <meta property="og:url" content="https://xcrol.com/auth" />
       </Helmet>
       <div className="max-w-md w-full animate-fade-in space-y-8">
