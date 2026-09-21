@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Home, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { MIN_GUESTS, MAX_GUESTS, clampGuests } from "@/pages/hearth-surfing/types";
 
 interface HostingPreferences {
   id?: string;
@@ -33,6 +34,20 @@ export const HostingPreferencesManager = ({ userId }: HostingPreferencesManagerP
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Raw string while the guest field has focus, so it can be cleared and retyped
+  // without each keystroke clamping back to the minimum. Normalised on blur.
+  const [guestsDraft, setGuestsDraft] = useState<string | null>(null);
+
+  const commitGuests = (): number => {
+    if (guestsDraft === null) return preferences.max_guests;
+    const parsed = parseInt(guestsDraft, 10);
+    const next = Number.isNaN(parsed) ? preferences.max_guests : clampGuests(parsed);
+    setGuestsDraft(null);
+    if (next !== preferences.max_guests) {
+      setPreferences({ ...preferences, max_guests: next });
+    }
+    return next;
+  };
 
   useEffect(() => {
     loadPreferences();
@@ -67,6 +82,9 @@ export const HostingPreferencesManager = ({ userId }: HostingPreferencesManagerP
 
   const handleSave = async () => {
     setSaving(true);
+    // Flush any in-progress guest edit; clicking Save is not guaranteed to blur
+    // the input first, and setPreferences would not have landed yet.
+    const maxGuests = commitGuests();
     try {
       if (preferences.id) {
         const { error } = await supabase
@@ -75,7 +93,7 @@ export const HostingPreferencesManager = ({ userId }: HostingPreferencesManagerP
             is_open_to_hosting: preferences.is_open_to_hosting,
             hosting_description: preferences.hosting_description,
             accommodation_type: preferences.accommodation_type,
-            max_guests: preferences.max_guests,
+            max_guests: clampGuests(maxGuests),
             min_friendship_level: preferences.min_friendship_level,
           })
           .eq("id", preferences.id);
@@ -89,7 +107,7 @@ export const HostingPreferencesManager = ({ userId }: HostingPreferencesManagerP
             is_open_to_hosting: preferences.is_open_to_hosting,
             hosting_description: preferences.hosting_description,
             accommodation_type: preferences.accommodation_type,
-            max_guests: preferences.max_guests,
+            max_guests: clampGuests(maxGuests),
             min_friendship_level: preferences.min_friendship_level,
           })
           .select()
@@ -190,15 +208,15 @@ export const HostingPreferencesManager = ({ userId }: HostingPreferencesManagerP
               <Input
                 id="max-guests"
                 type="number"
-                min="1"
-                max="10"
-                value={preferences.max_guests}
-                onChange={(e) =>
-                  setPreferences({
-                    ...preferences,
-                    max_guests: Math.min(10, Math.max(1, parseInt(e.target.value) || 1)),
-                  })
-                }
+                inputMode="numeric"
+                min={MIN_GUESTS}
+                max={MAX_GUESTS}
+                value={guestsDraft ?? preferences.max_guests}
+                onChange={(e) => setGuestsDraft(e.target.value)}
+                onBlur={() => commitGuests()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
               />
             </div>
 

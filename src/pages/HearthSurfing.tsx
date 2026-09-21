@@ -258,7 +258,8 @@ const HearthSurfing = () => {
               is_open_to_hosting: d.is_open_to_hosting,
               hosting_description: d.hosting_description,
               accommodation_type: d.accommodation_type,
-              max_guests: d.max_guests,
+              // Column is nullable; readers render this directly.
+              max_guests: d.max_guests ?? 1,
               min_friendship_level: d.min_friendship_level,
               accepts_last_minute: d.accepts_last_minute ?? false,
               compensation_type_preferred: parseCompensationTypes(d.compensation_type_preferred),
