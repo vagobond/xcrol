@@ -11,7 +11,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Home, Loader2, Save, Share2, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { HostingPreferences, ACCOMMODATION_TYPES, COMPENSATION_TYPES } from "./types";
+import {
+  HostingPreferences,
+  ACCOMMODATION_TYPES,
+  COMPENSATION_TYPES,
+  MIN_GUESTS,
+  MAX_GUESTS,
+  clampGuests,
+} from "./types";
 import HostAvailabilityCalendar from "@/components/HostAvailabilityCalendar";
 import TripsManager from "@/components/TripsManager";
 
@@ -19,7 +26,8 @@ interface Props {
   preferences: HostingPreferences;
   setPreferences: (p: HostingPreferences) => void;
   saving: boolean;
-  onSave: () => void;
+  /** `overrides` carries field edits that may not have reached state yet. */
+  onSave: (overrides?: Partial<HostingPreferences>) => void;
 }
 
 export default function MySpaceTab({ preferences, setPreferences, saving, onSave }: Props) {
@@ -49,6 +57,32 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
     } catch {
       toast.error("Could not copy");
     }
+  };
+
+  // Guest count is held as a raw string while the field has focus, so the user can
+  // clear it or build a two-digit number without each keystroke being clamped back
+  // to the minimum. It is normalised on blur.
+  const [guestsDraft, setGuestsDraft] = useState<string | null>(null);
+
+  // Returns the normalised guest count so callers can use it synchronously,
+  // without waiting for the setPreferences state update to land.
+  const commitGuests = (): number => {
+    if (guestsDraft === null) return preferences.max_guests;
+    const parsed = parseInt(guestsDraft, 10);
+    const next = Number.isNaN(parsed) ? preferences.max_guests : clampGuests(parsed);
+    setGuestsDraft(null);
+    if (next !== preferences.max_guests) {
+      setPreferences({ ...preferences, max_guests: next });
+    }
+    return next;
+  };
+
+  // Flush any in-progress guest edit before saving. Clicking Save usually blurs the
+  // input first, but that ordering isn't guaranteed — so pass the value explicitly
+  // rather than relying on the pending state update.
+  const handleSaveClick = () => {
+    const maxGuests = commitGuests();
+    onSave({ max_guests: maxGuests });
   };
 
   const toggleCompensation = (value: string) => {
@@ -152,19 +186,23 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
             </div>
 
             <div className="space-y-2">
-              <Label>Maximum Guests</Label>
+              <Label htmlFor="max-guests">Maximum Guests</Label>
               <Input
+                id="max-guests"
                 type="number"
-                min="1"
-                max="10"
-                value={preferences.max_guests}
-                onChange={(e) =>
-                  setPreferences({
-                    ...preferences,
-                    max_guests: Math.min(10, Math.max(1, parseInt(e.target.value) || 1)),
-                  })
-                }
+                inputMode="numeric"
+                min={MIN_GUESTS}
+                max={MAX_GUESTS}
+                value={guestsDraft ?? preferences.max_guests}
+                onChange={(e) => setGuestsDraft(e.target.value)}
+                onBlur={() => commitGuests()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
               />
+              <p className="text-xs text-muted-foreground">
+                Between {MIN_GUESTS} and {MAX_GUESTS}.
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -221,7 +259,7 @@ export default function MySpaceTab({ preferences, setPreferences, saving, onSave
           </>
         )}
 
-        <Button onClick={onSave} disabled={saving} className="w-full">
+        <Button onClick={handleSaveClick} disabled={saving} className="w-full">
           {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
           Save Hosting Preferences
         </Button>

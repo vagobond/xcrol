@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +20,9 @@ interface Props {
   setSearchQuery: (v: string) => void;
   hosts: HostProfile[];
   searchLoading: boolean;
-  onSearch: () => void;
+  onSearch: (queryOverride?: string, lastMinuteOverride?: boolean) => void;
+  lastMinuteOnly: boolean;
+  setLastMinuteOnly: (v: boolean) => void;
 }
 
 export default function SearchTab({
@@ -30,17 +31,14 @@ export default function SearchTab({
   hosts,
   searchLoading,
   onSearch,
+  lastMinuteOnly,
+  setLastMinuteOnly,
 }: Props) {
   const navigate = useNavigate();
-  const [lastMinuteOnly, setLastMinuteOnly] = useState(false);
 
-  const visibleHosts = useMemo(
-    () =>
-      lastMinuteOnly
-        ? hosts.filter((h) => h.hosting_preferences.accepts_last_minute)
-        : hosts,
-    [hosts, lastMinuteOnly]
-  );
+  // The last-minute predicate is applied in the query itself, so `hosts` is
+  // already filtered by the time it arrives here.
+  const visibleHosts = hosts;
 
   return (
     <div className="space-y-4">
@@ -54,7 +52,7 @@ export default function SearchTab({
             className="pl-10"
           />
         </div>
-        <Button onClick={onSearch} disabled={searchLoading}>
+        <Button onClick={() => onSearch()} disabled={searchLoading}>
           {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
         </Button>
       </div>
@@ -63,7 +61,12 @@ export default function SearchTab({
         <Checkbox
           id="last-minute-filter"
           checked={lastMinuteOnly}
-          onCheckedChange={(c) => setLastMinuteOnly(!!c)}
+          onCheckedChange={(c) => {
+            const next = !!c;
+            setLastMinuteOnly(next);
+            // Re-query immediately; the predicate now lives in the request.
+            onSearch(undefined, next);
+          }}
         />
         <Label htmlFor="last-minute-filter" className="text-sm cursor-pointer flex items-center gap-1">
           <Zap className="w-3.5 h-3.5 text-amber-500" />
