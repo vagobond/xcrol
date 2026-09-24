@@ -27,6 +27,7 @@ const BAOISM_EDITIONS = [
   { slug: "wtf-is-baoism-chinese-3a9806", label: "中文", match: "(Chinese)" },
   { slug: "wtf-is-baoism-japanese-cb97b7", label: "日本語", match: "(Japanese)" },
   { slug: "wtf-is-baoism-thai-e87701", label: "ไทย", match: "(Thai)" },
+  { slug: "wtf-is-baoism-korean-9d97e1", label: "한국어", match: "(Korean)" },
 ];
 
 // Only this one book is translated, so the picker is scoped to it rather than
