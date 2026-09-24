@@ -51,6 +51,11 @@ verify_jwt = true
 [functions.fetch-rss-feeds]
 verify_jwt = false
 
+# Loaded from <img src>, which cannot send a JWT. Gated server-side instead:
+# http:// only, and only images already posted as an entry link/preview.
+[functions.image-proxy]
+verify_jwt = false
+
 [functions.get-public-stats]
 verify_jwt = false
 

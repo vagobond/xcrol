@@ -291,6 +291,19 @@ async function fetchOgPreview(
 
     // Manual, re-validated redirects; 4s deadline covers the body read too.
     const { res, timer } = await safeFetch(url, { timeoutMs: 4000, headers: { 'User-Agent': ua } });
+
+    // A link straight to an image file (a self-hosted jpg, say) has no HTML
+    // and so no OG tags — reading it as text used to yield 'unknown' and the
+    // post showed nothing. The link IS the image: render it inline, using the
+    // same shape PixelFed and Instagram previews use. Check the header before
+    // touching the body so we never pull an image's bytes into a text decoder.
+    const contentType = (res.headers.get('content-type') || '').toLowerCase();
+    if (contentType.startsWith('image/')) {
+      clearTimeout(timer);
+      try { await res.body?.cancel(); } catch { /* ignore */ }
+      return { type: 'pixelfed', image_url: url, original_url: url };
+    }
+
     let html = '';
     try {
       html = await readTextLimited(res, 50 * 1024);
