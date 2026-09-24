@@ -84,32 +84,87 @@ function instagramEmbedUrl(url: string): string | null {
   }
 }
 
-/** Instagram's embed iframe, resized from the MEASURE messages it posts. */
-function InstagramEmbed({ src }: { src: string }) {
+/**
+ * Instagram's embed, with a link card instead of a blank box.
+ *
+ * Instagram sometimes refuses the embed — it rate-limits by IP and redirects
+ * to its login page, which forbids framing (X-Frame-Options: DENY), leaving an
+ * empty frame. We can't read a cross-origin frame to tell, so this fails SAFE:
+ * a normal link card shows while the embed loads invisibly behind it, and the
+ * embed is revealed only once Instagram's frame posts a message to us. If
+ * nothing arrives in time the frame is dropped and the card stays. Worst case
+ * is a tidy link, never a blank box and never a hidden working post.
+ */
+const IG_EMBED_TIMEOUT_MS = 8000;
+
+function InstagramEmbed({ src, url }: { src: string; url: string }) {
+  const [state, setState] = useState<"loading" | "live" | "failed">("loading");
   const [height, setHeight] = useState(640);
+
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== "https://www.instagram.com") return;
+      // Any message from Instagram's frame means a real embed loaded — the
+      // login page it redirects to when refusing never talks to the parent.
+      setState((s) => (s === "failed" ? s : "live"));
       try {
         const msg = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
         const h = msg?.type === "MEASURE" ? Number(msg?.details?.height) : NaN;
         if (h > 100 && h < 3000) setHeight(Math.ceil(h));
-      } catch { /* not ours */ }
+      } catch { /* not a sizing message */ }
     };
     window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
+    const timer = setTimeout(
+      () => setState((s) => (s === "live" ? s : "failed")),
+      IG_EMBED_TIMEOUT_MS,
+    );
+    return () => {
+      window.removeEventListener("message", onMessage);
+      clearTimeout(timer);
+    };
+  }, [src]);
+
+  const isReel = /\/(reel|tv)\//.test(src);
+
   return (
-    <div className="mt-2 rounded-lg overflow-hidden border border-border bg-background">
-      <iframe
-        src={src}
-        className="w-full border-0 block"
-        style={{ height }}
-        loading="lazy"
-        scrolling="no"
-        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-        title="Instagram post"
-      />
+    <div className="relative">
+      {state !== "live" && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 flex rounded-lg overflow-hidden border border-border bg-muted/30 hover:bg-muted/50 transition-colors no-underline"
+        >
+          <div className="flex-1 min-w-0 p-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+              <Globe className="h-3.5 w-3.5" />
+              <span className="truncate">Instagram</span>
+            </div>
+            <p className="text-sm font-semibold text-foreground leading-tight">
+              {isReel ? "Watch this reel on Instagram" : "View this post on Instagram"}
+            </p>
+          </div>
+        </a>
+      )}
+      {state !== "failed" && (
+        <div
+          className={
+            state === "live"
+              ? "mt-2 rounded-lg overflow-hidden border border-border bg-background"
+              : "absolute inset-x-0 top-0 h-px overflow-hidden opacity-0 pointer-events-none"
+          }
+          aria-hidden={state !== "live"}
+        >
+          <iframe
+            src={src}
+            className="w-full border-0 block"
+            style={{ height }}
+            scrolling="no"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+            title="Instagram post"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -178,7 +233,7 @@ export const LinkPreview = ({ url, stored }: LinkPreviewProps) => {
     // to re-render when the row's preview changes.
   }, [url, igEmbed, authLoading, useStored, stored?.preview_type, stored?.preview_image_url]);
 
-  if (igEmbed) return <InstagramEmbed src={igEmbed} />;
+  if (igEmbed) return <InstagramEmbed src={igEmbed} url={url} />;
 
   if (!isPreviewableUrl(url) || loading || !data) {
     return null;
