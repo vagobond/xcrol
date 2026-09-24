@@ -50,6 +50,70 @@ function isPreviewableUrl(url: string): boolean {
   }
 }
 
+/**
+ * xcrol.com is https, so browsers upgrade an <img src="http://…"> to https —
+ * and a host without TLS (e.g. a self-hosted image) then fails to load. Send
+ * plain-http images through the image-proxy function, which relays them over
+ * https. https images load directly.
+ */
+function displayImageSrc(src: string): string {
+  if (!/^http:\/\//i.test(src)) return src;
+  return `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-proxy?url=${encodeURIComponent(src)}`;
+}
+
+/**
+ * Instagram post/reel links → Instagram's own public embed page.
+ *
+ * Instagram login-walls server-side fetches (Xcrol's edge function gets a
+ * redirect to /accounts/login/ with no OG tags), so a scraped preview can
+ * never work. The embed page is what Instagram publishes for sharing a post
+ * anywhere; loaded in the reader's own browser it needs no app or token.
+ * Profile, story and share-sheet links have no embed and stay plain links.
+ */
+function instagramEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase().replace(/^www\./, "");
+    if (host !== "instagram.com") return null;
+    const m = u.pathname.match(/^\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
+    if (!m) return null;
+    const kind = m[1] === "reels" ? "reel" : m[1];
+    return `https://www.instagram.com/${kind}/${m[2]}/embed/captioned/`;
+  } catch {
+    return null;
+  }
+}
+
+/** Instagram's embed iframe, resized from the MEASURE messages it posts. */
+function InstagramEmbed({ src }: { src: string }) {
+  const [height, setHeight] = useState(640);
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== "https://www.instagram.com") return;
+      try {
+        const msg = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+        const h = msg?.type === "MEASURE" ? Number(msg?.details?.height) : NaN;
+        if (h > 100 && h < 3000) setHeight(Math.ceil(h));
+      } catch { /* not ours */ }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+  return (
+    <div className="mt-2 rounded-lg overflow-hidden border border-border bg-background">
+      <iframe
+        src={src}
+        className="w-full border-0 block"
+        style={{ height }}
+        loading="lazy"
+        scrolling="no"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        title="Instagram post"
+      />
+    </div>
+  );
+}
+
 /** Stored row fields → the shape the renderers below already expect. */
 function fromStored(stored: StoredPreview, url: string): LinkPreviewData | null {
   if (!stored.preview_type) return null;
@@ -79,8 +143,11 @@ export const LinkPreview = ({ url, stored }: LinkPreviewProps) => {
   const [data, setData] = useState<LinkPreviewData | null>(storedData);
   const [loading, setLoading] = useState(false);
   const [showEmbed, setShowEmbed] = useState(false);
+  const igEmbed = instagramEmbedUrl(url);
 
   useEffect(() => {
+    // Instagram renders from its own embed page; nothing to resolve.
+    if (igEmbed) return;
     if (useStored) {
       // Stored path: render what the row carries, make no network call.
       setData(storedData);
@@ -109,7 +176,9 @@ export const LinkPreview = ({ url, stored }: LinkPreviewProps) => {
     return () => { cancelled = true; };
     // storedData is derived from `stored`; keying on the type + url is enough
     // to re-render when the row's preview changes.
-  }, [url, authLoading, useStored, stored?.preview_type, stored?.preview_image_url]);
+  }, [url, igEmbed, authLoading, useStored, stored?.preview_type, stored?.preview_image_url]);
+
+  if (igEmbed) return <InstagramEmbed src={igEmbed} />;
 
   if (!isPreviewableUrl(url) || loading || !data) {
     return null;
@@ -121,7 +190,7 @@ export const LinkPreview = ({ url, stored }: LinkPreviewProps) => {
       <div className="mt-2 rounded-lg overflow-hidden border border-border">
         <a href={url} target="_blank" rel="noopener noreferrer">
           <img
-            src={data.image_url}
+            src={displayImageSrc(data.image_url)}
             alt={data.title || "PixelFed image"}
             className="w-full max-h-[400px] object-cover"
             loading="lazy"
@@ -168,7 +237,7 @@ export const LinkPreview = ({ url, stored }: LinkPreviewProps) => {
         {data.image_url ? (
           <AspectRatio ratio={16 / 9}>
             <img
-              src={data.image_url}
+              src={displayImageSrc(data.image_url)}
               alt={data.title || "PeerTube video"}
               className="w-full h-full object-cover"
               loading="lazy"
@@ -214,7 +283,7 @@ export const LinkPreview = ({ url, stored }: LinkPreviewProps) => {
         {hasImage && (
           <div className="flex-shrink-0 w-24 sm:w-32 bg-muted">
             <img
-              src={data.image_url}
+              src={displayImageSrc(data.image_url)}
               alt=""
               className="w-full h-full object-cover"
               loading="lazy"
