@@ -5,7 +5,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 function getISOWeek(date: Date): { year: number; week: number } {
@@ -17,13 +17,65 @@ function getISOWeek(date: Date): { year: number; week: number } {
   return { year: d.getUTCFullYear(), week };
 }
 
+// Escape user-supplied text (display names) before it goes into the HTML.
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// ── Content from CD ────────────────────────────────────────────────────────
+// "How to use Xcrol" is shown only to users who have never posted, so it
+// disappears from their digest once they do. News expires on its own date so
+// it never goes stale in a weekly email. Edit these and redeploy to change them.
+// Source: CD's personal email to all users, 2026-09-26.
+const HOW_TO_STEPS = [
+  "Log in at xcrol.com.",
+  "Pick a username and list your hometown.",
+  "Upload a profile picture, if you want to.",
+  "Open The River (the three wavy lines).",
+  "Click <strong>Write my Xcrol</strong>.",
+  "Write something. Include a link and a location, and select <strong>Public</strong>.",
+  "Post.",
+];
+
+// CD's short YouTube tutorials (titles verified via YouTube oEmbed 2026-09-26).
+const TUTORIALS = [
+  { title: "Algorithm Free Social Network in less than 30 seconds", url: "https://www.youtube.com/watch?v=qDpaNHoka30" },
+  { title: "You on Xcrol", url: "https://www.youtube.com/watch?v=t_XNfzBPd3M" },
+  { title: "How to use The River on Xcrol.com", url: "https://www.youtube.com/watch?v=DKehQUACESU" },
+];
+
+const NEWS_UNTIL = new Date("2026-11-01T00:00:00Z");
+const NEWS_ITEMS = [
+  `The first guests at BaoHouse, CD's free guest house in Japan, booked their stay through
+   <a href="https://www.xcrol.com/hearthsurf">Hearth Surf</a>.`,
+  `<em>WTF is Baoism?</em> is free in <a href="https://www.xcrol.com/the-castle/library">The Castle Library</a>,
+   in English, Japanese, Korean, Thai, Chinese and Hindi. The translations were made with AI, so expect some
+   errors, and corrections are welcome.`,
+];
+
 function buildEmailHtml(displayName: string, stats: {
   newPosts: number;
   unreadMessages: number;
   pendingRequests: number;
   newHometowns: number;
+  hasPosted: boolean;
 }): string {
-  const greeting = displayName?.split(" ")[0] || "Friend";
+  const greeting = esc(displayName?.split(" ")[0] || "Friend");
+  const howTo = stats.hasPosted ? "" : `
+      <div class="section">
+        <h2>New here? How to use Xcrol</h2>
+        <ol>${HOW_TO_STEPS.map((step) => `<li>${step}</li>`).join("")}</ol>
+        <p>Short video tutorials:</p>
+        <ul>${TUTORIALS.map((t) => `<li><a href="${t.url}">${t.title}</a></li>`).join("")}</ul>
+        <p>There are only about 100 of us so far, so CD is happy to do a one-on-one session with you.
+        <a href="https://www.xcrol.com/cd">Send him a message on Xcrol</a> with any question.</p>
+      </div>`;
+  const news = new Date() < NEWS_UNTIL ? `
+      <div class="section">
+        <h2>News from CD</h2>
+        <ul>${NEWS_ITEMS.map((item) => `<li>${item}</li>`).join("")}</ul>
+      </div>` : "";
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -38,6 +90,11 @@ function buildEmailHtml(displayName: string, stats: {
     .stat-num { color: #a78bfa; font-size: 28px; font-weight: 700; display: block; line-height: 1; }
     .stat-label { color: #b0b0b0; font-size: 14px; margin-top: 4px; display: block; }
     .cta { display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 16px; }
+    .section { margin: 28px 0; padding: 20px 24px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.2); }
+    .section h2 { color: #ffffff; font-size: 18px; font-weight: normal; margin: 0 0 12px; }
+    .section ol, .section ul { color: #c0c0c0; font-size: 15px; padding-left: 22px; margin: 0 0 12px; }
+    .section li { margin-bottom: 6px; }
+    .section a { color: #a78bfa; }
     .footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); color: #666; font-size: 13px; text-align: center; }
     .footer a { color: #8b5cf6; }
   </style>
@@ -55,8 +112,10 @@ function buildEmailHtml(displayName: string, stats: {
         <div class="stat"><span class="stat-num">${stats.newHometowns}</span><span class="stat-label">new hometowns claimed worldwide</span></div>
       </div>
 
+${howTo}
       <p>Drop by The River to catch up — calm, chronological, and human.</p>
       <a href="https://www.xcrol.com/the-river" class="cta">Visit The River</a>
+${news}
 
       <div class="footer">
         <p>You're receiving this because weekly digests are enabled.<br/>
@@ -73,6 +132,17 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Only the scheduler may trigger a send run: the pg_cron job passes
+  // x-cron-secret from the vault, same pattern as nightly-backup and
+  // heartbeat-check. Previously this endpoint accepted a call from anyone.
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  if (cronSecret && req.headers.get("x-cron-secret") !== cronSecret) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+
   try {
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
 
@@ -85,16 +155,30 @@ const handler = async (req: Request): Promise<Response> => {
     const { year, week } = getISOWeek(now);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Fetch opted-in users
-    const { data: settings, error: settingsErr } = await supabase
+    // Everyone is in by default; only an explicit "off" opts a user out.
+    // A user_settings row exists only for people who have saved Settings, so
+    // selecting FROM user_settings (the old query) silently excluded every
+    // user who never opened that page — 91 of 95 as of 2026-09-26. Both
+    // columns default to true, so a missing row means "on".
+    const allIds: string[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: page, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .range(from, from + 999);
+      if (error) throw error;
+      allIds.push(...(page ?? []).map((p: any) => p.id));
+      if (!page || page.length < 1000) break;
+    }
+
+    const { data: optedOut, error: optOutErr } = await supabase
       .from("user_settings")
       .select("user_id")
-      .eq("weekly_digest_enabled", true)
-      .eq("email_notifications", true);
+      .or("weekly_digest_enabled.eq.false,email_notifications.eq.false");
+    if (optOutErr) throw optOutErr;
+    const optedOutSet = new Set((optedOut ?? []).map((s: any) => s.user_id));
 
-    if (settingsErr) throw settingsErr;
-
-    const userIds = (settings ?? []).map((s: any) => s.user_id);
+    const userIds = allIds.filter((id) => !optedOutSet.has(id));
     if (userIds.length === 0) {
       return new Response(JSON.stringify({ sent: 0, message: "No opted-in users" }), {
         status: 200,
@@ -107,8 +191,7 @@ const handler = async (req: Request): Promise<Response> => {
       .from("weekly_digest_log")
       .select("user_id")
       .eq("year", year)
-      .eq("week_number", week)
-      .in("user_id", userIds);
+      .eq("week_number", week);
 
     const sentSet = new Set((alreadySent ?? []).map((r: any) => r.user_id));
     const targetUserIds = userIds.filter((id) => !sentSet.has(id));
@@ -169,6 +252,12 @@ const handler = async (req: Request): Promise<Response> => {
           .select("id", { count: "exact", head: true })
           .eq("to_user_id", userId);
 
+        // Has this user ever posted? Drives the "How to use Xcrol" section.
+        const { count: ownPosts } = await supabase
+          .from("xcrol_entries")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId);
+
         const totalActivity = (newPosts ?? 0) + (unreadMessages ?? 0) + (pendingRequests ?? 0);
         if (totalActivity === 0) continue; // skip empty digests
 
@@ -177,6 +266,7 @@ const handler = async (req: Request): Promise<Response> => {
           unreadMessages: unreadMessages ?? 0,
           pendingRequests: pendingRequests ?? 0,
           newHometowns: newHometownsCount ?? 0,
+          hasPosted: (ownPosts ?? 0) > 0,
         });
 
         const res = await fetch("https://api.resend.com/emails", {
