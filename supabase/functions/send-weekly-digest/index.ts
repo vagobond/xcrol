@@ -5,7 +5,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 function getISOWeek(date: Date): { year: number; week: number } {
@@ -73,6 +73,17 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Only the scheduler may trigger a send run: the pg_cron job passes
+  // x-cron-secret from the vault, same pattern as nightly-backup and
+  // heartbeat-check. Previously this endpoint accepted a call from anyone.
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  if (cronSecret && req.headers.get("x-cron-secret") !== cronSecret) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+
   try {
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
 
@@ -85,16 +96,30 @@ const handler = async (req: Request): Promise<Response> => {
     const { year, week } = getISOWeek(now);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Fetch opted-in users
-    const { data: settings, error: settingsErr } = await supabase
+    // Everyone is in by default; only an explicit "off" opts a user out.
+    // A user_settings row exists only for people who have saved Settings, so
+    // selecting FROM user_settings (the old query) silently excluded every
+    // user who never opened that page — 91 of 95 as of 2026-09-26. Both
+    // columns default to true, so a missing row means "on".
+    const allIds: string[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: page, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .range(from, from + 999);
+      if (error) throw error;
+      allIds.push(...(page ?? []).map((p: any) => p.id));
+      if (!page || page.length < 1000) break;
+    }
+
+    const { data: optedOut, error: optOutErr } = await supabase
       .from("user_settings")
       .select("user_id")
-      .eq("weekly_digest_enabled", true)
-      .eq("email_notifications", true);
+      .or("weekly_digest_enabled.eq.false,email_notifications.eq.false");
+    if (optOutErr) throw optOutErr;
+    const optedOutSet = new Set((optedOut ?? []).map((s: any) => s.user_id));
 
-    if (settingsErr) throw settingsErr;
-
-    const userIds = (settings ?? []).map((s: any) => s.user_id);
+    const userIds = allIds.filter((id) => !optedOutSet.has(id));
     if (userIds.length === 0) {
       return new Response(JSON.stringify({ sent: 0, message: "No opted-in users" }), {
         status: 200,
@@ -107,8 +132,7 @@ const handler = async (req: Request): Promise<Response> => {
       .from("weekly_digest_log")
       .select("user_id")
       .eq("year", year)
-      .eq("week_number", week)
-      .in("user_id", userIds);
+      .eq("week_number", week);
 
     const sentSet = new Set((alreadySent ?? []).map((r: any) => r.user_id));
     const targetUserIds = userIds.filter((id) => !sentSet.has(id));
